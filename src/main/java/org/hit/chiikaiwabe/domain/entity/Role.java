@@ -16,9 +16,6 @@ import java.util.Set;
 @Table(name = "roles")
 public class Role {
 
-  public enum Roles{
-    ADMIN, USER
-  }
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -31,4 +31,8 @@ public class ErrorMessage {
     public static final String ERR_NOT_FOUND_ID = "exception.user.not.found.id";
   }
 
+  public static class Admin {
+    public static final String ERR_NOT_FiND_NAME = "exception.user.not.find.name";
+  }
+
 }

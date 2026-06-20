@@ -48,27 +48,27 @@ public class User extends DateAuditing {
   private String avatar;
 
   @Nationalized
-  @Column(nullable = true)
-  private String major_name;
+  @Column(nullable = true, name = "major_name")
+  private String majorName;
 
   @Nationalized
   @Column(nullable = true)
   private String university;
 
-  @Column(nullable = true, length = 10)
+  @Column(nullable = false, length = 10)
   private String gender;
 
-  @Column(nullable = true)
+  @Column(nullable = false)
   private int age;
 
   @Nationalized
-  @Column(nullable = true)
+  @Column(nullable = false)
   private String location;
 
-  @Column(nullable = true, name = "trust_score")
+  @Column(nullable = false, name = "trust_score")
   private Double trustScore;
 
-  @Column(nullable = true)
+  @Column(nullable = false)
   private String status;
 
   //Link to table Role

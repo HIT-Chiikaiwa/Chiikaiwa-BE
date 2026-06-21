@@ -1,9 +1,11 @@
 package org.hit.chiikaiwabe.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.hit.chiikaiwabe.base.RestApiV1;
 import org.hit.chiikaiwabe.base.VsResponseUtil;
 import org.hit.chiikaiwabe.constant.UrlConstant;
 import org.hit.chiikaiwabe.domain.dto.request.LoginRequestDto;
+import org.hit.chiikaiwabe.domain.dto.request.TokenRefreshRequestDto;
 import org.hit.chiikaiwabe.service.AuthService;
 import org.hit.chiikaiwabe.validator.annotation.ValidFileImage;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,4 +37,15 @@ public class AuthController {
     return multipartFile.getContentType();
   }
 
+  @Operation(summary = "API Refresh Token")
+  @PostMapping(UrlConstant.Auth.REFRESH_TOKEN)
+  public ResponseEntity<?> refresh(@Valid @RequestBody TokenRefreshRequestDto request) {
+    return VsResponseUtil.success(authService.refresh(request));
+  }
+
+  @Operation(summary = "API Logout")
+  @PostMapping(UrlConstant.Auth.LOGOUT)
+  public ResponseEntity<?> logout(HttpServletRequest request) {
+    return VsResponseUtil.success(authService.logout(request));
+  }
 }

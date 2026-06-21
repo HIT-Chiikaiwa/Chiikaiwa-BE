@@ -1,6 +1,7 @@
 package org.hit.chiikaiwabe.service.impl;
 
 import org.hit.chiikaiwabe.constant.ErrorMessage;
+import org.hit.chiikaiwabe.constant.SuccessMessage;
 import org.hit.chiikaiwabe.domain.dto.request.LoginRequestDto;
 import org.hit.chiikaiwabe.domain.dto.request.TokenRefreshRequestDto;
 import org.hit.chiikaiwabe.domain.dto.response.CommonResponseDto;
@@ -11,6 +12,7 @@ import org.hit.chiikaiwabe.security.UserPrincipal;
 import org.hit.chiikaiwabe.security.jwt.JwtTokenProvider;
 import org.hit.chiikaiwabe.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.hit.chiikaiwabe.service.CustomUserDetailsService;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +27,8 @@ public class AuthServiceImpl implements AuthService {
   private final AuthenticationManager authenticationManager;
 
   private final JwtTokenProvider jwtTokenProvider;
+
+  private final CustomUserDetailsService customUserDetailsService;
 
   @Override
   public LoginResponseDto login(LoginRequestDto request) {
@@ -45,12 +49,24 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public TokenRefreshResponseDto refresh(TokenRefreshRequestDto request) {
-    return null;
+    try {
+      Authentication authentication = jwtTokenProvider.getAuthenticationByRefreshToken(request.getRefreshToken());
+      String identifier = authentication.getName();
+      UserPrincipal userPrincipal = (UserPrincipal) customUserDetailsService.loadUserByUsername(identifier);
+      String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
+      String refreshToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.TRUE);
+
+      return new TokenRefreshResponseDto(accessToken, refreshToken);
+
+    } catch (Exception e) {
+      throw new UnauthorizedException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
+    }
   }
 
   @Override
   public CommonResponseDto logout(HttpServletRequest request) {
-    return null;
+    SecurityContextHolder.clearContext();
+    return new CommonResponseDto(true, SuccessMessage.LOGOUT_SUCCESS);
   }
 
 }

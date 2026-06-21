@@ -9,6 +9,7 @@ import org.hit.chiikaiwabe.domain.entity.User;
 import org.hit.chiikaiwabe.repository.RoleRepository;
 import org.hit.chiikaiwabe.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,6 +18,8 @@ public class DataInitializer implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final AdminInfoProperties adminInfoProperties;
+
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) throws Exception {
@@ -33,10 +36,15 @@ public class DataInitializer implements CommandLineRunner {
             }
             User adminUser = User.builder()
                     .username(adminInfoProperties.getUsername())
-                    .password(adminInfoProperties.getPassword())
+                    .password(passwordEncoder.encode(adminInfoProperties.getPassword()))
                     .firstName(adminInfoProperties.getFirstName())
                     .lastName(adminInfoProperties.getLastName())
-                    .role(adminRole).build();
+                    .gender("MALE")
+                    .location("Hà Nội")
+                    .status("ACTIVE")
+                    .trustScore(100.0)
+                    .role(adminRole)
+                    .build();
             userRepository.save(adminUser);
         }
 

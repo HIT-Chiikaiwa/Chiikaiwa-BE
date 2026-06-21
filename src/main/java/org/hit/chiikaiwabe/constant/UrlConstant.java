@@ -8,6 +8,7 @@ public class UrlConstant {
     public static final String LOGIN = PRE_FIX + "/login";
     public static final String LOGOUT = PRE_FIX + "/logout";
 
+    public static final String REFRESH_TOKEN = PRE_FIX + "/refresh";
     private Auth() {
     }
   }

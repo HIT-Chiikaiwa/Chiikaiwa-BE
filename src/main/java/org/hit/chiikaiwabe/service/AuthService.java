@@ -1,7 +1,6 @@
 package org.hit.chiikaiwabe.service;
 
-import org.hit.chiikaiwabe.domain.dto.request.LoginRequestDto;
-import org.hit.chiikaiwabe.domain.dto.request.TokenRefreshRequestDto;
+import org.hit.chiikaiwabe.domain.dto.request.*;
 import org.hit.chiikaiwabe.domain.dto.response.CommonResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.LoginResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.TokenRefreshResponseDto;
@@ -14,6 +13,16 @@ public interface AuthService {
 
   TokenRefreshResponseDto refresh(TokenRefreshRequestDto request);
 
-  CommonResponseDto logout(HttpServletRequest request);
+  CommonResponseDto logout(HttpServletRequest request, String refreshToken);
+
+  CommonResponseDto register(UserCreateDto request);
+
+  CommonResponseDto verifyRegisterOtp(VerifyOtpRequestDto request);
+
+  CommonResponseDto forgotPasswordSendOtp(SendOtpRequestDto request);
+
+  CommonResponseDto verifyForgotPasswordOtp(VerifyOtpRequestDto request);
+
+  CommonResponseDto resetPassword(ResetPasswordRequestDto request);
 
 }

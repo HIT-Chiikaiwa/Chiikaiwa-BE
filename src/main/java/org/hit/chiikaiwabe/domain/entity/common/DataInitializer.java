@@ -39,6 +39,7 @@ public class DataInitializer implements CommandLineRunner {
                     .password(passwordEncoder.encode(adminInfoProperties.getPassword()))
                     .firstName(adminInfoProperties.getFirstName())
                     .lastName(adminInfoProperties.getLastName())
+                    .dateOfBirth(java.time.LocalDate.of(2000, 1, 1))
                     .gender("MALE")
                     .location("Hà Nội")
                     .status("ACTIVE")

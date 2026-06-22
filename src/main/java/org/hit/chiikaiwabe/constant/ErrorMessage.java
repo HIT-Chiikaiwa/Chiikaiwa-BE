@@ -24,6 +24,17 @@ public class ErrorMessage {
     public static final String ERR_ACCOUNT_LOCKED = "exception.auth.account.locked";
     public static final String INVALID_REFRESH_TOKEN = "exception.auth.invalid.refresh.token";
     public static final String EXPIRED_REFRESH_TOKEN = "exception.auth.expired.refresh.token";
+    public static final String ERR_CONFIRM_PASSWORD_NOT_MATCH = "auth.register.password_not_match";
+    public static final String ERR_ACCOUNT_ALREADY_EXISTS = "auth.register.account_exists";
+    public static final String INVALID_FORMAT_PASSWORD_COMPLEX = "invalid.password-complex";
+    public static final String ERR_RESET_TICKET_EXPIRED = "exception.auth.reset.ticket.expired";
+    public static final String ERR_OTP_INCORRECT = "exception.auth.otp.incorrect";
+    public static final String ERR_ACCOUNT_ALREADY_VERIFIED = "auth.register.already_verified";
+    public static final String ERR_ACCOUNT_NOT_VERIFIED = "exception.auth.account_not_verified";
+    public static final String ERR_OTP_SPAM = "exception.auth.spam_otp";
+    public static final String ERR_FORGOT_PASS_NOT_VERIFIED = "exception.auth.forgot_pass_not_verified";
+
+
   }
 
   public static class User {
@@ -34,5 +45,14 @@ public class ErrorMessage {
   public static class Admin {
     public static final String ERR_NOT_FiND_NAME = "exception.user.not.find.name";
   }
+
+
+  public static class Role {
+    public static final String ERR_ROLE_NOT_FOUND = "exception.role.not.found";
+  }
+  public static class Mail {
+    public static final String ERR_SEND_MAIL_FAILED = "exception.mail.send_failed";
+  }
+
 
 }

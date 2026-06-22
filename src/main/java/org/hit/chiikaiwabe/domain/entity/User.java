@@ -8,6 +8,8 @@ import org.hibernate.annotations.Nationalized;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -60,6 +62,9 @@ public class User extends DateAuditing {
 
   @Column(nullable = false)
   private int age;
+
+  @Column(name = "date_of_birth",nullable = false)
+  private LocalDate dateOfBirth;
 
   @Nationalized
   @Column(nullable = false)

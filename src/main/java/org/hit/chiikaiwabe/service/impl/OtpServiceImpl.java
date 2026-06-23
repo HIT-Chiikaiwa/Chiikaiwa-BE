@@ -1,16 +1,17 @@
 package org.hit.chiikaiwabe.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.hit.chiikaiwabe.constant.ErrorMessage; // Nhớ import
+import org.hit.chiikaiwabe.constant.ErrorMessage;
 import org.hit.chiikaiwabe.domain.dto.common.DataMailDto;
 import org.hit.chiikaiwabe.exception.InvalidException;
 import org.hit.chiikaiwabe.service.OtpService;
 import org.hit.chiikaiwabe.util.SendMailUtil;
-import org.springframework.context.MessageSource; // Nhớ import
-import org.springframework.context.i18n.LocaleContextHolder; // Nhớ import
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -25,10 +26,17 @@ public class OtpServiceImpl implements OtpService {
     private final MessageSource messageSource;
 
     @Override
-    public void generateAndSendOtp(String email) {
-        String otpCode = String.format("%06d", new Random().nextInt(999999));
-        redisTemplate.opsForValue().set("OTP:" + email, otpCode, 5, TimeUnit.MINUTES);
+    public String generateOtp(String email) {
+        SecureRandom secureRandom = new SecureRandom();
+        int otp = secureRandom.nextInt(900000) + 100000;
+        String otpCode = String.valueOf(otp);
 
+        redisTemplate.opsForValue().set("OTP:" + email, otpCode, 5, TimeUnit.MINUTES);
+        return otpCode;
+    }
+
+    @Override
+    public void sendOtp(String email, String otpCode) {
         try {
             DataMailDto dataMail = new DataMailDto();
             dataMail.setTo(email);
@@ -42,17 +50,18 @@ public class OtpServiceImpl implements OtpService {
             dataMail.setProperties(properties);
 
             sendMailUtil.sendEmailWithHTML(dataMail, "otp-template");
-
         } catch (Exception e) {
             throw new InvalidException(ErrorMessage.Mail.ERR_SEND_MAIL_FAILED);
         }
     }
 
+
     @Override
     public boolean validateOtp(String email, String otpCode) {
-        String cacheOtp = redisTemplate.opsForValue().get("OTP:" + email);
-        if (cacheOtp != null && cacheOtp.equals(otpCode)) {
-            redisTemplate.delete("OTP:" + email);
+        String key = "OTP:" + email;
+        String storedOtp = redisTemplate.opsForValue().get(key);
+        if (storedOtp != null && storedOtp.equals(otpCode)) {
+            redisTemplate.delete(key);
             return true;
         }
         return false;

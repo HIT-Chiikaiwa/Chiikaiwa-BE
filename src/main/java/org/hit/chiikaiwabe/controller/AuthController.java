@@ -54,15 +54,15 @@ public class AuthController {
 
   @Operation(summary = "API Register")
   @PostMapping(UrlConstant.Auth.REGISTER)
-  public ResponseEntity<?> register(@RequestBody UserCreateDto request) {
+  public ResponseEntity<?> register(@Valid @RequestBody UserCreateDto request) {
     return VsResponseUtil.success(authService.register(request));
   }
 
   @Operation(summary = "API Send OTP")
   @PostMapping(UrlConstant.Auth.SEND_OTP)
-  public ResponseEntity<?> sendOtp(@RequestBody SendOtpRequestDto request ){
-    otpService.generateAndSendOtp(request.getEmail());
-
+  public ResponseEntity<?> sendOtp(@Valid @RequestBody SendOtpRequestDto request) {
+    String otpCode = otpService.generateOtp(request.getEmail());
+    otpService.sendOtp(request.getEmail(), otpCode);
     return VsResponseUtil.success(
             new CommonResponseDto(true, SuccessMessage.SEND_OTP_SUCCESS)
     );

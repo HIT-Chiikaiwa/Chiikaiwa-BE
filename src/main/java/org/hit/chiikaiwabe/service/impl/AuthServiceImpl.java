@@ -1,18 +1,17 @@
 package org.hit.chiikaiwabe.service.impl;
 
 import org.hit.chiikaiwabe.constant.ErrorMessage;
-import org.hit.chiikaiwabe.constant.RoleConstant;
 import org.hit.chiikaiwabe.constant.SuccessMessage;
+import org.hit.chiikaiwabe.domain.enums.Role;
+import org.hit.chiikaiwabe.domain.enums.UserStatus;
 import org.hit.chiikaiwabe.domain.dto.request.*;
 import org.hit.chiikaiwabe.domain.dto.response.CommonResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.LoginResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.TokenRefreshResponseDto;
-import org.hit.chiikaiwabe.domain.entity.Role;
 import org.hit.chiikaiwabe.domain.entity.User;
 import org.hit.chiikaiwabe.exception.InvalidException;
 import org.hit.chiikaiwabe.exception.NotFoundException;
 import org.hit.chiikaiwabe.exception.UnauthorizedException;
-import org.hit.chiikaiwabe.repository.RoleRepository;
 import org.hit.chiikaiwabe.repository.UserRepository;
 import org.hit.chiikaiwabe.security.UserPrincipal;
 import org.hit.chiikaiwabe.security.jwt.JwtTokenProvider;
@@ -20,8 +19,6 @@ import org.hit.chiikaiwabe.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.hit.chiikaiwabe.service.CustomUserDetailsService;
 import org.hit.chiikaiwabe.service.OtpService;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
@@ -45,24 +42,22 @@ public class AuthServiceImpl implements AuthService {
   private final CustomUserDetailsService customUserDetailsService;
 
   private final UserRepository userRepository;
-  private final RoleRepository roleRepository;
   private final PasswordEncoder passwordEncoder;
 
   private final OtpService otpService;
 
   private final StringRedisTemplate redisTemplate;
 
-  private final MessageSource messageSource;
   @Override
   public LoginResponseDto login(LoginRequestDto request) {
     try {
-      User user = userRepository.findByEmail(request.getEmailOrPhone())
+      User user = userRepository.findByEmail(request.getEmail())
               .orElseThrow(() -> new UnauthorizedException(ErrorMessage.Auth.ERR_INCORRECT_USERNAME));
-      if ("UNVERIFIED".equals(user.getStatus())) {
+      if (UserStatus.UNVERIFIED == user.getStatus()) {
         throw new UnauthorizedException(ErrorMessage.Auth.ERR_ACCOUNT_NOT_VERIFIED);
       }
       Authentication authentication = authenticationManager.authenticate(
-          new UsernamePasswordAuthenticationToken(request.getEmailOrPhone(), request.getPassword()));
+          new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
       SecurityContextHolder.getContext().setAuthentication(authentication);
       UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
       String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
@@ -71,12 +66,9 @@ public class AuthServiceImpl implements AuthService {
       long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
       long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
 
-      if (accessTtl > 0) {
         redisTemplate.opsForValue().set(accessToken, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
-      }
-      if (refreshTtl > 0) {
         redisTemplate.opsForValue().set(refreshToken, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
-      }
+
       return new LoginResponseDto(accessToken, refreshToken, userPrincipal.getId(), authentication.getAuthorities());
     } catch (InternalAuthenticationServiceException e) {
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_INCORRECT_USERNAME);
@@ -90,7 +82,7 @@ public class AuthServiceImpl implements AuthService {
     try {
       String oldRefreshToken = request.getRefreshToken();
 
-      if (Boolean.FALSE.equals(redisTemplate.hasKey(oldRefreshToken))) {
+      if (!redisTemplate.hasKey(oldRefreshToken)) {
         throw new UnauthorizedException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
       }
       Authentication authentication = jwtTokenProvider.getAuthenticationByRefreshToken(request.getRefreshToken());
@@ -103,12 +95,10 @@ public class AuthServiceImpl implements AuthService {
       long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
       long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
 
-      if (accessTtl > 0) {
+
         redisTemplate.opsForValue().set(accessToken, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
-      }
-      if (refreshTtl > 0) {
         redisTemplate.opsForValue().set(refreshToken, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
-      }
+
       return new TokenRefreshResponseDto(accessToken, refreshToken);
 
     } catch (Exception e) {
@@ -117,14 +107,20 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public CommonResponseDto logout( HttpServletRequest request, String refreshToken) {
+  public CommonResponseDto logout(HttpServletRequest request, String refreshToken) {
     String bearerToken = request.getHeader("Authorization");
     if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
       String accessToken = bearerToken.substring(7);
-      redisTemplate.delete(accessToken);
+      long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
+      if (accessTtl > 0) {
+        redisTemplate.opsForValue().set("BLACKLIST:" + accessToken, "LOGGED_OUT", accessTtl, TimeUnit.MILLISECONDS);
+      }
     }
     if (StringUtils.hasText(refreshToken)) {
-      redisTemplate.delete(refreshToken);
+      long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
+      if (refreshTtl > 0) {
+        redisTemplate.opsForValue().set("BLACKLIST:" + refreshToken, "LOGGED_OUT", refreshTtl, TimeUnit.MILLISECONDS);
+      }
     }
 
     SecurityContextHolder.clearContext();
@@ -141,16 +137,8 @@ public class AuthServiceImpl implements AuthService {
       throw new InvalidException(ErrorMessage.Auth.ERR_ACCOUNT_ALREADY_EXISTS);
     }
 
-    int currentYear = java.time.Year.now().getValue();
-    int age = 0;
-    if (request.getDateOfBirth() != null) {
-      age = java.time.Period.between(request.getDateOfBirth(), java.time.LocalDate.now()).getYears();
-    }
+    int age = java.time.Period.between(request.getDateOfBirth(), java.time.LocalDate.now()).getYears();
 
-    Role userRole = roleRepository.findByRoleName(RoleConstant.USER);
-    if (userRole == null) {
-      throw new NotFoundException(ErrorMessage.Role.ERR_ROLE_NOT_FOUND);
-    }
 
     User newUser = User.builder()
             .username(request.getEmail())
@@ -161,15 +149,16 @@ public class AuthServiceImpl implements AuthService {
             .gender(request.getGender())
             .dateOfBirth(request.getDateOfBirth())
             .age(age)
-            .location("Chưa cập nhật")
-            .status("UNVERIFIED")
+            .status(UserStatus.UNVERIFIED)
             .trustScore(100.0)
-            .role(userRole)
+            .role(Role.USER)
             .build();
 
     userRepository.save(newUser);
 
-    otpService.generateAndSendOtp(request.getEmail());
+    String otpCode = otpService.generateOtp(request.getEmail());
+    otpService.sendOtp(request.getEmail(), otpCode);
+
     return new CommonResponseDto(true, SuccessMessage.REGISTER_SUCCESS_CHECK_EMAIL);
   }
 
@@ -181,12 +170,11 @@ public class AuthServiceImpl implements AuthService {
     }
     User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{request.getEmail()}));
-
-    if ("ACTIVE".equals(user.getStatus())) {
+    if (UserStatus.ACTIVE == user.getStatus()) {
       throw new InvalidException(ErrorMessage.Auth.ERR_ACCOUNT_ALREADY_VERIFIED);
     }
 
-    user.setStatus("ACTIVE");
+    user.setStatus(UserStatus.ACTIVE);
     userRepository.save(user);
     return new CommonResponseDto(true, SuccessMessage.VERIFY_REGISTER_SUCCESS);
   }
@@ -196,23 +184,23 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public CommonResponseDto forgotPasswordSendOtp(SendOtpRequestDto request) {
     String spamKey = "OTP_RATE_LIMIT:" + request.getEmail();
-    if (Boolean.TRUE.equals(redisTemplate.hasKey(spamKey))) {
+
+    if (redisTemplate.hasKey(spamKey)) {
       throw new InvalidException(ErrorMessage.Auth.ERR_OTP_SPAM);
     }
+
     User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME,
                     new String[]{request.getEmail()}));
-    if (!"ACTIVE".equals(user.getStatus())) {
+    if (user.getStatus() !=  UserStatus.ACTIVE) {
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_FORGOT_PASS_NOT_VERIFIED);
     }
 
-    otpService.generateAndSendOtp(request.getEmail());
-
+    String otpCode = otpService.generateOtp(request.getEmail());
+    otpService.sendOtp(request.getEmail(), otpCode);
     redisTemplate.opsForValue().set(spamKey, "BLOCKED", 60, TimeUnit.SECONDS);
 
-    String successMsg = messageSource.getMessage(SuccessMessage.FORGOT_PASSWORD_SEND_OTP_SUCCESS,
-            null, LocaleContextHolder.getLocale());
-    return new CommonResponseDto(true, successMsg);
+    return new CommonResponseDto(true, SuccessMessage.FORGOT_PASSWORD_SEND_OTP_SUCCESS);
   }
   @Override
   public CommonResponseDto verifyForgotPasswordOtp(VerifyOtpRequestDto request) {
@@ -232,7 +220,7 @@ public class AuthServiceImpl implements AuthService {
       throw new InvalidException(ErrorMessage.Auth.ERR_CONFIRM_PASSWORD_NOT_MATCH);
     }
     String resetTicketKey = "RESET_TICKET:" + request.getEmail();
-    if (Boolean.FALSE.equals(redisTemplate.hasKey(resetTicketKey))) {
+    if (!redisTemplate.hasKey(resetTicketKey)) {
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_RESET_TICKET_EXPIRED);
     }
     User user = userRepository.findByEmail(request.getEmail())

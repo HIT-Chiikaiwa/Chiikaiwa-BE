@@ -1,16 +1,12 @@
 package org.hit.chiikaiwabe.domain.dto.response;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.ForeignKey;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import org.hibernate.annotations.Nationalized;
 import org.hit.chiikaiwabe.domain.dto.common.DateAuditingDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hit.chiikaiwabe.domain.entity.Role;
+
+import java.time.LocalDate;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -39,6 +35,8 @@ public class UserDto extends DateAuditingDto {
   private String gender;
 
   private int age;
+
+  private LocalDate dateOfBirth;
 
   private String location;
 

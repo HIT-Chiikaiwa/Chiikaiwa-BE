@@ -1,6 +1,7 @@
 package org.hit.chiikaiwabe.service;
 
 public interface OtpService {
-    void generateAndSendOtp(String email);
-    boolean validateOtp(String email, String inputOtp);
+    String generateOtp(String email);
+    void sendOtp(String email, String otpCode);
+    boolean validateOtp(String email, String otpCode);
 }

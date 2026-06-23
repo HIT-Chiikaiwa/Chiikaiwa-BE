@@ -3,10 +3,9 @@ package org.hit.chiikaiwabe.domain.entity.common;
 import lombok.RequiredArgsConstructor;
 import org.hit.chiikaiwabe.config.properties.AdminInfoProperties;
 import org.hit.chiikaiwabe.constant.ErrorMessage;
-import org.hit.chiikaiwabe.constant.RoleConstant;
-import org.hit.chiikaiwabe.domain.entity.Role;
 import org.hit.chiikaiwabe.domain.entity.User;
-import org.hit.chiikaiwabe.repository.RoleRepository;
+import org.hit.chiikaiwabe.domain.enums.Role;
+import org.hit.chiikaiwabe.domain.enums.UserStatus;
 import org.hit.chiikaiwabe.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
-    private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final AdminInfoProperties adminInfoProperties;
 
@@ -23,17 +21,10 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if(roleRepository.count() == 0){
-            roleRepository.save(Role.builder().name(RoleConstant.ADMIN).build());
-            roleRepository.save(Role.builder().name(RoleConstant.USER).build());
-        }
+
 
 
         if(userRepository.findByUsername(adminInfoProperties.getUsername()).isEmpty()){
-            Role adminRole = roleRepository.findByRoleName(RoleConstant.ADMIN);
-            if(adminRole == null){
-                throw new RuntimeException(ErrorMessage.Admin.ERR_NOT_FiND_NAME);
-            }
             User adminUser = User.builder()
                     .username(adminInfoProperties.getUsername())
                     .password(passwordEncoder.encode(adminInfoProperties.getPassword()))
@@ -41,10 +32,9 @@ public class DataInitializer implements CommandLineRunner {
                     .lastName(adminInfoProperties.getLastName())
                     .dateOfBirth(java.time.LocalDate.of(2000, 1, 1))
                     .gender("MALE")
-                    .location("Hà Nội")
-                    .status("ACTIVE")
+                    .status(UserStatus.ACTIVE)
                     .trustScore(100.0)
-                    .role(adminRole)
+                    .role(Role.ADMIN)
                     .build();
             userRepository.save(adminUser);
         }

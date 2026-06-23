@@ -1,5 +1,7 @@
 package org.hit.chiikaiwabe.domain.entity;
 
+import org.hit.chiikaiwabe.domain.enums.Role;
+import org.hit.chiikaiwabe.domain.enums.UserStatus;
 import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
@@ -63,22 +65,22 @@ public class User extends DateAuditing {
   @Column(nullable = false)
   private int age;
 
-  @Column(name = "date_of_birth",nullable = false)
+  @Column(name = "date_of_birth",nullable = true)
   private LocalDate dateOfBirth;
 
   @Nationalized
-  @Column(nullable = false)
+  @Column(nullable = true)
   private String location;
 
   @Column(nullable = false, name = "trust_score")
   private Double trustScore;
 
-  @Column(nullable = false)
-  private String status;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private UserStatus status;
 
-  //Link to table Role
-  @ManyToOne
-  @JoinColumn(name = "role_id", foreignKey = @ForeignKey(name = "FK_USER_ROLE"))
+  @Enumerated(EnumType.STRING)
+  @Column(name = "role", nullable = false)
   private Role role;
 
 

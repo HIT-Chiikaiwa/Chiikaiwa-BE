@@ -22,8 +22,8 @@ import java.time.LocalDate;
 public class UserCreateDto {
 
 
+  @NotBlank(message = ErrorMessage.INVALID_SOME_THING_FIELD_IS_REQUIRED)
   @Email(message = ErrorMessage.INVALID_SOME_THING_FIELD)
-  @NotNull(message = ErrorMessage.INVALID_SOME_THING_FIELD_IS_REQUIRED)
   private String email;
 
   @NotNull(message = ErrorMessage.INVALID_SOME_THING_FIELD_IS_REQUIRED)
@@ -43,7 +43,7 @@ public class UserCreateDto {
   private String gender;
 
   @NotNull(message = ErrorMessage.INVALID_SOME_THING_FIELD_IS_REQUIRED)
-  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   private LocalDate dateOfBirth;
 
 }

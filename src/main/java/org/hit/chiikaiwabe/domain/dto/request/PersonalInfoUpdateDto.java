@@ -10,6 +10,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Past;
+
+import java.time.LocalDate;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -27,9 +30,8 @@ public class PersonalInfoUpdateDto {
     private String gender;
 
     @NotNull(message = ErrorMessage.INVALID_SOME_THING_FIELD_IS_REQUIRED)
-    @Min(value = 17, message = "Age must be at least 17")
-    @Max(value = 100, message = "Age must be at most 100")
-    private Integer age;
+    @Past(message = "Date of birth must be in the past")
+    private LocalDate dateOfBirth;
 
     private String email;
 

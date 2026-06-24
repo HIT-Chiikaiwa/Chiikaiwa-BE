@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -32,7 +34,7 @@ public class UserDto extends DateAuditingDto {
 
   private String gender;
 
-  private int age;
+  private LocalDate dateOfBirth;
 
   private String location;
 

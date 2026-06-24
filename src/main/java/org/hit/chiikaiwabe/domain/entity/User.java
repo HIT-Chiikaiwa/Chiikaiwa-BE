@@ -7,6 +7,7 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Nationalized;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -59,7 +60,7 @@ public class User extends DateAuditing {
   private String gender;
 
   @Column(nullable = false)
-  private int age;
+  private LocalDate dateOfBirth;
 
   @Nationalized
   @Column(nullable = false)

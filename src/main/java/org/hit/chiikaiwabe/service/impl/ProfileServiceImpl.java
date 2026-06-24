@@ -33,6 +33,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final SubjectMapper subjectMapper;
     private final UploadFileUtil uploadFileUtil;
 
+
     private User findUserById(String userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{userId}));
@@ -43,6 +44,7 @@ public class ProfileServiceImpl implements ProfileService {
             throw new InvalidException(ErrorMessage.User.ERR_USER_ALREADY_DELETED);
         }
     }
+
 
     @Override
     public PublicProfileDto getPublicProfile(String userId) {
@@ -60,7 +62,7 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setUniversity(user.getUniversity());
         dto.setMajorName(user.getMajorName());
         dto.setGender(user.getGender());
-        dto.setAge(user.getAge());
+        dto.setDateOfBirth(user.getDateOfBirth());
         dto.setLocation(user.getLocation());
         dto.setTrustScore(user.getTrustScore());
         dto.setBuddyActive(user.getBuddyActive());
@@ -96,7 +98,7 @@ public class ProfileServiceImpl implements ProfileService {
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
         user.setGender(dto.getGender());
-        user.setAge(dto.getAge());
+        user.setDateOfBirth(dto.getDateOfBirth());
 
         return userMapper.toUserDto(userRepository.save(user));
     }
@@ -106,17 +108,14 @@ public class ProfileServiceImpl implements ProfileService {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
 
-
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
             throw new InvalidException(ErrorMessage.User.ERR_INVALID_AVATAR);
         }
 
-
         if (user.getAvatar() != null && !user.getAvatar().isBlank()) {
             uploadFileUtil.destroyFileWithUrl(user.getAvatar());
         }
-
 
         String newAvatarUrl = uploadFileUtil.uploadFile(file);
         user.setAvatar(newAvatarUrl);
@@ -189,7 +188,6 @@ public class ProfileServiceImpl implements ProfileService {
     public void deleteSubject(String userId, String subjectId) {
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Subject.ERR_NOT_FOUND_ID, new String[]{subjectId}));
-
 
         if (!Objects.equals(subject.getUser().getId(), userId)) {
             throw new ForbiddenException(ErrorMessage.Subject.ERR_NOT_BELONG_TO_USER);

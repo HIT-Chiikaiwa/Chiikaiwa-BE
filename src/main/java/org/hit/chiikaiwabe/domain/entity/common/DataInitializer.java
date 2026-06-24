@@ -9,6 +9,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
@@ -26,7 +28,7 @@ public class DataInitializer implements CommandLineRunner {
                     .lastName(adminInfoProperties.getLastName())
                     .role(Role.ROLE_ADMIN)
                     .gender("OTHER")
-                    .age(0)
+                    .dateOfBirth(LocalDate.of(2000, 1, 1))
                     .location("N/A")
                     .trustScore(100.0)
                     .status("ACTIVE")

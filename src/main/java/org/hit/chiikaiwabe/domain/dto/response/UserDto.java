@@ -1,16 +1,10 @@
 package org.hit.chiikaiwabe.domain.dto.response;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.ForeignKey;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import org.hibernate.annotations.Nationalized;
 import org.hit.chiikaiwabe.domain.dto.common.DateAuditingDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hit.chiikaiwabe.domain.entity.Role;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -32,7 +26,7 @@ public class UserDto extends DateAuditingDto {
 
   private String avatar;
 
-  private String major_name;
+  private String majorName;
 
   private String university;
 
@@ -46,7 +40,12 @@ public class UserDto extends DateAuditingDto {
 
   private String status;
 
+  private Boolean buddyActive;
+
+  private String statusTag;
+
+  private Boolean deleteFlag;
+
   private String roleName;
 
 }
-

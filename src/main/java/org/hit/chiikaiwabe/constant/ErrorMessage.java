@@ -7,7 +7,7 @@ public class ErrorMessage {
   public static final String FORBIDDEN = "exception.forbidden";
   public static final String FORBIDDEN_UPDATE_DELETE = "exception.forbidden.update-delete";
 
-  //error validation dto
+
   public static final String INVALID_SOME_THING_FIELD = "invalid.general";
   public static final String INVALID_FORMAT_SOME_THING_FIELD = "invalid.general.format";
   public static final String INVALID_SOME_THING_FIELD_IS_REQUIRED = "invalid.general.required";
@@ -29,6 +29,17 @@ public class ErrorMessage {
   public static class User {
     public static final String ERR_NOT_FOUND_USERNAME = "exception.user.not.found.username";
     public static final String ERR_NOT_FOUND_ID = "exception.user.not.found.id";
+    public static final String ERR_DUPLICATE_EMAIL = "exception.user.duplicate.email";
+    public static final String ERR_DUPLICATE_PHONE = "exception.user.duplicate.phone";
+    public static final String ERR_INVALID_AVATAR = "exception.user.invalid.avatar";
+    public static final String ERR_USER_ALREADY_DELETED = "exception.user.already.deleted";
+  }
+
+  public static class Subject {
+    public static final String ERR_NOT_FOUND_ID = "exception.subject.not.found.id";
+    public static final String ERR_DUPLICATE_NAME = "exception.subject.duplicate.name";
+    public static final String ERR_INVALID_TYPE = "exception.subject.invalid.type";
+    public static final String ERR_NOT_BELONG_TO_USER = "exception.subject.not.belong.to.user";
   }
 
   public static class Admin {

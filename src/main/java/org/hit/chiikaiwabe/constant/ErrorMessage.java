@@ -7,7 +7,6 @@ public class ErrorMessage {
   public static final String FORBIDDEN = "exception.forbidden";
   public static final String FORBIDDEN_UPDATE_DELETE = "exception.forbidden.update-delete";
 
-
   public static final String INVALID_SOME_THING_FIELD = "invalid.general";
   public static final String INVALID_FORMAT_SOME_THING_FIELD = "invalid.general.format";
   public static final String INVALID_SOME_THING_FIELD_IS_REQUIRED = "invalid.general.required";
@@ -20,6 +19,7 @@ public class ErrorMessage {
   public static class Auth {
     public static final String ERR_INCORRECT_USERNAME = "exception.auth.incorrect.username";
     public static final String ERR_INCORRECT_PASSWORD = "exception.auth.incorrect.password";
+    public static final String ERR_NOT_MATCH_PASSWORD = "exception.auth.not.match.password";
     public static final String ERR_ACCOUNT_NOT_ENABLED = "exception.auth.account.not.enabled";
     public static final String ERR_ACCOUNT_LOCKED = "exception.auth.account.locked";
     public static final String INVALID_REFRESH_TOKEN = "exception.auth.invalid.refresh.token";

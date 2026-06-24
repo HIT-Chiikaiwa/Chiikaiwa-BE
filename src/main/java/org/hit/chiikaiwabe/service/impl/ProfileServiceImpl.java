@@ -17,6 +17,7 @@ import org.hit.chiikaiwabe.repository.UserRepository;
 import org.hit.chiikaiwabe.service.ProfileService;
 import org.hit.chiikaiwabe.util.UploadFileUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,6 +33,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final UserMapper userMapper;
     private final SubjectMapper subjectMapper;
     private final UploadFileUtil uploadFileUtil;
+    private final PasswordEncoder passwordEncoder;
 
 
     private User findUserById(String userId) {
@@ -76,15 +78,6 @@ public class ProfileServiceImpl implements ProfileService {
     public UserDto updatePersonalInfo(String userId, PersonalInfoUpdateDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
-
-        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
-            userRepository.findByEmail(dto.getEmail())
-                    .filter(existingUser -> !existingUser.getId().equals(userId))
-                    .ifPresent(existingUser -> {
-                        throw new InvalidException(ErrorMessage.User.ERR_DUPLICATE_EMAIL);
-                    });
-            user.setEmail(dto.getEmail());
-        }
 
         if (dto.getPhone() != null && !dto.getPhone().isBlank()) {
             userRepository.findByPhoneNumber(dto.getPhone())
@@ -132,6 +125,23 @@ public class ProfileServiceImpl implements ProfileService {
         userRepository.save(user);
     }
 
+    @Override
+    public void updatePassword(String userId, ChangePasswordDto dto) {
+        User user = findUserById(userId);
+        checkUserNotDeleted(user);
+
+        if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
+            throw new InvalidException(ErrorMessage.Auth.ERR_INCORRECT_PASSWORD);
+        }
+
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new InvalidException(ErrorMessage.Auth.ERR_NOT_MATCH_PASSWORD);
+        }
+
+        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        userRepository.save(user);
+    }
+
 
     @Override
     public UserDto updateAcademicInfo(String userId, AcademicInfoUpdateDto dto) {
@@ -150,12 +160,10 @@ public class ProfileServiceImpl implements ProfileService {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
 
-
         String type = dto.getType().toUpperCase();
         if (!type.equals("STRENGTH") && !type.equals("NEED_REVIEW")) {
             throw new InvalidException(ErrorMessage.Subject.ERR_INVALID_TYPE);
         }
-
 
         List<Subject> existing = subjectRepository.findByUserIdAndName(userId, dto.getName());
         if (!existing.isEmpty()) {
@@ -171,7 +179,6 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public List<SubjectDto> getSubjects(String userId, String type) {
-
         findUserById(userId);
 
         List<Subject> subjects;
@@ -195,6 +202,7 @@ public class ProfileServiceImpl implements ProfileService {
 
         subjectRepository.delete(subject);
     }
+
 
     @Override
     public UserDto updateBuddyStatus(String userId, StatusUpdateDto dto) {

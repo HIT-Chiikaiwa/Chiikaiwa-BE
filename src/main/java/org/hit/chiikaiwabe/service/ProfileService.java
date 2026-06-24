@@ -14,27 +14,23 @@ public interface ProfileService {
 
     UserDto updatePersonalInfo(String userId, PersonalInfoUpdateDto dto);
 
+    void updatePassword(String userId, ChangePasswordDto dto);
+
     UserDto uploadAvatar(String userId, MultipartFile file);
 
     void deleteUser(String userId);
-
 
     UserDto updateAcademicInfo(String userId, AcademicInfoUpdateDto dto);
 
     SubjectDto addSubject(String userId, SubjectCreateDto dto);
 
-
     List<SubjectDto> getSubjects(String userId, String type);
-
 
     void deleteSubject(String userId, String subjectId);
 
-
     UserDto updateBuddyStatus(String userId, StatusUpdateDto dto);
 
-
     UserDto updateStatusTag(String userId, StatusTagUpdateDto dto);
-
 
     UserDto updateLocation(String userId, LocationUpdateDto dto);
 

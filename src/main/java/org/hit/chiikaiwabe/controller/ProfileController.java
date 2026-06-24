@@ -23,14 +23,14 @@ public class ProfileController {
 
 
     @Tag(name = "profile-controller")
-    @Operation(summary = "API xem profile công khai")
+    @Operation(summary = "Get public profile")
     @GetMapping(UrlConstant.Profile.GET_PROFILE)
     public ResponseEntity<?> getPublicProfile(@PathVariable String userId) {
         return VsResponseUtil.success(profileService.getPublicProfile(userId));
     }
 
     @Tag(name = "profile-controller")
-    @Operation(summary = "API cập nhật thông tin cá nhân")
+    @Operation(summary = "Update personal info")
     @PutMapping(UrlConstant.Profile.UPDATE_PERSONAL_INFO)
     public ResponseEntity<?> updatePersonalInfo(
             @PathVariable String userId,
@@ -39,7 +39,17 @@ public class ProfileController {
     }
 
     @Tag(name = "profile-controller")
-    @Operation(summary = "API upload avatar")
+    @Operation(summary = "Change password")
+    @PutMapping("/api/v1/profile/{userId}/password")
+    public ResponseEntity<?> changePassword(
+            @PathVariable String userId,
+            @Valid @RequestBody ChangePasswordDto dto) {
+        profileService.updatePassword(userId, dto);
+        return VsResponseUtil.success("Password updated successfully");
+    }
+
+    @Tag(name = "profile-controller")
+    @Operation(summary = "Upload avatar")
     @PostMapping(UrlConstant.Profile.UPLOAD_AVATAR)
     public ResponseEntity<?> uploadAvatar(
             @PathVariable String userId,
@@ -48,7 +58,7 @@ public class ProfileController {
     }
 
     @Tag(name = "profile-controller")
-    @Operation(summary = "API xóa tài khoản (soft delete)")
+    @Operation(summary = "Delete account (soft delete)")
     @DeleteMapping(UrlConstant.Profile.DELETE_USER)
     public ResponseEntity<?> deleteUser(@PathVariable String userId) {
         profileService.deleteUser(userId);
@@ -57,7 +67,7 @@ public class ProfileController {
 
 
     @Tag(name = "profile-controller")
-    @Operation(summary = "API cập nhật thông tin học tập (trường, chuyên ngành)")
+    @Operation(summary = "Update academic info (university, major)")
     @PutMapping(UrlConstant.Profile.UPDATE_ACADEMIC_INFO)
     public ResponseEntity<?> updateAcademicInfo(
             @PathVariable String userId,
@@ -67,7 +77,7 @@ public class ProfileController {
 
 
     @Tag(name = "profile-controller")
-    @Operation(summary = "API thêm môn học mới")
+    @Operation(summary = "Add new subject")
     @PostMapping(UrlConstant.Profile.ADD_SUBJECT)
     public ResponseEntity<?> addSubject(
             @PathVariable String userId,
@@ -76,7 +86,7 @@ public class ProfileController {
     }
 
     @Tag(name = "profile-controller")
-    @Operation(summary = "API lấy danh sách môn học của user")
+    @Operation(summary = "Get user's subject list")
     @GetMapping(UrlConstant.Profile.GET_SUBJECTS)
     public ResponseEntity<?> getSubjects(
             @PathVariable String userId,
@@ -85,7 +95,7 @@ public class ProfileController {
     }
 
     @Tag(name = "profile-controller")
-    @Operation(summary = "API xóa môn học")
+    @Operation(summary = "Delete subject")
     @DeleteMapping(UrlConstant.Profile.DELETE_SUBJECT)
     public ResponseEntity<?> deleteSubject(
             @PathVariable String userId,
@@ -96,7 +106,7 @@ public class ProfileController {
 
 
     @Tag(name = "profile-controller")
-    @Operation(summary = "API bật/tắt trạng thái buddy")
+    @Operation(summary = "Toggle buddy status")
     @PatchMapping(UrlConstant.Profile.UPDATE_BUDDY_STATUS)
     public ResponseEntity<?> updateBuddyStatus(
             @PathVariable String userId,
@@ -105,7 +115,7 @@ public class ProfileController {
     }
 
     @Tag(name = "profile-controller")
-    @Operation(summary = "API cập nhật tag trạng thái")
+    @Operation(summary = "Update status tag")
     @PutMapping(UrlConstant.Profile.UPDATE_STATUS_TAG)
     public ResponseEntity<?> updateStatusTag(
             @PathVariable String userId,
@@ -114,7 +124,7 @@ public class ProfileController {
     }
 
     @Tag(name = "profile-controller")
-    @Operation(summary = "API cập nhật vị trí")
+    @Operation(summary = "Update location")
     @PutMapping(UrlConstant.Profile.UPDATE_LOCATION)
     public ResponseEntity<?> updateLocation(
             @PathVariable String userId,

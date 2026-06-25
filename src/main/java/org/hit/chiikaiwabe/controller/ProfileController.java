@@ -3,6 +3,7 @@ package org.hit.chiikaiwabe.controller;
 import org.hit.chiikaiwabe.base.RestApiV1;
 import org.hit.chiikaiwabe.base.VsResponseUtil;
 import org.hit.chiikaiwabe.constant.UrlConstant;
+import org.hit.chiikaiwabe.constant.SuccessMessage;
 import org.hit.chiikaiwabe.domain.dto.request.*;
 import org.hit.chiikaiwabe.domain.dto.response.*;
 import org.hit.chiikaiwabe.base.RestData;
@@ -24,7 +25,6 @@ public class ProfileController {
 
     private final ProfileService profileService;
 
-    // ==================== Thông tin cá nhân ====================
 
     @Tag(name = "profile-controller")
     @Operation(summary = "Get public profile")
@@ -45,11 +45,13 @@ public class ProfileController {
     @Tag(name = "profile-controller")
     @Operation(summary = "Change password")
     @PutMapping("/api/v1/profile/{userId}/password")
-    public ResponseEntity<RestData<String>> changePassword(
+    public ResponseEntity<RestData<CommonResponseDto>> changePassword(
             @PathVariable String userId,
             @Valid @RequestBody ChangePasswordDto dto) {
         profileService.updatePassword(userId, dto);
-        return VsResponseUtil.success("Password updated successfully");
+        return VsResponseUtil.success(
+                new CommonResponseDto(true, SuccessMessage.PASSWORD_UPDATED)
+        );
     }
 
     @Tag(name = "profile-controller")
@@ -64,9 +66,11 @@ public class ProfileController {
     @Tag(name = "profile-controller")
     @Operation(summary = "Delete account (soft delete)")
     @DeleteMapping(UrlConstant.Profile.DELETE_USER)
-    public ResponseEntity<RestData<String>> deleteUser(@PathVariable String userId) {
+    public ResponseEntity<RestData<CommonResponseDto>> deleteUser(@PathVariable String userId) {
         profileService.deleteUser(userId);
-        return VsResponseUtil.success("User deleted successfully");
+        return VsResponseUtil.success(
+                new CommonResponseDto(true, SuccessMessage.USER_DELETED)
+        );
     }
 
 
@@ -101,11 +105,13 @@ public class ProfileController {
     @Tag(name = "profile-controller")
     @Operation(summary = "Delete subject")
     @DeleteMapping(UrlConstant.Profile.DELETE_SUBJECT)
-    public ResponseEntity<RestData<String>> deleteSubject(
+    public ResponseEntity<RestData<CommonResponseDto>> deleteSubject(
             @PathVariable String userId,
             @PathVariable String subjectId) {
         profileService.deleteSubject(userId, subjectId);
-        return VsResponseUtil.success("Subject deleted successfully");
+        return VsResponseUtil.success(
+                new CommonResponseDto(true, SuccessMessage.SUBJECT_DELETED)
+        );
     }
 
 

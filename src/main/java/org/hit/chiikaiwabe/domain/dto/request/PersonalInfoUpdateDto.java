@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
@@ -35,4 +36,8 @@ public class PersonalInfoUpdateDto {
 
     private String phone;
 
+    @Email(message = ErrorMessage.INVALID_FORMAT_EMAIL)
+    private String email;
+
 }
+

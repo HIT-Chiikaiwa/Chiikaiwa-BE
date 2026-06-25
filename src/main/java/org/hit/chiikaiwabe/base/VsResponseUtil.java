@@ -14,7 +14,7 @@ public class VsResponseUtil {
   }
 
   public static <T> ResponseEntity<RestData<T>> success(HttpStatus status, T data) {
-    RestData<T> response = new RestData<>(status.value(), true, "Success", data, Instant.now().toString());
+    RestData<T> response = new RestData<>(status.value(), "Success", data, Instant.now().toString());
     return new ResponseEntity<>(response, status);
   }
 
@@ -23,19 +23,19 @@ public class VsResponseUtil {
   }
 
   public static <T> ResponseEntity<RestData<T>> success(HttpStatus status, MultiValueMap<String, String> header, T data) {
-    RestData<T> response = new RestData<>(status.value(), true, "Success", data, Instant.now().toString());
+    RestData<T> response = new RestData<>(status.value(), "Success", data, Instant.now().toString());
     HttpHeaders responseHeaders = new HttpHeaders();
     responseHeaders.addAll(header);
     return ResponseEntity.ok().headers(responseHeaders).body(response);
   }
 
   public static ResponseEntity<RestData<?>> error(HttpStatus status, String message) {
-    RestData<?> response = new RestData<>(status.value(), false, message, null, Instant.now().toString());
+    RestData<?> response = new RestData<>(status.value(), message, null, Instant.now().toString());
     return new ResponseEntity<>(response, status);
   }
 
   public static ResponseEntity<RestData<?>> error(HttpStatus status, String message, Object data) {
-    RestData<?> response = new RestData<>(status.value(), false, message, data, Instant.now().toString());
+    RestData<?> response = new RestData<>(status.value(), message, data, Instant.now().toString());
     return new ResponseEntity<>(response, status);
   }
 
@@ -43,7 +43,7 @@ public class VsResponseUtil {
     if (message instanceof String) {
       return error(status, (String) message);
     }
-    RestData<?> response = new RestData<>(status.value(), false, "Error", message, Instant.now().toString());
+    RestData<?> response = new RestData<>(status.value(), "Error", message, Instant.now().toString());
     return new ResponseEntity<>(response, status);
   }
 

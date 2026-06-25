@@ -14,9 +14,7 @@ import java.time.Instant;
 @AllArgsConstructor
 public class RestData<T> {
 
-  private int code;
-
-  private boolean success;
+  private int codeStatus;
 
   private String message;
 
@@ -25,8 +23,8 @@ public class RestData<T> {
 
   private String timestamp;
 
-  public static RestData<?> error(int code, String message) {
-    return new RestData<>(code, false, message, null, Instant.now().toString());
+  public static RestData<?> error(int codeStatus, String message) {
+    return new RestData<>(codeStatus, message, null, Instant.now().toString());
   }
 
 }

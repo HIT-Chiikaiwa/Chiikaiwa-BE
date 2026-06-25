@@ -13,7 +13,7 @@ public interface UserMapper {
   User toUser(UserCreateDto userCreateDTO);
 
   @Mappings({
-      @Mapping(target = "roleName", source = "role.authority"),
+          @Mapping(target = "roleName", expression = "java(user.getRole().name())"),
   })
   UserDto toUserDto(User user);
 

@@ -28,13 +28,13 @@ public class UserDto extends DateAuditingDto {
 
   private String avatar;
 
-  private String major_name;
+  private String majorName;
 
   private String university;
 
   private String gender;
 
-  private int age;
+  private LocalDate dateOfBirth;
 
   private LocalDate dateOfBirth;
 
@@ -44,7 +44,12 @@ public class UserDto extends DateAuditingDto {
 
   private String status;
 
+  private Boolean buddyActive;
+
+  private String statusTag;
+
+  private Boolean deleteFlag;
+
   private String roleName;
 
 }
-

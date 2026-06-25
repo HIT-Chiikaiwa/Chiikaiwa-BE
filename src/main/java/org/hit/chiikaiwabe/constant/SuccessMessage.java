@@ -11,5 +11,8 @@ public class SuccessMessage {
     public static final String FORGOT_PASSWORD_SEND_OTP_SUCCESS = "auth.forgot_password.send_otp_success";
     public static final String FORGOT_PASSWORD_VERIFY_SUCCESS = "auth.otp.verify_success"; // Bạn có thể dùng chung nếu nội dung giống nhau
 
+    public static final String PASSWORD_UPDATED = "Password updated successfully";
+    public static final String USER_DELETED = "User deleted successfully";
+    public static final String SUBJECT_DELETED = "Subject deleted successfully";
 
 }

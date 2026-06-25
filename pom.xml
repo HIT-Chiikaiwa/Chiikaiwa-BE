@@ -124,11 +124,11 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- PostgreSQL -->
+        <!-- Source: https://mvnrepository.com/artifact/org.postgresql/postgresql -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.11</version>
+            <version>42.6.0</version>
             <scope>compile</scope>
         </dependency>
 

@@ -9,6 +9,7 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Nationalized;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 
 import java.time.LocalDate;
 
@@ -62,9 +63,6 @@ public class User extends DateAuditing {
   @Column(nullable = false, length = 10)
   private String gender;
 
-  @Column(nullable = false)
-  private int age;
-
   @Column(name = "date_of_birth",nullable = true)
   private LocalDate dateOfBirth;
 
@@ -79,10 +77,21 @@ public class User extends DateAuditing {
   @Column(nullable = false, length = 20)
   private UserStatus userstatus;
 
+
+  @Column(nullable = false, name = "buddy_active")
+  @Builder.Default
+  private Boolean buddyActive = Boolean.FALSE;
+
+  @Nationalized
+  @Column(name = "status_tag")
+  private String statusTag;
+
+  @Column(nullable = false, name = "delete_flag")
+  @Builder.Default
+  private Boolean deleteFlag = Boolean.FALSE;
+
   @Enumerated(EnumType.STRING)
-  @Column(name = "role", nullable = false)
+  @Column(nullable = false, length = 20)
   private Role role;
-
-
 
 }

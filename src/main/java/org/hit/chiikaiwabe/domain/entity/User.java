@@ -7,6 +7,7 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Nationalized;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -59,7 +60,7 @@ public class User extends DateAuditing {
   private String gender;
 
   @Column(nullable = false)
-  private int age;
+  private LocalDate dateOfBirth;
 
   @Nationalized
   @Column(nullable = false)
@@ -71,11 +72,20 @@ public class User extends DateAuditing {
   @Column(nullable = false)
   private String status;
 
-  //Link to table Role
-  @ManyToOne
-  @JoinColumn(name = "role_id", foreignKey = @ForeignKey(name = "FK_USER_ROLE"))
+  @Column(nullable = false, name = "buddy_active")
+  @Builder.Default
+  private Boolean buddyActive = Boolean.FALSE;
+
+  @Nationalized
+  @Column(name = "status_tag")
+  private String statusTag;
+
+  @Column(nullable = false, name = "delete_flag")
+  @Builder.Default
+  private Boolean deleteFlag = Boolean.FALSE;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
   private Role role;
-
-
 
 }

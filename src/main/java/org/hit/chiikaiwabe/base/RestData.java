@@ -6,27 +6,25 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class RestData<T> {
 
-  private RestStatus status;
+  private int codeStatus;
 
-  @JsonInclude(JsonInclude.Include.NON_NULL)
-  private T message;
+  private String message;
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   private T data;
 
-  public RestData(T data) {
-    this.status = RestStatus.SUCCESS;
-    this.data = data;
-  }
+  private String timestamp;
 
-  public static RestData<?> error(Object message) {
-    return new RestData<>(RestStatus.ERROR, message, null);
+  public static RestData<?> error(int codeStatus, String message) {
+    return new RestData<>(codeStatus, message, null, Instant.now().toString());
   }
 
 }

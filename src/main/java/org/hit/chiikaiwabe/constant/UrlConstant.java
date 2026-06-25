@@ -23,4 +23,26 @@ public class UrlConstant {
     }
   }
 
+  public static class Profile {
+    private static final String PRE_FIX = "/profile";
+
+    public static final String GET_PROFILE = PRE_FIX + "/{userId}";
+    public static final String UPDATE_PERSONAL_INFO = PRE_FIX + "/{userId}/personal-info";
+    public static final String CHANGE_PASSWORD = PRE_FIX + "/{userId}/password";
+    public static final String UPLOAD_AVATAR = PRE_FIX + "/{userId}/avatar";
+    public static final String DELETE_USER = PRE_FIX + "/{userId}";
+
+    public static final String UPDATE_ACADEMIC_INFO = PRE_FIX + "/{userId}/academic-info";
+    public static final String ADD_SUBJECT = PRE_FIX + "/{userId}/subjects";
+    public static final String GET_SUBJECTS = PRE_FIX + "/{userId}/subjects";
+    public static final String DELETE_SUBJECT = PRE_FIX + "/{userId}/subjects/{subjectId}";
+
+    public static final String UPDATE_BUDDY_STATUS = PRE_FIX + "/{userId}/status";
+    public static final String UPDATE_STATUS_TAG = PRE_FIX + "/{userId}/status-tag";
+    public static final String UPDATE_LOCATION = PRE_FIX + "/{userId}/location";
+
+    private Profile() {
+    }
+  }
+
 }

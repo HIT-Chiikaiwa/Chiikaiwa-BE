@@ -36,7 +36,6 @@ public class UserDto extends DateAuditingDto {
 
   private LocalDate dateOfBirth;
 
-  private LocalDate dateOfBirth;
 
   private String location;
 

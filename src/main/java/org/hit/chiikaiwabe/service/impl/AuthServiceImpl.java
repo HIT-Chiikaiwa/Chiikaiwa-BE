@@ -1,5 +1,6 @@
 package org.hit.chiikaiwabe.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hit.chiikaiwabe.constant.ErrorMessage;
 import org.hit.chiikaiwabe.constant.SuccessMessage;
 import org.hit.chiikaiwabe.domain.enums.Role;
@@ -47,6 +48,8 @@ public class AuthServiceImpl implements AuthService {
   private final OtpService otpService;
 
   private final StringRedisTemplate redisTemplate;
+
+  private final ObjectMapper objectMapper;
 
   @Override
   public LoginResponseDto login(LoginRequestDto request) {
@@ -116,6 +119,7 @@ public class AuthServiceImpl implements AuthService {
         redisTemplate.opsForValue().set("BLACKLIST:" + accessToken, "LOGGED_OUT", accessTtl, TimeUnit.MILLISECONDS);
       }
     }
+
     if (StringUtils.hasText(refreshToken)) {
       long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
       if (refreshTtl > 0) {
@@ -137,24 +141,13 @@ public class AuthServiceImpl implements AuthService {
       throw new InvalidException(ErrorMessage.Auth.ERR_ACCOUNT_ALREADY_EXISTS);
     }
 
-    int age = java.time.Period.between(request.getDateOfBirth(), java.time.LocalDate.now()).getYears();
-
-
-    User newUser = User.builder()
-            .username(request.getEmail())
-            .email(request.getEmail())
-            .password(passwordEncoder.encode(request.getPassword()))
-            .firstName(request.getFirstName())
-            .lastName(request.getLastName())
-            .gender(request.getGender())
-            .dateOfBirth(request.getDateOfBirth())
-            .age(age)
-            .status(UserStatus.UNVERIFIED)
-            .trustScore(100.0)
-            .role(Role.USER)
-            .build();
-
-    userRepository.save(newUser);
+    try {
+      String userJson = objectMapper.writeValueAsString(request);
+      String redisKey = "TEMP_USER:" + request.getEmail();
+      redisTemplate.opsForValue().set(redisKey, userJson, 5, TimeUnit.MINUTES);
+    } catch (Exception e) {
+      throw new RuntimeException(ErrorMessage.Auth.ERR_SYSTEM_PROCESS);
+    }
 
     String otpCode = otpService.generateOtp(request.getEmail());
     otpService.sendOtp(request.getEmail(), otpCode);
@@ -168,14 +161,40 @@ public class AuthServiceImpl implements AuthService {
     if (!isValid) {
       throw new InvalidException(ErrorMessage.Auth.ERR_OTP_INCORRECT);
     }
-    User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{request.getEmail()}));
-    if (UserStatus.ACTIVE == user.getStatus()) {
-      throw new InvalidException(ErrorMessage.Auth.ERR_ACCOUNT_ALREADY_VERIFIED);
+    String redisKey = "TEMP_USER:" + request.getEmail();
+    String userJson = redisTemplate.opsForValue().get(redisKey);
+
+    if (userJson == null) {
+      throw new InvalidException(ErrorMessage.Auth.ERR_SESSION_EXPIRED);
     }
 
-    user.setStatus(UserStatus.ACTIVE);
-    userRepository.save(user);
+    try {
+      UserCreateDto userDto = objectMapper.readValue(userJson, UserCreateDto.class);
+      if (userRepository.existsByEmail(userDto.getEmail())) {
+        throw new InvalidException(ErrorMessage.Auth.ERR_ACCOUNT_ALREADY_EXISTS);
+      }
+      int age = java.time.Period.between(userDto.getDateOfBirth(), java.time.LocalDate.now()).getYears();
+
+      User newUser = User.builder()
+              .username(userDto.getEmail())
+              .email(userDto.getEmail())
+              .password(passwordEncoder.encode(userDto.getPassword()))
+              .firstName(userDto.getFirstName())
+              .lastName(userDto.getLastName())
+              .gender(userDto.getGender())
+              .dateOfBirth(userDto.getDateOfBirth())
+              .age(age)
+              .status(UserStatus.ACTIVE)
+              .trustScore(100.0)
+              .role(Role.USER)
+              .build();
+
+      userRepository.save(newUser);
+      redisTemplate.delete(redisKey);
+
+    } catch (Exception e) {
+      throw new RuntimeException(ErrorMessage.Auth.ERR_SYSTEM_PROCESS);
+    }
     return new CommonResponseDto(true, SuccessMessage.VERIFY_REGISTER_SUCCESS);
   }
 

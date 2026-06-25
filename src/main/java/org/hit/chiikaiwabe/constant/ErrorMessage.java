@@ -33,7 +33,8 @@ public class ErrorMessage {
     public static final String ERR_ACCOUNT_NOT_VERIFIED = "exception.auth.account_not_verified";
     public static final String ERR_OTP_SPAM = "exception.auth.spam_otp";
     public static final String ERR_FORGOT_PASS_NOT_VERIFIED = "exception.auth.forgot_pass_not_verified";
-
+    public static final String ERR_SYSTEM_PROCESS = "auth.register.system_process_error";
+    public static final String ERR_SESSION_EXPIRED = "auth.register.session_expired";
 
   }
 

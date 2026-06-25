@@ -36,8 +36,8 @@ public class AuthController {
 
   @Operation(summary = "API test")
   @PostMapping("auth/test")
-  public String login(@ValidFileImage MultipartFile multipartFile) {
-    return multipartFile.getContentType();
+  public ResponseEntity<?> login(@ValidFileImage MultipartFile multipartFile) {
+    return VsResponseUtil.success(multipartFile.getContentType());
   }
 
   @Operation(summary = "API Refresh Token")

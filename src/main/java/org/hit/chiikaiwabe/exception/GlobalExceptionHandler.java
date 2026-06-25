@@ -6,8 +6,6 @@ import org.hit.chiikaiwabe.constant.ErrorMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.internal.engine.path.PathImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
@@ -39,10 +37,10 @@ public class GlobalExceptionHandler {
     ex.getConstraintViolations().forEach((error) -> {
       String fieldName = ((PathImpl) error.getPropertyPath()).getLeafNode().getName();
       String errorMessage = messageSource.getMessage(Objects.requireNonNull(error.getMessage()), null,
-          LocaleContextHolder.getLocale());
+              LocaleContextHolder.getLocale());
       result.put(fieldName, errorMessage);
     });
-    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, result);
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, "Validation error", result);
   }
 
   //Error validate for body
@@ -53,10 +51,10 @@ public class GlobalExceptionHandler {
     ex.getBindingResult().getAllErrors().forEach((error) -> {
       String fieldName = ((FieldError) error).getField();
       String errorMessage = messageSource.getMessage(Objects.requireNonNull(error.getDefaultMessage()), null,
-          LocaleContextHolder.getLocale());
+              LocaleContextHolder.getLocale());
       result.put(fieldName, errorMessage);
     });
-    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, result);
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, "Validation error", result);
   }
 
   @ExceptionHandler(Exception.class)
@@ -64,7 +62,7 @@ public class GlobalExceptionHandler {
   public ResponseEntity<RestData<?>> handlerInternalServerError(Exception ex) {
     log.error(ex.getMessage(), ex);
     String message = messageSource.getMessage(ErrorMessage.ERR_EXCEPTION_GENERAL, null,
-        LocaleContextHolder.getLocale());
+            LocaleContextHolder.getLocale());
     return VsResponseUtil.error(HttpStatus.INTERNAL_SERVER_ERROR, message);
   }
 

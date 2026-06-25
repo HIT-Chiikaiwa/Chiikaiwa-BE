@@ -25,10 +25,11 @@ public class OtpServiceImpl implements OtpService {
     private final SendMailUtil sendMailUtil;
     private final MessageSource messageSource;
 
+    private static final SecureRandom secureRandom = new SecureRandom();
+
     @Override
     public String generateOtp(String email) {
-        SecureRandom secureRandom = new SecureRandom();
-        int otp = secureRandom.nextInt(900000) + 100000;
+        int otp = secureRandom.nextInt(90000) + 10000;
         String otpCode = String.valueOf(otp);
 
         redisTemplate.opsForValue().set("OTP:" + email, otpCode, 5, TimeUnit.MINUTES);

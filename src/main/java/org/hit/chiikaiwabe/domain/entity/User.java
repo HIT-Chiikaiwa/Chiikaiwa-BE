@@ -77,7 +77,7 @@ public class User extends DateAuditing {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
-  private UserStatus status;
+  private UserStatus userstatus;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "role", nullable = false)

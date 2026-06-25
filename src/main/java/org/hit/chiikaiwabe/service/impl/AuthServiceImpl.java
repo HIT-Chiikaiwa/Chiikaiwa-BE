@@ -56,7 +56,7 @@ public class AuthServiceImpl implements AuthService {
     try {
       User user = userRepository.findByEmail(request.getEmail())
               .orElseThrow(() -> new UnauthorizedException(ErrorMessage.Auth.ERR_INCORRECT_USERNAME));
-      if (UserStatus.UNVERIFIED == user.getStatus()) {
+      if (UserStatus.UNVERIFIED == user.getUserstatus()) {
         throw new UnauthorizedException(ErrorMessage.Auth.ERR_ACCOUNT_NOT_VERIFIED);
       }
       Authentication authentication = authenticationManager.authenticate(
@@ -184,7 +184,7 @@ public class AuthServiceImpl implements AuthService {
               .gender(userDto.getGender())
               .dateOfBirth(userDto.getDateOfBirth())
               .age(age)
-              .status(UserStatus.ACTIVE)
+              .userstatus(UserStatus.ACTIVE)
               .trustScore(100.0)
               .role(Role.USER)
               .build();
@@ -211,7 +211,7 @@ public class AuthServiceImpl implements AuthService {
     User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME,
                     new String[]{request.getEmail()}));
-    if (user.getStatus() !=  UserStatus.ACTIVE) {
+    if (user.getUserstatus() !=  UserStatus.ACTIVE) {
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_FORGOT_PASS_NOT_VERIFIED);
     }
 

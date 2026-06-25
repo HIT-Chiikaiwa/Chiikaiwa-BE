@@ -32,7 +32,7 @@ public class DataInitializer implements CommandLineRunner {
                     .lastName(adminInfoProperties.getLastName())
                     .dateOfBirth(java.time.LocalDate.of(2000, 1, 1))
                     .gender("MALE")
-                    .status(UserStatus.ACTIVE)
+                    .userstatus(UserStatus.ACTIVE)
                     .trustScore(100.0)
                     .role(Role.ADMIN)
                     .build();

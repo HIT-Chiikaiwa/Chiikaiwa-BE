@@ -28,6 +28,7 @@ public class UrlConstant {
 
     public static final String GET_PROFILE = PRE_FIX + "/{userId}";
     public static final String UPDATE_PERSONAL_INFO = PRE_FIX + "/{userId}/personal-info";
+    public static final String CHANGE_PASSWORD = PRE_FIX + "/{userId}/password";
     public static final String UPLOAD_AVATAR = PRE_FIX + "/{userId}/avatar";
     public static final String DELETE_USER = PRE_FIX + "/{userId}";
 

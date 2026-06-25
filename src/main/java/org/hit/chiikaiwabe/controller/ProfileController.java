@@ -44,7 +44,7 @@ public class ProfileController {
 
     @Tag(name = "profile-controller")
     @Operation(summary = "Change password")
-    @PutMapping("/api/v1/profile/{userId}/password")
+    @PutMapping(UrlConstant.Profile.CHANGE_PASSWORD)
     public ResponseEntity<RestData<CommonResponseDto>> changePassword(
             @PathVariable String userId,
             @Valid @RequestBody ChangePasswordDto dto) {

@@ -63,6 +63,9 @@ public class User extends DateAuditing {
   @Column(nullable = false, length = 10)
   private String gender;
 
+  @Column(nullable = false)
+  private int age;
+
   @Column(name = "date_of_birth",nullable = true)
   private LocalDate dateOfBirth;
 

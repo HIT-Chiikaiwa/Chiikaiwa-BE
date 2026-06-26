@@ -36,12 +36,11 @@ public class UserDto extends DateAuditingDto {
 
   private LocalDate dateOfBirth;
 
-
   private String location;
 
   private Double trustScore;
 
-  private String status;
+  private String userstatus;
 
   private Boolean buddyActive;
 

@@ -80,7 +80,6 @@ public class User extends DateAuditing {
   @Column(nullable = false, length = 20)
   private UserStatus userstatus;
 
-
   @Column(nullable = false, name = "buddy_active")
   @Builder.Default
   private Boolean buddyActive = Boolean.FALSE;

@@ -28,6 +28,7 @@ public class SendMailUtil {
    * @param template Tên file html trong folder resources/template
    *                 Example: Index.html
    */
+
   public void sendEmailWithHTML(DataMailDto mail, String template) throws Exception {
     MimeMessage message = mailSender.createMimeMessage();
     MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
@@ -46,6 +47,7 @@ public class SendMailUtil {
    * @param mail Thông tin của mail cần gửi
    * @param files File cần gửi
    */
+
   public void sendMailWithAttachment(DataMailDto mail, MultipartFile[] files) throws MessagingException {
     MimeMessage message = mailSender.createMimeMessage();
     MimeMessageHelper helper = new MimeMessageHelper(message, true, "utf-8");

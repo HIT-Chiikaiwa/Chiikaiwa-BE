@@ -1,5 +1,7 @@
 package org.hit.chiikaiwabe.domain.entity;
 
+import org.hit.chiikaiwabe.domain.enums.Role;
+import org.hit.chiikaiwabe.domain.enums.UserStatus;
 import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
@@ -7,6 +9,8 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Nationalized;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
+
 import java.time.LocalDate;
 
 @AllArgsConstructor
@@ -60,17 +64,22 @@ public class User extends DateAuditing {
   private String gender;
 
   @Column(nullable = false)
+  private int age;
+
+  @Column(name = "date_of_birth",nullable = true)
   private LocalDate dateOfBirth;
 
   @Nationalized
-  @Column(nullable = false)
+  @Column(nullable = true)
   private String location;
 
   @Column(nullable = false, name = "trust_score")
   private Double trustScore;
 
-  @Column(nullable = false)
-  private String status;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private UserStatus userstatus;
+
 
   @Column(nullable = false, name = "buddy_active")
   @Builder.Default

@@ -15,4 +15,5 @@ public class SuccessMessage {
     public static final String USER_DELETED = "User deleted successfully";
     public static final String SUBJECT_DELETED = "Subject deleted successfully";
 
+    public static final String LOCATION_UPDATED = "location.update_success";
 }

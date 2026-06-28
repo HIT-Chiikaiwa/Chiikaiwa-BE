@@ -51,5 +51,12 @@ public class UrlConstant {
     private Profile() {
     }
   }
+  public static class Location {
+    private static final String PRE_FIX = "/location";
+    public static final String UPDATE = PRE_FIX + "/update";
+
+    private Location() {
+    }
+  }
 
 }

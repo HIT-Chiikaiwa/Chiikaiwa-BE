@@ -67,5 +67,8 @@ public class ErrorMessage {
     public static final String ERR_SEND_MAIL_FAILED = "exception.mail.send_failed";
   }
 
+  public static class Location {
+    public static final String ERR_INACTIVE_STATUS = "exception.location.inactive_status";
+  }
 
 }

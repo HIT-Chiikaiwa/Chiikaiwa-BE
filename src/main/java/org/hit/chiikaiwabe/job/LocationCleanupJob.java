@@ -26,7 +26,7 @@ public class LocationCleanupJob {
     public void cleanupStaleLocation(){
         log.debug(SuccessMessage.CleanupLocation.PROCESSING);
         long currentTimeMillis = System.currentTimeMillis();
-        long timeToLiveMillis = (long)radarProperties.getTimeToLiveMinutes() * 60 * 1000;
+        long timeToLiveMillis = (long)radarProperties.getTtlMinutes() * 60 * 1000;
 
         Map<Object, Object> timestamps = redisTemplate.opsForHash().entries(TIME_KEY);
 

@@ -67,5 +67,11 @@ public class ErrorMessage {
     public static final String ERR_SEND_MAIL_FAILED = "exception.mail.send_failed";
   }
 
+  public static class Location {
+    public static final String ERR_BUDDY_INACTIVE = "exception.location.buddy.inactive";
+    public static final String ERR_INVALID_RADIUS = "exception.location.invalid.radius";
+    public static final String ERR_INVALID_COORDINATES = "exception.location.invalid.coordinates";
+  }
+
 
 }

@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -30,10 +31,12 @@ public interface UserRepository extends JpaRepository<User, String> {
 
   boolean existsByEmail(String email);
 
+  List<User> findAllByIdInAndDeleteFlagFalseAndBuddyActiveTrue(List<String> ids);
+
   default User getUser(UserPrincipal currentUser) {
     return findByUsername(currentUser.getUsername())
-        .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME,
-            new String[]{currentUser.getUsername()}));
+            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME,
+                    new String[]{currentUser.getUsername()}));
   }
 
 }

@@ -68,6 +68,7 @@ public class ErrorMessage {
   }
 
   public static class Location {
+    public static final String ERR_INACTIVE_STATUS = "exception.location.inactive_status";
     public static final String ERR_BUDDY_INACTIVE = "exception.location.buddy.inactive";
     public static final String ERR_INVALID_RADIUS = "exception.location.invalid.radius";
     public static final String ERR_INVALID_COORDINATES = "exception.location.invalid.coordinates";

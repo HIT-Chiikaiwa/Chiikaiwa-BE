@@ -34,4 +34,10 @@ public class LocationServiceImpl implements LocationService {
         redisTemplate.opsForGeo().add(GEO_KEY, new Point(lon, lat), userId);
         redisTemplate.opsForHash().put(TIME_KEY, userId, String.valueOf(System.currentTimeMillis()));
     }
+
+    @Override
+    public void removeLocation(String userId) {
+        redisTemplate.opsForGeo().remove(GEO_KEY, userId);
+        redisTemplate.opsForHash().delete(TIME_KEY, userId);
+    }
 }

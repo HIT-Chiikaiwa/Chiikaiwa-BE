@@ -16,4 +16,10 @@ public class SuccessMessage {
     public static final String SUBJECT_DELETED = "Subject deleted successfully";
 
     public static final String LOCATION_UPDATED = "location.update_success";
+
+    public static class CleanupLocation{
+        public static final String PROCESSING = "location.cleanup.processing";
+        public static final String SUCCESS = "location.cleanup.success";
+        public static final String TOTAL_COUNT_SUCCESS = "location.cleanup.total-count-success";
+    }
 }

@@ -74,4 +74,5 @@ public class ErrorMessage {
     public static final String ERR_INVALID_COORDINATES = "exception.location.invalid.coordinates";
   }
 
+
 }

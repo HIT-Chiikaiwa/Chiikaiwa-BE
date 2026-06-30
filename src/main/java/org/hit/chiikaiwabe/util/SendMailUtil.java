@@ -2,6 +2,7 @@ package org.hit.chiikaiwabe.util;
 
 import org.hit.chiikaiwabe.domain.dto.common.DataMailDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,9 @@ public class SendMailUtil {
 
   private final TemplateEngine templateEngine;
 
+  @Value("${spring.mail.username}")
+  private String mailFrom;
+
   /**
    * Gửi mail với file html
    * @param mail Thông tin của mail cần gửi
@@ -32,7 +36,8 @@ public class SendMailUtil {
   public void sendEmailWithHTML(DataMailDto mail, String template) throws Exception {
     MimeMessage message = mailSender.createMimeMessage();
     MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
-        StandardCharsets.UTF_8.name());
+            StandardCharsets.UTF_8.name());
+    helper.setFrom(mailFrom);
     helper.setTo(mail.getTo());
     helper.setSubject(mail.getSubject());
     Context context = new Context();

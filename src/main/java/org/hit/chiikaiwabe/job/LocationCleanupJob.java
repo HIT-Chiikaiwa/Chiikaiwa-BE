@@ -4,9 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hit.chiikaiwabe.config.properties.RadarProperties;
 import org.hit.chiikaiwabe.constant.SuccessMessage;
-import org.hit.chiikaiwabe.service.LocationService;
+import org.hit.chiikaiwabe.service.LocationRadarService;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +19,7 @@ public class LocationCleanupJob {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final RadarProperties radarProperties;
-    private final LocationService locationService;
+    private final LocationRadarService locationRadarService;
 
     @Scheduled(fixedRateString = "60000")
     public void cleanupStaleLocation(){
@@ -40,7 +39,7 @@ public class LocationCleanupJob {
             long lastActiveTimestamp = Long.parseLong(entry.getValue().toString());
 
             if(currentTimeMillis - lastActiveTimestamp > timeToLiveMillis){
-                locationService.removeLocation(userId);
+                locationRadarService.removeLocation(userId);
                 countDeleteUser++;
                 log.info(SuccessMessage.CleanupLocation.SUCCESS + "userID: " + userId);
             }

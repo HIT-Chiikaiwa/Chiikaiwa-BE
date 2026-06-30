@@ -1,6 +1,7 @@
 package org.hit.chiikaiwabe.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.hit.chiikaiwabe.constant.ErrorMessage;
 import org.hit.chiikaiwabe.domain.dto.common.DataMailDto;
 import org.hit.chiikaiwabe.exception.InvalidException;
@@ -14,9 +15,9 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OtpServiceImpl implements OtpService {
@@ -52,6 +53,7 @@ public class OtpServiceImpl implements OtpService {
 
             sendMailUtil.sendEmailWithHTML(dataMail, "otp-template");
         } catch (Exception e) {
+            log.error("Failed to send OTP email to {}: {}", email, e.getMessage(), e);
             throw new InvalidException(ErrorMessage.Mail.ERR_SEND_MAIL_FAILED);
         }
     }

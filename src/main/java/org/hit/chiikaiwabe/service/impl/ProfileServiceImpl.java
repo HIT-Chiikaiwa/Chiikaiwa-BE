@@ -14,6 +14,7 @@ import org.hit.chiikaiwabe.exception.InvalidException;
 import org.hit.chiikaiwabe.exception.NotFoundException;
 import org.hit.chiikaiwabe.repository.SubjectRepository;
 import org.hit.chiikaiwabe.repository.UserRepository;
+import org.hit.chiikaiwabe.service.LocationRadarService;
 import org.hit.chiikaiwabe.service.ProfileService;
 import org.hit.chiikaiwabe.util.UploadFileUtil;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final SubjectMapper subjectMapper;
     private final UploadFileUtil uploadFileUtil;
     private final PasswordEncoder passwordEncoder;
+    private final LocationRadarService locationRadarService;
 
 
     private User findUserById(String userId) {
@@ -210,6 +212,9 @@ public class ProfileServiceImpl implements ProfileService {
         checkUserNotDeleted(user);
 
         user.setBuddyActive(dto.getBuddyActive());
+        if(Boolean.FALSE.equals(dto.getBuddyActive())){
+            locationRadarService.removeLocation(userId);
+        }
 
         return userMapper.toUserDto(userRepository.save(user));
     }

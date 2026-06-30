@@ -5,14 +5,17 @@ import org.hit.chiikaiwabe.constant.ErrorMessage;
 import org.hit.chiikaiwabe.domain.dto.response.NearbyUserDto;
 import org.hit.chiikaiwabe.domain.entity.User;
 import org.hit.chiikaiwabe.domain.mapper.LocationMapper;
+import org.hit.chiikaiwabe.exception.ForbiddenException;
 import org.hit.chiikaiwabe.exception.InvalidException;
+import org.hit.chiikaiwabe.exception.NotFoundException;
 import org.hit.chiikaiwabe.repository.UserRepository;
 import org.hit.chiikaiwabe.service.LocationRadarService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.geo.*;
 import org.springframework.data.redis.connection.RedisGeoCommands;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,16 +27,41 @@ import java.util.concurrent.ThreadLocalRandom;
 @RequiredArgsConstructor
 public class LocationRadarServiceImpl implements LocationRadarService {
 
-    private final RedisTemplate<String, String> redisTemplate;
+    private final StringRedisTemplate redisTemplate;
     private final UserRepository userRepository;
     private final LocationMapper locationMapper;
     private final RadarProperties radarProperties;
 
     private static final String BUDDY_LOCATIONS_KEY = "buddy_locations";
+    private static final String TIME_KEY = "buddy_timestamps";
 
+    @Override
+    @Transactional(readOnly = true)
+    public void updateLocation(String userId, double lat, double lon) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{userId}));
+
+        if (!user.getBuddyActive()) {
+            throw new ForbiddenException(ErrorMessage.Location.ERR_BUDDY_INACTIVE);
+        }
+
+        redisTemplate.opsForGeo().add(BUDDY_LOCATIONS_KEY, new Point(lon, lat), userId);
+        redisTemplate.opsForHash().put(TIME_KEY, userId, String.valueOf(System.currentTimeMillis()));
+    }
+
+    @Override
+    public void removeLocation(String userId) {
+        redisTemplate.opsForGeo().remove(BUDDY_LOCATIONS_KEY, userId);
+        redisTemplate.opsForHash().delete(TIME_KEY, userId);
+    }
 
     @Override
     public List<NearbyUserDto> scanRadar(String userId, double lat, double lng, Double radiusKm) {
+        User scanner = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{userId}));
+        if (!scanner.getBuddyActive()) {
+            throw new ForbiddenException(ErrorMessage.Location.ERR_BUDDY_INACTIVE);
+        }
 
         if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
             throw new InvalidException(ErrorMessage.Location.ERR_INVALID_COORDINATES);
@@ -111,7 +139,6 @@ public class LocationRadarServiceImpl implements LocationRadarService {
 
         return result;
     }
-
 
     private double obfuscate(double coordinate) {
         double offset = (ThreadLocalRandom.current().nextDouble() - 0.5) * 2 * 0.0007;

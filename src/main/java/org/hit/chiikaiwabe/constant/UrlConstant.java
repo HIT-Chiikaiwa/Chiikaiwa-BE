@@ -53,9 +53,9 @@ public class UrlConstant {
   }
   public static class Location {
     private static final String PRE_FIX = "/location";
-    public static final String UPDATE = PRE_FIX + "/update";
 
-    public static final String UPDATE_GPS = PRE_FIX + "/{userId}/update";
+    public static final String UPDATE_GPS = PRE_FIX + "/update";
+    public static final String REMOVE_GPS = PRE_FIX + "/remove";
     public static final String RADAR = PRE_FIX + "/radar";
 
     private Location() {

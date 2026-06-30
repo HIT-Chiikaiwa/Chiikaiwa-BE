@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties("radar")
 public class RadarProperties {
-    private Double defaultRadiusKm = 5.0;
-    private Double maxRadiusKm = 20.0;
-    private Integer ttlMinutes = 30;
+    private Double defaultRadiusKm;
+    private Double maxRadiusKm;
+    private Integer ttlMinutes;
 }

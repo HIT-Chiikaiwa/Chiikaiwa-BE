@@ -1,0 +1,49 @@
+# Maven / Gradle Build
+target/
+build/
+.gradle/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Git
+.git
+.gitignore
+
+
+# VS Code
+.vscode/
+
+
+# Environment variables & Configs
+.env
+*.pem
+*.key
+application-local.yml
+application-local.properties
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache

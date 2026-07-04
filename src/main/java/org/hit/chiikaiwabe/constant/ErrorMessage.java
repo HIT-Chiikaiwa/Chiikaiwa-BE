@@ -74,5 +74,21 @@ public class ErrorMessage {
     public static final String ERR_INVALID_COORDINATES = "exception.location.invalid.coordinates";
   }
 
+  public static class File {
+    public static final String ERR_FILE_EMPTY = "exception.file.empty";
+    public static final String ERR_FILE_SIZE_EXCEED = "exception.file.size_exceed";
+    public static final String ERR_FILE_TYPE_NOT_ALLOWED = "exception.file.type_not_allowed";
+    public static final String ERR_FILE_NAME_INVALID = "exception.file.name_invalid";
+    public static final String ERR_FILE_UPLOAD_FAILED = "exception.file.upload_failed";
+  }
+
+  public static class Chat {
+    public static final String ERR_CANNOT_BLOCK_YOURSELF = "exception.chat.cannot_block_yourself";
+    public static final String ERR_MESSAGE_NOT_FOUND = "exception.chat.message_not_found";
+    public static final String ERR_NOT_AUTHOR = "exception.chat.not_author";
+    public static final String ERR_CANNOT_RECALL_AFTER_30_MINS = "exception.chat.cannot_recall_after_30_mins";
+    public static final String ERR_CONVERSATION_NOT_FOUND = "exception.chat.conversation_not_found";
+  }
+
 
 }

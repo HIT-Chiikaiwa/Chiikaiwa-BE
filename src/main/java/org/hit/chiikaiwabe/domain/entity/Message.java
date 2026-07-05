@@ -1,0 +1,52 @@
+package org.hit.chiikaiwabe.domain.entity;
+
+import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
+import org.hit.chiikaiwabe.domain.enums.MessageType;
+import lombok.*;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Nationalized;
+
+import jakarta.persistence.*;
+
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+@Builder
+@Entity
+@Table(name = "messages",
+        indexes = {
+                @Index(name = "IDX_MESSAGE_CONVERSATION_DATE",
+                        columnList = "conversation_id, createdDate DESC")
+        })
+public class Message extends DateAuditing {
+
+    @Id
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(insertable = false, updatable = false, nullable = false, columnDefinition = "CHAR(36)")
+    private String id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "conversation_id", nullable = false,
+            foreignKey = @ForeignKey(name = "FK_MESSAGE_CONVERSATION"))
+    private Conversation conversation;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sender_id",
+            foreignKey = @ForeignKey(name = "FK_MESSAGE_SENDER"))
+    private User sender;
+
+    @Nationalized
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "message_type", nullable = false, length = 20)
+    private MessageType messageType;
+
+    @Column(name = "is_recalled", nullable = false)
+    @Builder.Default
+    private Boolean isRecalled = Boolean.FALSE;
+
+}

@@ -34,3 +34,6 @@ build/
 
 # Environment variables
 .env
+
+# Firebase Secret Key
+firebase-service-account.json

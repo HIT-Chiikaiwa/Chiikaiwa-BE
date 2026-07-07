@@ -29,10 +29,14 @@ public class SuccessMessage {
     public static final String MESSAGE_DELETED = "success.chat.message.deleted";
     public static final String MESSAGE_RECALLED = "success.chat.message.recalled";
 
-
     public static class CleanupLocation{
         public static final String PROCESSING = "location.cleanup.processing";
         public static final String SUCCESS = "location.cleanup.success";
         public static final String TOTAL_COUNT_SUCCESS = "location.cleanup.total-count-success";
     }
+    public static class Device{
+        public static final String REGISTER = "device.register.success";
+        public static final String UNREGISTER = "device.unregister.success";
+    }
+
 }

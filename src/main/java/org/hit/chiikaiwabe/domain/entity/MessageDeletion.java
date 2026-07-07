@@ -1,8 +1,9 @@
 package org.hit.chiikaiwabe.domain.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
+
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @AllArgsConstructor
@@ -21,14 +22,16 @@ public class MessageDeletion {
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "message_id", nullable = false)
+    @JoinColumn(name = "message_id", nullable = false,
+            foreignKey = @ForeignKey(name = "FK_DELETION_MESSAGE"))
     private Message message;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false,
+            foreignKey = @ForeignKey(name = "FK_DELETION_USER"))
     private User user;
 
     @Column(name = "deleted_at", nullable = false)
-    @Builder.Default
-    private LocalDateTime deletedAt = LocalDateTime.now();
+    private LocalDateTime deletedAt;
+
 }

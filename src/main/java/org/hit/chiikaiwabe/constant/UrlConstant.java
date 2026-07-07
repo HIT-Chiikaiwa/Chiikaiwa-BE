@@ -24,7 +24,9 @@ public class UrlConstant {
     private static final String PRE_FIX = "/user";
     public static final String GET_USERS = PRE_FIX;
     public static final String GET_USER = PRE_FIX + "/{userId}";
+    public static final String GET_USER_ONLINE = GET_USER + "/online-status";
     public static final String GET_CURRENT_USER = PRE_FIX + "/current";
+
 
     private User() {
     }
@@ -59,6 +61,37 @@ public class UrlConstant {
     public static final String RADAR = PRE_FIX + "/radar";
 
     private Location() {
+    }
+  }
+
+  public static class Chat {
+    private static final String PRE_FIX = "/chat";
+    public static final String CONVERSATIONS = PRE_FIX + "/conversations";
+    public static final String DIRECT = CONVERSATIONS + "/direct";
+    public static final String GROUP = CONVERSATIONS + "/group";
+    public static final String MESSAGES = "/{id}/messages";
+    public static final String UPLOAD = "/{id}/upload";
+    public static final String SCHEDULE_INVITE = "/{id}/schedule-invite";
+    public static final String MEMBERS = "/{id}/members";
+    public static final String MEMBER_DETAIL = "/{id}/members/{userId}";
+
+    private Chat() {
+    }
+  }
+
+  public static class BlockReport {
+    public static final String BLOCK = "/users/block/{userId}";
+    public static final String BLOCKED_LIST = "/users/blocked";
+    public static final String REPORT = "/reports";
+
+    private BlockReport() {
+    }
+  }
+
+  public static class Device {
+    public static final String DEVICES = "/devices";
+
+    private Device() {
     }
   }
 

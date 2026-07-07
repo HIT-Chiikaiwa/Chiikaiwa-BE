@@ -1,9 +1,10 @@
 package org.hit.chiikaiwabe.domain.entity;
 
-import jakarta.persistence.*;
+import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
-import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
+
+import jakarta.persistence.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -21,10 +22,13 @@ public class UserBlock extends DateAuditing {
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "blocker_id", nullable = false)
+    @JoinColumn(name = "blocker_id", nullable = false,
+            foreignKey = @ForeignKey(name = "FK_BLOCK_BLOCKER"))
     private User blocker;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "blocked_id", nullable = false)
+    @JoinColumn(name = "blocked_id", nullable = false,
+            foreignKey = @ForeignKey(name = "FK_BLOCK_BLOCKED"))
     private User blocked;
+
 }

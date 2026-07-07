@@ -1,9 +1,10 @@
 package org.hit.chiikaiwabe.domain.entity;
 
-import jakarta.persistence.*;
+import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
-import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
+
+import jakarta.persistence.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -21,7 +22,8 @@ public class MessageAttachment extends DateAuditing {
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "message_id", nullable = false)
+    @JoinColumn(name = "message_id", nullable = false,
+            foreignKey = @ForeignKey(name = "FK_ATTACHMENT_MESSAGE"))
     private Message message;
 
     @Column(name = "file_url", nullable = false)
@@ -33,6 +35,7 @@ public class MessageAttachment extends DateAuditing {
     @Column(name = "file_type", nullable = false)
     private String fileType;
 
-    @Column(name = "file_size", nullable = false)
+    @Column(name = "file_size")
     private Long fileSize;
+
 }

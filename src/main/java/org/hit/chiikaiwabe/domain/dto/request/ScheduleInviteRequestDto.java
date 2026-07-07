@@ -1,16 +1,13 @@
 package org.hit.chiikaiwabe.domain.dto.request;
-
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import jakarta.validation.constraints.NotBlank;
-
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import java.time.LocalDateTime;
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class ScheduleInviteRequestDto {
-    @NotBlank(message = "Payload is required")
-    private String payload;
+    @NotBlank private String subject;
+    private String location;
+    @NotNull private LocalDateTime scheduledAt;
+    private Integer duration;
+    private String note;
 }

@@ -1,12 +1,12 @@
 package org.hit.chiikaiwabe.domain.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
 import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
 import org.hit.chiikaiwabe.domain.enums.MessageType;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.*;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Nationalized;
+
+import jakarta.persistence.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -14,7 +14,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Setter
 @Builder
 @Entity
-@Table(name = "messages")
+@Table(name = "messages",
+        indexes = {
+                @Index(name = "IDX_MESSAGE_CONVERSATION_DATE",
+                        columnList = "conversation_id, createdDate DESC")
+        })
 public class Message extends DateAuditing {
 
     @Id
@@ -23,24 +27,26 @@ public class Message extends DateAuditing {
     @Column(insertable = false, updatable = false, nullable = false, columnDefinition = "CHAR(36)")
     private String id;
 
-    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "conversation_id", nullable = false)
+    @JoinColumn(name = "conversation_id", nullable = false,
+            foreignKey = @ForeignKey(name = "FK_MESSAGE_CONVERSATION"))
     private Conversation conversation;
 
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(name = "sender_id",
+            foreignKey = @ForeignKey(name = "FK_MESSAGE_SENDER"))
     private User sender;
 
+    @Nationalized
     @Column(columnDefinition = "TEXT")
     private String content;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "message_type", nullable = false)
+    @Column(name = "message_type", nullable = false, length = 20)
     private MessageType messageType;
 
     @Column(name = "is_recalled", nullable = false)
     @Builder.Default
-    private Boolean isRecalled = false;
+    private Boolean isRecalled = Boolean.FALSE;
+
 }

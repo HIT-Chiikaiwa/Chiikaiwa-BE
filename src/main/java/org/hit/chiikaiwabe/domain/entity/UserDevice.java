@@ -1,11 +1,12 @@
 package org.hit.chiikaiwabe.domain.entity;
 
-import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
-import org.hit.chiikaiwabe.domain.enums.DeviceType;
+import jakarta.persistence.*;
+import kotlin.jvm.JvmPackageName;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
-
-import jakarta.persistence.*;
+import org.hibernate.annotations.Nationalized;
+import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
+import org.hit.chiikaiwabe.domain.enums.DeviceType;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -13,9 +14,8 @@ import jakarta.persistence.*;
 @Setter
 @Builder
 @Entity
-@Table(name = "user_devices")
+@Table(name = "user_device")
 public class UserDevice extends DateAuditing {
-
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")

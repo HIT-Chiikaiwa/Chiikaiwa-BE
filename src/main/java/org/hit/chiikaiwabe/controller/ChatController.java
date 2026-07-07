@@ -30,27 +30,30 @@ public class ChatController {
                                         @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
         messageFeatureService.validateConversationAccess(principal.getId(), id);
         messageFeatureService.validateNotBlockedInDirectConversation(principal.getId(), id);
+        // Upload file lên Cloudinary
         String fileUrl = fileService.uploadFile(file);
-        return VsResponseUtil.success(fileUrl);
+        // Tạo Message với type FILE để lưu vào cuộc hội thoại và broadcast
+        return VsResponseUtil.success(
+                messageFeatureService.createFileMessage(principal.getId(), id, fileUrl, file.getOriginalFilename()));
     }
 
     @DeleteMapping("/chat/messages/{msgId}")
     public ResponseEntity<?> deleteMessageForMe(@PathVariable String msgId,
-                            @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
+                                                @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
         messageFeatureService.deleteMessageForMe(principal.getId(), msgId);
         return VsResponseUtil.success(SuccessMessage.Chat.MESSAGE_DELETED_SUCCESS);
     }
 
     @PutMapping("/chat/messages/{msgId}/recall")
     public ResponseEntity<?> recallMessage(@PathVariable String msgId,
-                            @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
+                                           @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
         messageFeatureService.recallMessage(principal.getId(), msgId);
         return VsResponseUtil.success(SuccessMessage.Chat.MESSAGE_RECALLED_SUCCESS);
     }
 
     @PostMapping("/chat/conversations/{id}/schedule-invite")
     public ResponseEntity<?> createScheduleInvite(@PathVariable String id,
-                            @RequestBody @Valid ScheduleInviteRequestDto requestDto,
+                                                  @RequestBody @Valid ScheduleInviteRequestDto requestDto,
                                                   @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
         return VsResponseUtil.success(messageFeatureService.createScheduleInvite(principal.getId(), id, requestDto));
     }

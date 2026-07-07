@@ -11,9 +11,10 @@ public interface MessageMapper {
 
     @Mappings({
             @Mapping(source = "sender.id", target = "senderId"),
-            @Mapping(target = "senderName", expression = "java(message.getSender() != null ? message.getSender().getFirstName() + \" \" + message.getSender().getLastName() : null)"),
+            @Mapping(target = "senderName", expression = "java(message.getSender() != null ? message.getSender().getLastName() + \" \" + message.getSender().getFirstName() : \"System\")"),
             @Mapping(source = "sender.avatar", target = "senderAvatar"),
-            @Mapping(source = "conversation.id", target = "conversationId")
+            @Mapping(source = "conversation.id", target = "conversationId"),
+            @Mapping(target = "messageType", expression = "java(message.getMessageType() != null ? message.getMessageType().name() : null)")
     })
     MessageResponseDto toDto(Message message);
 }

@@ -2,6 +2,7 @@ package org.hit.chiikaiwabe.controller;
 
 import org.hit.chiikaiwabe.domain.dto.request.SendMessageRequestDto;
 import org.hit.chiikaiwabe.service.ChatService;
+import org.hit.chiikaiwabe.service.OnlineStatusService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -16,6 +17,7 @@ import java.security.Principal;
 public class ChatWebSocketController {
 
     private final ChatService chatService;
+    private final OnlineStatusService onlineStatusService;
 
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload SendMessageRequestDto dto, Principal principal) {
@@ -36,5 +38,6 @@ public class ChatWebSocketController {
         String userId = principal.getName();
         String conversationId = payload.get("conversationId");
         log.debug("User {} is typing in conversation {}", userId, conversationId);
+        onlineStatusService.setTyping(conversationId, userId);
     }
 }

@@ -11,15 +11,19 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class OnlineStatusServiceImpl implements OnlineStatusService {
 
-    private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
     private static final String ONLINE_KEY = "user:online:";
     private static final String TYPING_KEY = "user:typing:";
     private static final String UNREAD_KEY = "unread:";
-    private static final String SESSION_KEY = "user:ws-session:";
 
     @Override
     public void setOnline(String userID) {
         redisTemplate.opsForValue().set(ONLINE_KEY + userID, "true", Duration.ofMinutes(5));
+    }
+
+    @Override
+    public void setOffline(String userID) {
+        redisTemplate.delete(ONLINE_KEY + userID);
     }
 
     @Override
@@ -44,8 +48,8 @@ public class OnlineStatusServiceImpl implements OnlineStatusService {
 
     @Override
     public int getUnreadCount(String conversationID, String userID) {
-        String value = redisTemplate.opsForValue().get(UNREAD_KEY + conversationID+":"+userID);
+        Object value = redisTemplate.opsForValue().get(UNREAD_KEY + conversationID+":"+userID);
         if(value == null) return 0;
-        return Integer.parseInt(value);
+        return Integer.parseInt(value.toString());
     }
 }

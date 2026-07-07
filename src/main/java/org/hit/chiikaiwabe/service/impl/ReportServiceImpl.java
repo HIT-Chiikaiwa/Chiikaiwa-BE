@@ -26,9 +26,9 @@ public class ReportServiceImpl implements ReportService {
     private final MessageRepository messageRepository;
 
     public ReportServiceImpl(UserReportRepository userReportRepository,
-                         UserRepository userRepository,
-                         ConversationRepository conversationRepository,
-                         MessageRepository messageRepository) {
+                             UserRepository userRepository,
+                             ConversationRepository conversationRepository,
+                             MessageRepository messageRepository) {
         this.userReportRepository = userReportRepository;
         this.userRepository = userRepository;
         this.conversationRepository = conversationRepository;
@@ -40,6 +40,10 @@ public class ReportServiceImpl implements ReportService {
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
         User reported = userRepository.findById(requestDto.getReportedId())
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
+
+        if (reporterId.equals(requestDto.getReportedId())) {
+            throw new org.hit.chiikaiwabe.exception.InvalidException(ErrorMessage.Chat.ERR_CANNOT_REPORT_YOURSELF);
+        }
 
         Conversation conversation = null;
         if (requestDto.getConversationId() != null) {

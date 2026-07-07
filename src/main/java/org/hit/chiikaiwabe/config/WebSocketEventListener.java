@@ -15,7 +15,7 @@ import java.security.Principal;
 @RequiredArgsConstructor
 public class WebSocketEventListener {
     private final OnlineStatusService onlineStatusService;
-    private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @EventListener
     public void handleWebSocketConnectListener(SessionConnectedEvent event){
@@ -31,7 +31,7 @@ public class WebSocketEventListener {
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event){
         Principal principal = event.getUser();
         if(principal != null){
-            redisTemplate.delete("user:online:" + principal.getName());
+            onlineStatusService.setOffline(principal.getName());
             redisTemplate.delete("user:ws-session:" + principal.getName());
         }
     }

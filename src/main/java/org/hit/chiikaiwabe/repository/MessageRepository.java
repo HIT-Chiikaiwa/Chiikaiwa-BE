@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, String> {
@@ -23,4 +24,10 @@ public interface MessageRepository extends JpaRepository<Message, String> {
             "AND m.createdDate > ?2 " +
             "AND (m.sender.id IS NULL OR m.sender.id <> ?3)")
     int countUnreadMessages(String conversationId, LocalDateTime lastReadAt, String userId);
+
+    @Query("SELECT m FROM Message m " +
+            "LEFT JOIN FETCH m.sender " +
+            "LEFT JOIN FETCH m.conversation " +
+            "WHERE m.id = ?1")
+    Optional<Message> findByIdWithDetails(String messageId);
 }

@@ -8,7 +8,7 @@ import org.hit.chiikaiwabe.constant.UrlConstant;
 import org.hit.chiikaiwabe.domain.dto.request.*;
 import org.hit.chiikaiwabe.domain.dto.response.*;
 import org.hit.chiikaiwabe.service.ChatService;
-import org.hit.chiikaiwabe.service.FileUploadService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 public class ChatRestController {
 
     private final ChatService chatService;
-    private final FileUploadService fileUploadService;
 
 
     @Tag(name = "chat-controller")
@@ -92,7 +91,7 @@ public class ChatRestController {
             @Valid @RequestBody AddMembersRequestDto dto) {
         chatService.addMembers(principal.getId(), id, dto);
         return VsResponseUtil.success(HttpStatus.CREATED,
-                new CommonResponseDto(true, SuccessMessage.MEMBER_ADDED));
+                new CommonResponseDto(true, SuccessMessage.Chat.MEMBER_ADDED));
     }
 
     @Tag(name = "chat-controller")
@@ -104,6 +103,6 @@ public class ChatRestController {
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
         chatService.removeMember(principal.getId(), id, userId);
         return VsResponseUtil.success(
-                new CommonResponseDto(true, SuccessMessage.MEMBER_REMOVED));
+                new CommonResponseDto(true, SuccessMessage.Chat.MEMBER_REMOVED));
     }
 }

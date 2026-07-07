@@ -17,34 +17,30 @@ public class SuccessMessage {
     public static final String LOCATION_UPDATED = "success.location.updated";
     public static final String LOCATION_REMOVED = "success.location.removed";
 
-    public static final String MESSAGE_SENT = "success.chat.message.sent";
-    public static final String GROUP_CREATED = "success.chat.group.created";
-    public static final String MEMBER_ADDED = "success.chat.member.added";
-    public static final String MEMBER_REMOVED = "success.chat.member.removed";
-    public static final String USER_BLOCKED = "success.chat.user.blocked";
-    public static final String USER_UNBLOCKED = "success.chat.user.unblocked";
-    public static final String REPORT_SUBMITTED = "success.chat.report.submitted";
-    public static final String FILE_UPLOADED = "success.chat.file.uploaded";
-    public static final String DEVICE_REGISTERED = "success.chat.device.registered";
-    public static final String MESSAGE_DELETED = "success.chat.message.deleted";
-    public static final String MESSAGE_RECALLED = "success.chat.message.recalled";
-
     public static class CleanupLocation{
         public static final String PROCESSING = "location.cleanup.processing";
         public static final String SUCCESS = "location.cleanup.success";
         public static final String TOTAL_COUNT_SUCCESS = "location.cleanup.total-count-success";
     }
 
+    // Chat - Unified constants (DEV 1 + DEV 2)
     public static class Chat {
-        public static final String USER_BLOCKED_SUCCESS = "success.chat.user_blocked";
-        public static final String USER_UNBLOCKED_SUCCESS = "success.chat.user_unblocked";
-        public static final String REPORT_SUBMITTED_SUCCESS = "success.chat.report_submitted";
-        public static final String MESSAGE_DELETED_SUCCESS = "success.chat.message_deleted";
-        public static final String MESSAGE_RECALLED_SUCCESS = "success.chat.message_recalled";
+        public static final String MESSAGE_SENT = "success.chat.message.sent";
+        public static final String GROUP_CREATED = "success.chat.group.created";
+        public static final String MEMBER_ADDED = "success.chat.member.added";
+        public static final String MEMBER_REMOVED = "success.chat.member.removed";
+        public static final String USER_BLOCKED_SUCCESS = "success.chat.user.blocked";
+        public static final String USER_UNBLOCKED_SUCCESS = "success.chat.user.unblocked";
+        public static final String REPORT_SUBMITTED_SUCCESS = "success.chat.report.submitted";
+        public static final String FILE_UPLOADED = "success.chat.file.uploaded";
+        public static final String DEVICE_REGISTERED = "success.chat.device.registered";
+        public static final String MESSAGE_DELETED_SUCCESS = "success.chat.message.deleted";
+        public static final String MESSAGE_RECALLED_SUCCESS = "success.chat.message.recalled";
     }
-    public static class Device{
-        public static final String REGISTER = "device.register.success";
-        public static final String UNREGISTER = "device.unregister.success";
+
+    public static class Device {
+        public static final String REGISTER = "success.chat.device.registered";
+        public static final String UNREGISTER = "success.chat.device.unregistered";
     }
 
 }

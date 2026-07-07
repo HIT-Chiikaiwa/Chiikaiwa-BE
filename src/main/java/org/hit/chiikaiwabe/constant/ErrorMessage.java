@@ -91,6 +91,19 @@ public class ErrorMessage {
     public static final String ERR_CONVERSATION_NOT_FOUND = "exception.chat.conversation_not_found";
     public static final String ERR_NOT_IN_CONVERSATION = "exception.chat.not_in_conversation";
     public static final String ERR_MESSAGE_ALREADY_RECALLED = "exception.chat.message_already_recalled";
+  public static class Chat {
+    public static final String ERR_CONVERSATION_NOT_FOUND = "exception.chat.conversation.not.found";
+    public static final String ERR_NOT_MEMBER = "exception.chat.not.member";
+    public static final String ERR_USER_BLOCKED = "exception.chat.user.blocked";
+    public static final String ERR_GROUP_FULL = "exception.chat.group.full";
+    public static final String ERR_INVALID_FILE = "exception.chat.invalid.file";
+    public static final String ERR_FILE_TOO_LARGE = "exception.chat.file.too.large";
+    public static final String ERR_ALREADY_BLOCKED = "exception.chat.already.blocked";
+    public static final String ERR_MESSAGE_NOT_FOUND = "exception.chat.message.not.found";
+    public static final String ERR_NOT_SENDER = "exception.chat.not.sender";
+    public static final String ERR_RECALL_TIMEOUT = "exception.chat.recall.timeout";
+    public static final String ERR_ALREADY_LEFT = "exception.chat.already.left";
+    public static final String ERR_SELF_CHAT = "exception.chat.self.chat";
   }
 
 

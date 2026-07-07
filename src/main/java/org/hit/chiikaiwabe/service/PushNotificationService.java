@@ -5,5 +5,5 @@ import org.hit.chiikaiwabe.domain.dto.request.RegisterDeviceRequestDto;
 public interface PushNotificationService {
     void sendPushNotification(String userId, String title, String body);
     void registerDevice(String userId, RegisterDeviceRequestDto dto);
-    void removeDevice(String userId, String fcmToken);
+    void unregisterDevice(String userId, String fcmToken);
 }

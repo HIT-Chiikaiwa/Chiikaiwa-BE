@@ -9,4 +9,5 @@ public interface MessageFeatureService {
     void deleteMessageForMe(String userId, String messageId);
     void recallMessage(String userId, String messageId);
     MessageResponseDto createScheduleInvite(String userId, String conversationId, ScheduleInviteRequestDto requestDto);
+    MessageResponseDto createFileMessage(String userId, String conversationId, String fileUrl, String fileName);
 }

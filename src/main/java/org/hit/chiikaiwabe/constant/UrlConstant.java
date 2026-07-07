@@ -90,6 +90,7 @@ public class UrlConstant {
 
   public static class Device {
     public static final String DEVICES = "/devices";
+    public static final String UPDATE_DEVICE = DEVICES;
 
     private Device() {
     }

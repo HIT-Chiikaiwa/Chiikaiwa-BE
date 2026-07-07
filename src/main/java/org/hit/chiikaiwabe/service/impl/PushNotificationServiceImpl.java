@@ -1,12 +1,15 @@
 package org.hit.chiikaiwabe.service.impl;
 
 import com.google.firebase.messaging.*;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.hit.chiikaiwabe.domain.dto.request.RegisterDeviceRequestDto;
 import org.hit.chiikaiwabe.domain.entity.User;
 import org.hit.chiikaiwabe.domain.entity.UserDevice;
 import org.hit.chiikaiwabe.repository.UserDeviceRepository;
+import org.hit.chiikaiwabe.repository.UserRepository;
+import org.hit.chiikaiwabe.exception.NotFoundException;
+import org.hit.chiikaiwabe.constant.ErrorMessage;
 import org.hit.chiikaiwabe.service.PushNotificationService;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +21,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PushNotificationServiceImpl implements PushNotificationService {
     private final UserDeviceRepository userDeviceRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -40,7 +44,7 @@ public class PushNotificationServiceImpl implements PushNotificationService {
             } catch (FirebaseMessagingException e) {
                 String errorCode = e.getMessagingErrorCode().name();
                 if(MessagingErrorCode.UNREGISTERED.name().equals(errorCode)
-                || MessagingErrorCode.INVALID_ARGUMENT.name().equals(errorCode)){
+                        || MessagingErrorCode.INVALID_ARGUMENT.name().equals(errorCode)){
                     d.setIsActive(false);
                     errorDevices.add(d);
                 }
@@ -57,8 +61,8 @@ public class PushNotificationServiceImpl implements PushNotificationService {
         String fcmToken = dto.getFcmToken();
 
         Optional<UserDevice> existingDevice = userDeviceRepository.findByFcmToken(fcmToken);
-        User existUser = new User();
-        existUser.setId(userID);
+        User existUser = userRepository.findById(userID)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
 
         if(existingDevice.isPresent()){
             UserDevice device = existingDevice.get();
@@ -83,7 +87,10 @@ public class PushNotificationServiceImpl implements PushNotificationService {
     @Transactional
     public void unregisterDevice(String userID, String fcmToken) {
         userDeviceRepository.findByUserIdAndFcmToken(userID, fcmToken)
-                .ifPresent(device -> device.setIsActive(false));
+                .ifPresent(device -> {
+                    device.setIsActive(false);
+                    userDeviceRepository.save(device);
+                });
 
     }
 }

@@ -13,6 +13,7 @@ import org.hit.chiikaiwabe.exception.NotFoundException;
 import org.hit.chiikaiwabe.repository.*;
 import org.hit.chiikaiwabe.service.BlockReportService;
 import org.hit.chiikaiwabe.service.ChatService;
+import org.hit.chiikaiwabe.service.OnlineStatusService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,6 +43,7 @@ public class ChatServiceImpl implements ChatService {
     private final UserRepository userRepository;
     private final BlockReportService blockReportService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final OnlineStatusService onlineStatusService;
 
     @Value("${chat.max-group-members:30}")
     private int maxGroupMembers;
@@ -263,6 +265,14 @@ public class ChatServiceImpl implements ChatService {
 
         MessageResponseDto responseDto = toMessageResponseDto(message);
         broadcastToConversation(dto.getConversationId(), responseDto);
+
+        // Increment unread count for other active members
+        List<String> activeMemberIds = memberRepository.findActiveUserIds(dto.getConversationId());
+        for (String activeMemberId : activeMemberIds) {
+            if (!activeMemberId.equals(senderId)) {
+                onlineStatusService.incrementUnread(dto.getConversationId(), activeMemberId);
+            }
+        }
     }
 
     @Override
@@ -427,5 +437,7 @@ public class ChatServiceImpl implements ChatService {
         ConversationMember member = findActiveMember(conversationId, userId);
         member.setLastReadAt(LocalDateTime.now());
         memberRepository.save(member);
+
+        onlineStatusService.resetUnread(conversationId, userId);
     }
 }

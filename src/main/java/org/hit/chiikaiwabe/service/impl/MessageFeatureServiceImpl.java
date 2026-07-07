@@ -42,13 +42,13 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
     private final UserBlockService userBlockService;
 
     public MessageFeatureServiceImpl(MessageRepository messageRepository,
-                                 MessageDeletionRepository messageDeletionRepository,
-                                 UserRepository userRepository,
-                                 ConversationRepository conversationRepository,
-                                 ConversationMemberRepository conversationMemberRepository,
-                                 SimpMessagingTemplate messagingTemplate,
-                                 MessageMapper messageMapper,
-                                 UserBlockService userBlockService) {
+                                     MessageDeletionRepository messageDeletionRepository,
+                                     UserRepository userRepository,
+                                     ConversationRepository conversationRepository,
+                                     ConversationMemberRepository conversationMemberRepository,
+                                     SimpMessagingTemplate messagingTemplate,
+                                     MessageMapper messageMapper,
+                                     UserBlockService userBlockService) {
         this.messageRepository = messageRepository;
         this.messageDeletionRepository = messageDeletionRepository;
         this.userRepository = userRepository;
@@ -125,7 +125,7 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
 
         String destination = "/topic/conversation." + message.getConversation().getId();
         MessageResponseDto messageDto = messageMapper.toDto(message);
-        
+
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -143,10 +143,17 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Chat.ERR_CONVERSATION_NOT_FOUND));
 
+        String content = String.format("{\"subject\":\"%s\",\"location\":\"%s\",\"scheduledAt\":\"%s\",\"duration\":%s,\"note\":\"%s\"}",
+                requestDto.getSubject(),
+                requestDto.getLocation() != null ? requestDto.getLocation() : "",
+                requestDto.getScheduledAt().toString(),
+                requestDto.getDuration() != null ? requestDto.getDuration() : 0,
+                requestDto.getNote() != null ? requestDto.getNote() : "");
+
         Message message = Message.builder()
                 .conversation(conversation)
                 .sender(sender)
-                .content(requestDto.getPayload())
+                .content(content)
                 .messageType(MessageType.SCHEDULE_INVITE)
                 .build();
 
@@ -157,14 +164,48 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
 
         String destination = "/topic/conversation." + conversationId;
         MessageResponseDto messageDto = messageMapper.toDto(message);
-        
+
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
                 messagingTemplate.convertAndSend(destination, messageDto);
             }
         });
-        
+
+        return messageDto;
+    }
+
+    public MessageResponseDto createFileMessage(String userId, String conversationId, String fileUrl, String fileName) {
+        validateConversationAccess(userId, conversationId);
+        validateNotBlockedInDirectConversation(userId, conversationId);
+
+        User sender = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Chat.ERR_CONVERSATION_NOT_FOUND));
+
+        Message message = Message.builder()
+                .conversation(conversation)
+                .sender(sender)
+                .content(fileUrl) // Store URL as content or you could use attachments mapping
+                .messageType(MessageType.FILE)
+                .build();
+
+        message = messageRepository.save(message);
+
+        conversation.setLastMessage(message);
+        conversationRepository.save(conversation);
+
+        String destination = "/topic/conversation." + conversationId;
+        MessageResponseDto messageDto = messageMapper.toDto(message);
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                messagingTemplate.convertAndSend(destination, messageDto);
+            }
+        });
+
         return messageDto;
     }
 }

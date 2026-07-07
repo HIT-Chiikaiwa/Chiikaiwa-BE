@@ -22,4 +22,7 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
 
     @Query("SELECT cm.user.id FROM ConversationMember cm WHERE cm.conversation.id = ?1 AND cm.leftAt IS NULL")
     List<String> findActiveUserIds(String conversationId);
+
+    @Query("SELECT cm FROM ConversationMember cm JOIN FETCH cm.user WHERE cm.conversation.id = ?1")
+    List<ConversationMember> findByConversationId(String conversationId);
 }

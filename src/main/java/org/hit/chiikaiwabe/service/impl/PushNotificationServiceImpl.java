@@ -4,6 +4,7 @@ import com.google.firebase.messaging.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.hit.chiikaiwabe.domain.dto.request.RegisterDeviceRequestDto;
+import org.hit.chiikaiwabe.domain.entity.User;
 import org.hit.chiikaiwabe.domain.entity.UserDevice;
 import org.hit.chiikaiwabe.repository.UserDeviceRepository;
 import org.hit.chiikaiwabe.service.PushNotificationService;
@@ -56,18 +57,22 @@ public class PushNotificationServiceImpl implements PushNotificationService {
         String fcmToken = dto.getFcmToken();
 
         Optional<UserDevice> existingDevice = userDeviceRepository.findByFcmToken(fcmToken);
+        User existUser = new User();
+        existUser.setId(userID);
 
         if(existingDevice.isPresent()){
             UserDevice device = existingDevice.get();
-            device.setId(userID);
+            device.setUser(existUser);
+            device.setDeviceName(dto.getDeviceName());
             device.setIsActive(true);
             userDeviceRepository.save(device);
         }
         else{
             UserDevice newDevice = new UserDevice();
-            newDevice.setId(userID);
+            newDevice.setUser(existUser);
             newDevice.setFcmToken(fcmToken);
             newDevice.setIsActive(true);
+            newDevice.setDeviceName(dto.getDeviceName());
             newDevice.setDeviceType(dto.getDeviceType());
 
             userDeviceRepository.save(newDevice);

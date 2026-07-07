@@ -38,7 +38,7 @@ public class UserDevice extends DateAuditing {
     @Column(nullable = false)
     private String deviceName;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private Boolean isActive = Boolean.TRUE;
 
 }

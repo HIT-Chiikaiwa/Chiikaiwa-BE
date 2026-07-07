@@ -34,6 +34,14 @@ public class SuccessMessage {
         public static final String SUCCESS = "location.cleanup.success";
         public static final String TOTAL_COUNT_SUCCESS = "location.cleanup.total-count-success";
     }
+
+    public static class Chat {
+        public static final String USER_BLOCKED_SUCCESS = "success.chat.user_blocked";
+        public static final String USER_UNBLOCKED_SUCCESS = "success.chat.user_unblocked";
+        public static final String REPORT_SUBMITTED_SUCCESS = "success.chat.report_submitted";
+        public static final String MESSAGE_DELETED_SUCCESS = "success.chat.message_deleted";
+        public static final String MESSAGE_RECALLED_SUCCESS = "success.chat.message_recalled";
+    }
     public static class Device{
         public static final String REGISTER = "device.register.success";
         public static final String UNREGISTER = "device.unregister.success";

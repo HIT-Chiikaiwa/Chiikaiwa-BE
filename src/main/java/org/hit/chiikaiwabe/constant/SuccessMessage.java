@@ -18,10 +18,14 @@ public class SuccessMessage {
     public static final String LOCATION_REMOVED = "success.location.removed";
 
 
-
     public static class CleanupLocation{
         public static final String PROCESSING = "location.cleanup.processing";
         public static final String SUCCESS = "location.cleanup.success";
         public static final String TOTAL_COUNT_SUCCESS = "location.cleanup.total-count-success";
     }
+    public static class Device{
+        public static final String REGISTER = "device.register.success";
+        public static final String UNREGISTER = "device.unregister.success";
+    }
+
 }

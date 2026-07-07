@@ -24,7 +24,9 @@ public class UrlConstant {
     private static final String PRE_FIX = "/user";
     public static final String GET_USERS = PRE_FIX;
     public static final String GET_USER = PRE_FIX + "/{userId}";
+    public static final String GET_USER_ONLINE = GET_USER + "/online-status";
     public static final String GET_CURRENT_USER = PRE_FIX + "/current";
+
 
     private User() {
     }
@@ -62,4 +64,11 @@ public class UrlConstant {
     }
   }
 
+  public static class Device {
+    private static final String PRE_FIX = "/device";
+    public static final String UPDATE_DEVICE = PRE_FIX ;
+
+    private Device() {
+    }
+  }
 }

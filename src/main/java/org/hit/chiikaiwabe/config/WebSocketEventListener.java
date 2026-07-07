@@ -23,12 +23,12 @@ public class WebSocketEventListener {
         if(principal != null){
             onlineStatusService.setOnline(principal.getName());
             redisTemplate.opsForValue().set("user:ws-session:" + principal.getName(),
-                    event.getMessage().getHeaders().get("simpSesionId").toString());
+                    event.getMessage().getHeaders().get("simpSessionId").toString());
         }
     }
 
     @EventListener
-    public void handleƯebSocketDisconnectListener(SessionDisconnectEvent event){
+    public void handleWebSocketDisconnectListener(SessionDisconnectEvent event){
         Principal principal = event.getUser();
         if(principal != null){
             redisTemplate.delete("user:online:" + principal.getName());

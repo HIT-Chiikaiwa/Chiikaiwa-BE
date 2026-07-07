@@ -10,12 +10,12 @@ import java.util.Optional;
 
 @Repository
 public interface UserDeviceRepository extends JpaRepository<UserDevice, String> {
-    @Query("SELECT d FROM UserDevice d WHERE d.id = ?1 AND d.isActive = true")
+    @Query("SELECT d FROM UserDevice d WHERE d.user.id = ?1 AND d.isActive = true")
     List<UserDevice> findByUserIdAndIsActiveTrue(String userId);
 
     @Query("SELECT d FROM UserDevice d WHERE d.fcmToken = ?1")
     Optional<UserDevice> findByFcmToken(String fcmToken);
 
-    @Query("SELECT d FROM UserDevice d WHERE d.id = ?1 AND d.fcmToken = ?2")
+    @Query("SELECT d FROM UserDevice d WHERE d.user.id = ?1 AND d.fcmToken = ?2")
     Optional<UserDevice> findByUserIdAndFcmToken(String userId, String fcmToken);
 }

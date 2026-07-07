@@ -27,18 +27,18 @@ public class UserDevice extends DateAuditing {
             foreignKey = @ForeignKey(name = "FK_DEVICE_USER"))
     private User user;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "fcm_token", nullable = false)
     private String fcmToken;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 26)
+    @Column(name = "device_type", nullable = false, length = 20)
     private DeviceType deviceType;
 
-    @Nationalized
-    @Column(nullable = false)
+    @Column(name = "device_name")
     private String deviceName;
 
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private Boolean isActive = Boolean.TRUE;
 
 }

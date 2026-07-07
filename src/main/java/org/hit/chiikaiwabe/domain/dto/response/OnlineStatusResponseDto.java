@@ -1,16 +1,7 @@
 package org.hit.chiikaiwabe.domain.dto.response;
-
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
+import lombok.*;
 import java.time.LocalDateTime;
-
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class OnlineStatusResponseDto {
     private String userId;
     private Boolean isOnline;

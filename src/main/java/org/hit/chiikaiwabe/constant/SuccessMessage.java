@@ -17,6 +17,17 @@ public class SuccessMessage {
     public static final String LOCATION_UPDATED = "success.location.updated";
     public static final String LOCATION_REMOVED = "success.location.removed";
 
+    public static final String MESSAGE_SENT = "success.chat.message.sent";
+    public static final String GROUP_CREATED = "success.chat.group.created";
+    public static final String MEMBER_ADDED = "success.chat.member.added";
+    public static final String MEMBER_REMOVED = "success.chat.member.removed";
+    public static final String USER_BLOCKED = "success.chat.user.blocked";
+    public static final String USER_UNBLOCKED = "success.chat.user.unblocked";
+    public static final String REPORT_SUBMITTED = "success.chat.report.submitted";
+    public static final String FILE_UPLOADED = "success.chat.file.uploaded";
+    public static final String DEVICE_REGISTERED = "success.chat.device.registered";
+    public static final String MESSAGE_DELETED = "success.chat.message.deleted";
+    public static final String MESSAGE_RECALLED = "success.chat.message.recalled";
 
     public static class CleanupLocation{
         public static final String PROCESSING = "location.cleanup.processing";

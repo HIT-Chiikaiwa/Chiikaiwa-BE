@@ -49,4 +49,18 @@ public class Message extends DateAuditing {
     @Builder.Default
     private Boolean isRecalled = Boolean.FALSE;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reply_to_message_id",
+            foreignKey = @ForeignKey(name = "FK_MESSAGE_REPLY_TO"))
+    private Message replyToMessage;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "forwarded_from_message_id",
+            foreignKey = @ForeignKey(name = "FK_MESSAGE_FORWARDED_FROM"))
+    private Message forwardedFromMessage;
+
+    @Column(name = "is_pinned", nullable = false)
+    @Builder.Default
+    private Boolean isPinned = Boolean.FALSE;
+
 }

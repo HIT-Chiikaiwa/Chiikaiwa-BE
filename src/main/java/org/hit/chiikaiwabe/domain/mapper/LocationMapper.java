@@ -11,6 +11,7 @@ public interface LocationMapper {
     @Mapping(target = "latitude", ignore = true)
     @Mapping(target = "longitude", ignore = true)
     @Mapping(target = "distanceKm", ignore = true)
+    @Mapping(target = "userId", source = "id")
     NearbyUserDto toNearbyUserDto(User user);
 
 }

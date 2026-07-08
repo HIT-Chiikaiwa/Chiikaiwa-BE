@@ -74,6 +74,17 @@ public class UrlConstant {
     public static final String SCHEDULE_INVITE = "/{id}/schedule-invite";
     public static final String MEMBERS = "/{id}/members";
     public static final String MEMBER_DETAIL = "/{id}/members/{userId}";
+    // New features
+    public static final String SEARCH_CONVERSATIONS = PRE_FIX + "/conversations/search";
+    public static final String SEARCH_MESSAGES = CONVERSATIONS + "/{id}/messages/search";
+    public static final String PIN_MESSAGE = PRE_FIX + "/messages/{msgId}/pin";
+    public static final String UNPIN_MESSAGE = PRE_FIX + "/messages/{msgId}/unpin";
+    public static final String PINNED_MESSAGES = CONVERSATIONS + "/{id}/pinned";
+    public static final String REPLY_MESSAGE = PRE_FIX + "/messages/{msgId}/reply";
+    public static final String FORWARD_MESSAGE = PRE_FIX + "/messages/{msgId}/forward";
+    public static final String MESSAGE_REACTIONS = PRE_FIX + "/messages/{msgId}/reactions";
+    public static final String DISSOLVE_GROUP = CONVERSATIONS + "/{id}/dissolve";
+    public static final String TRANSFER_OWNERSHIP = CONVERSATIONS + "/{id}/transfer-ownership";
 
     private Chat() {
     }

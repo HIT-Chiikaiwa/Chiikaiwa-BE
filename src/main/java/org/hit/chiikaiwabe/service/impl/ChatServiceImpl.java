@@ -1,6 +1,7 @@
 package org.hit.chiikaiwabe.service.impl;
 
 import org.hit.chiikaiwabe.constant.ErrorMessage;
+import org.hit.chiikaiwabe.constant.SuccessMessage;
 import org.hit.chiikaiwabe.domain.dto.request.*;
 import org.hit.chiikaiwabe.domain.dto.response.*;
 import org.hit.chiikaiwabe.domain.entity.*;
@@ -82,6 +83,30 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private MessageResponseDto toMessageResponseDto(Message msg) {
+        ReplyMessageDto replyDto = null;
+        if (msg.getReplyToMessage() != null) {
+            Message replyMsg = msg.getReplyToMessage();
+            replyDto = ReplyMessageDto.builder()
+                    .id(replyMsg.getId())
+                    .senderName(replyMsg.getSender() != null ?
+                            replyMsg.getSender().getLastName() + " " + replyMsg.getSender().getFirstName() : "System")
+                    .content(replyMsg.getIsRecalled() ? null : replyMsg.getContent())
+                    .messageType(replyMsg.getMessageType().name())
+                    .build();
+        }
+
+        ReplyMessageDto forwardDto = null;
+        if (msg.getForwardedFromMessage() != null) {
+            Message fwdMsg = msg.getForwardedFromMessage();
+            forwardDto = ReplyMessageDto.builder()
+                    .id(fwdMsg.getId())
+                    .senderName(fwdMsg.getSender() != null ?
+                            fwdMsg.getSender().getLastName() + " " + fwdMsg.getSender().getFirstName() : "System")
+                    .content(fwdMsg.getIsRecalled() ? null : fwdMsg.getContent())
+                    .messageType(fwdMsg.getMessageType().name())
+                    .build();
+        }
+
         return MessageResponseDto.builder()
                 .id(msg.getId())
                 .conversationId(msg.getConversation().getId())
@@ -94,6 +119,10 @@ public class ChatServiceImpl implements ChatService {
                 .isRecalled(msg.getIsRecalled())
                 .createdDate(msg.getCreatedDate())
                 .attachments(new ArrayList<>())
+                .replyToMessage(replyDto)
+                .forwardedFrom(forwardDto)
+                .isPinned(msg.getIsPinned())
+                .reactions(new ArrayList<>())
                 .build();
     }
 
@@ -439,5 +468,242 @@ public class ChatServiceImpl implements ChatService {
         memberRepository.save(member);
 
         onlineStatusService.resetUnread(conversationId, userId);
+    }
+
+
+    // ========================= NEW FEATURES =========================
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ConversationResponseDto> searchConversations(String userId, String keyword, Pageable pageable) {
+        Page<Conversation> conversations = conversationRepository.searchByKeyword(userId, keyword, pageable);
+
+        List<String> conversationIds = conversations.getContent().stream()
+                .map(Conversation::getId).collect(Collectors.toList());
+
+        if (conversationIds.isEmpty()) {
+            return new PageImpl<>(new ArrayList<>(), pageable, 0);
+        }
+
+        Map<String, Integer> memberCountMap = conversationIds.stream()
+                .collect(Collectors.toMap(id -> id, id -> memberRepository.countActiveMembers(id)));
+
+        Map<String, ConversationMember> membershipMap = conversationIds.stream()
+                .map(id -> memberRepository.findByConversationIdAndUserId(id, userId).orElse(null))
+                .filter(m -> m != null)
+                .collect(Collectors.toMap(m -> m.getConversation().getId(), Function.identity()));
+
+        List<ConversationResponseDto> result = conversations.getContent().stream()
+                .map(conv -> toConversationResponseDto(conv, userId, memberCountMap, membershipMap))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(result, pageable, conversations.getTotalElements());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<MessageResponseDto> searchMessages(String conversationId, String userId, String keyword, Pageable pageable) {
+        findActiveMember(conversationId, userId);
+        Page<Message> messages = messageRepository.searchMessages(conversationId, userId, keyword, pageable);
+        return messages.map(this::toMessageResponseDto);
+    }
+
+    @Override
+    @Transactional
+    public CommonResponseDto pinMessage(String userId, String messageId) {
+        Message message = messageRepository.findByIdWithDetails(messageId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Chat.ERR_MESSAGE_NOT_FOUND));
+        findActiveMember(message.getConversation().getId(), userId);
+
+        if (Boolean.TRUE.equals(message.getIsPinned())) {
+            throw new InvalidException(ErrorMessage.Chat.ERR_ALREADY_PINNED);
+        }
+
+        message.setIsPinned(true);
+        messageRepository.save(message);
+
+        User pinner = findUserById(userId);
+        String content = pinner.getLastName() + " " + pinner.getFirstName() + " đã ghim một tin nhắn";
+        Message sysMsg = createSystemMessage(message.getConversation(), content);
+        broadcastToConversation(message.getConversation().getId(), toMessageResponseDto(sysMsg));
+
+        return new CommonResponseDto(true, SuccessMessage.Chat.MESSAGE_PINNED);
+    }
+
+    @Override
+    @Transactional
+    public CommonResponseDto unpinMessage(String userId, String messageId) {
+        Message message = messageRepository.findByIdWithDetails(messageId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Chat.ERR_MESSAGE_NOT_FOUND));
+        findActiveMember(message.getConversation().getId(), userId);
+
+        if (!Boolean.TRUE.equals(message.getIsPinned())) {
+            throw new InvalidException(ErrorMessage.Chat.ERR_NOT_PINNED);
+        }
+
+        message.setIsPinned(false);
+        messageRepository.save(message);
+
+        return new CommonResponseDto(true, SuccessMessage.Chat.MESSAGE_UNPINNED);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MessageResponseDto> getPinnedMessages(String conversationId, String userId) {
+        findActiveMember(conversationId, userId);
+        List<Message> pinned = messageRepository.findPinnedMessages(conversationId);
+        return pinned.stream().map(this::toMessageResponseDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public MessageResponseDto replyToMessage(String senderId, String messageId, String content) {
+        Message originalMessage = messageRepository.findByIdWithDetails(messageId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Chat.ERR_MESSAGE_NOT_FOUND));
+
+        if (Boolean.TRUE.equals(originalMessage.getIsRecalled())) {
+            throw new InvalidException(ErrorMessage.Chat.ERR_CANNOT_REPLY_RECALLED);
+        }
+
+        String conversationId = originalMessage.getConversation().getId();
+        User sender = findUserById(senderId);
+        findActiveMember(conversationId, senderId);
+
+        Conversation conversation = originalMessage.getConversation();
+
+        Message replyMessage = Message.builder()
+                .conversation(conversation)
+                .sender(sender)
+                .content(content)
+                .messageType(MessageType.TEXT)
+                .replyToMessage(originalMessage)
+                .build();
+        replyMessage = messageRepository.save(replyMessage);
+
+        conversation.setLastMessage(replyMessage);
+        conversationRepository.save(conversation);
+
+        MessageResponseDto responseDto = toMessageResponseDto(replyMessage);
+        broadcastToConversation(conversationId, responseDto);
+
+        // Increment unread count
+        List<String> activeMemberIds = memberRepository.findActiveUserIds(conversationId);
+        for (String memberId : activeMemberIds) {
+            if (!memberId.equals(senderId)) {
+                onlineStatusService.incrementUnread(conversationId, memberId);
+            }
+        }
+
+        return responseDto;
+    }
+
+    @Override
+    @Transactional
+    public MessageResponseDto forwardMessage(String senderId, String messageId, String targetConversationId) {
+        Message originalMessage = messageRepository.findByIdWithDetails(messageId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Chat.ERR_MESSAGE_NOT_FOUND));
+
+        if (Boolean.TRUE.equals(originalMessage.getIsRecalled())) {
+            throw new InvalidException(ErrorMessage.Chat.ERR_CANNOT_FORWARD_RECALLED);
+        }
+
+        Conversation targetConversation = conversationRepository.findById(targetConversationId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessage.Chat.ERR_TARGET_CONVERSATION_NOT_FOUND));
+        User sender = findUserById(senderId);
+        findActiveMember(targetConversationId, senderId);
+
+        Message forwardedMessage = Message.builder()
+                .conversation(targetConversation)
+                .sender(sender)
+                .content(originalMessage.getContent())
+                .messageType(originalMessage.getMessageType())
+                .forwardedFromMessage(originalMessage)
+                .build();
+        forwardedMessage = messageRepository.save(forwardedMessage);
+
+        targetConversation.setLastMessage(forwardedMessage);
+        conversationRepository.save(targetConversation);
+
+        MessageResponseDto responseDto = toMessageResponseDto(forwardedMessage);
+        broadcastToConversation(targetConversationId, responseDto);
+
+        // Increment unread count
+        List<String> activeMemberIds = memberRepository.findActiveUserIds(targetConversationId);
+        for (String memberId : activeMemberIds) {
+            if (!memberId.equals(senderId)) {
+                onlineStatusService.incrementUnread(targetConversationId, memberId);
+            }
+        }
+
+        return responseDto;
+    }
+
+    @Override
+    @Transactional
+    public CommonResponseDto dissolveGroup(String userId, String conversationId) {
+        Conversation conversation = findConversationById(conversationId);
+
+        if (conversation.getType() == ConversationType.DIRECT) {
+            throw new InvalidException(ErrorMessage.Chat.ERR_CANNOT_DISSOLVE_DIRECT);
+        }
+
+        ConversationMember owner = findActiveMember(conversationId, userId);
+        if (owner.getRole() != MemberRole.OWNER) {
+            throw new ForbiddenException(ErrorMessage.Chat.ERR_NOT_OWNER);
+        }
+
+        // Đánh dấu tất cả member đã rời
+        List<ConversationMember> activeMembers = memberRepository.findActiveMembers(conversationId);
+        LocalDateTime now = LocalDateTime.now();
+        for (ConversationMember member : activeMembers) {
+            member.setLeftAt(now);
+            memberRepository.save(member);
+        }
+
+        User ownerUser = findUserById(userId);
+        String content = ownerUser.getLastName() + " " + ownerUser.getFirstName() + " đã giải tán nhóm";
+        Message sysMsg = createSystemMessage(conversation, content);
+        broadcastToConversation(conversationId, toMessageResponseDto(sysMsg));
+
+        log.info("Group {} dissolved by {}", conversationId, userId);
+        return new CommonResponseDto(true, SuccessMessage.Chat.GROUP_DISSOLVED);
+    }
+
+    @Override
+    @Transactional
+    public CommonResponseDto transferOwnership(String userId, String conversationId, String newOwnerId) {
+        if (userId.equals(newOwnerId)) {
+            throw new InvalidException(ErrorMessage.Chat.ERR_CANNOT_TRANSFER_TO_SELF);
+        }
+
+        Conversation conversation = findConversationById(conversationId);
+
+        if (conversation.getType() == ConversationType.DIRECT) {
+            throw new InvalidException(ErrorMessage.Chat.ERR_CANNOT_DISSOLVE_DIRECT);
+        }
+
+        ConversationMember currentOwner = findActiveMember(conversationId, userId);
+        if (currentOwner.getRole() != MemberRole.OWNER) {
+            throw new ForbiddenException(ErrorMessage.Chat.ERR_NOT_OWNER);
+        }
+
+        ConversationMember newOwner = findActiveMember(conversationId, newOwnerId);
+
+        // Chuyển quyền
+        currentOwner.setRole(MemberRole.MEMBER);
+        newOwner.setRole(MemberRole.OWNER);
+        memberRepository.save(currentOwner);
+        memberRepository.save(newOwner);
+
+        User oldOwnerUser = findUserById(userId);
+        User newOwnerUser = findUserById(newOwnerId);
+        String content = oldOwnerUser.getLastName() + " " + oldOwnerUser.getFirstName() +
+                " đã chuyển quyền trưởng nhóm cho " +
+                newOwnerUser.getLastName() + " " + newOwnerUser.getFirstName();
+        Message sysMsg = createSystemMessage(conversation, content);
+        broadcastToConversation(conversationId, toMessageResponseDto(sysMsg));
+
+        log.info("Ownership of group {} transferred from {} to {}", conversationId, userId, newOwnerId);
+        return new CommonResponseDto(true, SuccessMessage.Chat.OWNERSHIP_TRANSFERRED);
     }
 }

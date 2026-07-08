@@ -83,7 +83,6 @@ public class ErrorMessage {
   }
 
   public static class Chat {
-    // DEV 1 - Core Chat
     public static final String ERR_CONVERSATION_NOT_FOUND = "exception.chat.conversation.not.found";
     public static final String ERR_NOT_MEMBER = "exception.chat.not.member";
     public static final String ERR_USER_BLOCKED = "exception.chat.user.blocked";
@@ -96,7 +95,6 @@ public class ErrorMessage {
     public static final String ERR_RECALL_TIMEOUT = "exception.chat.recall.timeout";
     public static final String ERR_ALREADY_LEFT = "exception.chat.already.left";
     public static final String ERR_SELF_CHAT = "exception.chat.self.chat";
-    // DEV 2 - Block, Report, Message features
     public static final String ERR_BLOCKED = "exception.chat.user.blocked";
     public static final String ERR_CANNOT_BLOCK_YOURSELF = "exception.chat.cannot.block.yourself";
     public static final String ERR_CANNOT_REPORT_YOURSELF = "cannot.report.yourself";
@@ -106,6 +104,14 @@ public class ErrorMessage {
     public static final String ERR_MESSAGE_ALREADY_RECALLED = "exception.chat.message.already.recalled";
   }
 
+  public static class Friendship {
+    public static final String ERR_SELF_REQUEST = "exception.friendship.self.request";
+    public static final String ERR_ALREADY_FRIENDS = "exception.friendship.already.friends";
+    public static final String ERR_REQUEST_ALREADY_SENT = "exception.friendship.request.already.sent";
+    public static final String ERR_REQUEST_NOT_FOUND = "exception.friendship.request.not.found";
+    public static final String ERR_NOT_RECEIVER = "exception.friendship.not.receiver";
+    public static final String ERR_NOT_FRIENDS = "exception.friendship.not.friends";
+    public static final String ERR_USER_NOT_FOUND_PHONE = "exception.friendship.user.not.found.phone";
+  }
 
 }
-

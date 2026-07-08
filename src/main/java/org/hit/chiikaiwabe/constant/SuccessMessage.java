@@ -23,7 +23,6 @@ public class SuccessMessage {
         public static final String TOTAL_COUNT_SUCCESS = "location.cleanup.total-count-success";
     }
 
-    // Chat - Unified constants (DEV 1 + DEV 2)
     public static class Chat {
         public static final String MESSAGE_SENT = "success.chat.message.sent";
         public static final String GROUP_CREATED = "success.chat.group.created";
@@ -41,6 +40,13 @@ public class SuccessMessage {
     public static class Device {
         public static final String REGISTER = "success.chat.device.registered";
         public static final String UNREGISTER = "success.chat.device.unregistered";
+    }
+
+    public static class Friendship {
+        public static final String REQUEST_SENT = "success.friendship.request.sent";
+        public static final String REQUEST_ACCEPTED = "success.friendship.request.accepted";
+        public static final String REQUEST_REJECTED = "success.friendship.request.rejected";
+        public static final String UNFRIENDED = "success.friendship.unfriended";
     }
 
 }

@@ -96,4 +96,25 @@ public class UrlConstant {
     }
   }
 
+  public static class Friendship {
+    private static final String PRE_FIX = "/friends";
+    public static final String FRIENDS_LIST = PRE_FIX;
+    public static final String SEND_REQUEST = PRE_FIX + "/request/{targetUserId}";
+    public static final String ACCEPT_REQUEST = PRE_FIX + "/request/{requestId}/accept";
+    public static final String REJECT_REQUEST = PRE_FIX + "/request/{requestId}/reject";
+    public static final String UNFRIEND = PRE_FIX + "/{friendId}";
+    public static final String PENDING_REQUESTS = PRE_FIX + "/requests/pending";
+    public static final String SEARCH_FRIENDS = PRE_FIX + "/search";
+
+    private Friendship() {
+    }
+  }
+
+  public static class UserSearch {
+    public static final String SEARCH_BY_PHONE = "/users/search/phone";
+
+    private UserSearch() {
+    }
+  }
+
 }

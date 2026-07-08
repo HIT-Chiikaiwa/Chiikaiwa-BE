@@ -8,6 +8,7 @@ import org.hit.chiikaiwabe.constant.UrlConstant;
 import org.hit.chiikaiwabe.domain.dto.request.*;
 import org.hit.chiikaiwabe.domain.dto.response.*;
 import org.hit.chiikaiwabe.service.ChatService;
+import org.hit.chiikaiwabe.service.MessageReactionService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +30,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 public class ChatRestController {
 
     private final ChatService chatService;
+    private final MessageReactionService messageReactionService;
 
 
     @Tag(name = "chat-controller")
@@ -104,5 +106,120 @@ public class ChatRestController {
         chatService.removeMember(principal.getId(), id, userId);
         return VsResponseUtil.success(
                 new CommonResponseDto(true, SuccessMessage.Chat.MEMBER_REMOVED));
+    }
+
+    // ========================= NEW FEATURES =========================
+
+    @Tag(name = "chat-controller")
+    @Operation(summary = "Search conversations by keyword (group name or user name)")
+    @GetMapping(UrlConstant.Chat.SEARCH_CONVERSATIONS)
+    public ResponseEntity<RestData<Page<ConversationResponseDto>>> searchConversations(
+            @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
+            @RequestParam String keyword,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return VsResponseUtil.success(
+                chatService.searchConversations(principal.getId(), keyword, pageable));
+    }
+
+    @Tag(name = "chat-controller")
+    @Operation(summary = "Search messages in a conversation by keyword")
+    @GetMapping(UrlConstant.Chat.SEARCH_MESSAGES)
+    public ResponseEntity<RestData<Page<MessageResponseDto>>> searchMessages(
+            @PathVariable String id,
+            @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
+            @RequestParam String keyword,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return VsResponseUtil.success(
+                chatService.searchMessages(id, principal.getId(), keyword, pageable));
+    }
+
+    @Tag(name = "chat-controller")
+    @Operation(summary = "Pin a message")
+    @PutMapping(UrlConstant.Chat.PIN_MESSAGE)
+    public ResponseEntity<RestData<CommonResponseDto>> pinMessage(
+            @PathVariable String msgId,
+            @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
+        return VsResponseUtil.success(chatService.pinMessage(principal.getId(), msgId));
+    }
+
+    @Tag(name = "chat-controller")
+    @Operation(summary = "Unpin a message")
+    @PutMapping(UrlConstant.Chat.UNPIN_MESSAGE)
+    public ResponseEntity<RestData<CommonResponseDto>> unpinMessage(
+            @PathVariable String msgId,
+            @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
+        return VsResponseUtil.success(chatService.unpinMessage(principal.getId(), msgId));
+    }
+
+    @Tag(name = "chat-controller")
+    @Operation(summary = "Get pinned messages of a conversation")
+    @GetMapping(UrlConstant.Chat.PINNED_MESSAGES)
+    public ResponseEntity<RestData<java.util.List<MessageResponseDto>>> getPinnedMessages(
+            @PathVariable String id,
+            @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
+        return VsResponseUtil.success(chatService.getPinnedMessages(id, principal.getId()));
+    }
+
+    @Tag(name = "chat-controller")
+    @Operation(summary = "Reply to a message")
+    @PostMapping(UrlConstant.Chat.REPLY_MESSAGE)
+    public ResponseEntity<RestData<MessageResponseDto>> replyToMessage(
+            @PathVariable String msgId,
+            @RequestParam String content,
+            @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
+        return VsResponseUtil.success(HttpStatus.CREATED,
+                chatService.replyToMessage(principal.getId(), msgId, content));
+    }
+
+    @Tag(name = "chat-controller")
+    @Operation(summary = "Forward a message to another conversation")
+    @PostMapping(UrlConstant.Chat.FORWARD_MESSAGE)
+    public ResponseEntity<RestData<MessageResponseDto>> forwardMessage(
+            @PathVariable String msgId,
+            @RequestParam String targetConversationId,
+            @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
+        return VsResponseUtil.success(HttpStatus.CREATED,
+                chatService.forwardMessage(principal.getId(), msgId, targetConversationId));
+    }
+
+    @Tag(name = "chat-controller")
+    @Operation(summary = "Add emoji reaction to a message")
+    @PostMapping(UrlConstant.Chat.MESSAGE_REACTIONS)
+    public ResponseEntity<RestData<CommonResponseDto>> addReaction(
+            @PathVariable String msgId,
+            @RequestParam String emoji,
+            @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
+        return VsResponseUtil.success(
+                messageReactionService.addReaction(principal.getId(), msgId, emoji));
+    }
+
+    @Tag(name = "chat-controller")
+    @Operation(summary = "Remove emoji reaction from a message")
+    @DeleteMapping(UrlConstant.Chat.MESSAGE_REACTIONS)
+    public ResponseEntity<RestData<CommonResponseDto>> removeReaction(
+            @PathVariable String msgId,
+            @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
+        return VsResponseUtil.success(
+                messageReactionService.removeReaction(principal.getId(), msgId));
+    }
+
+    @Tag(name = "chat-controller")
+    @Operation(summary = "Dissolve group (owner only)")
+    @DeleteMapping(UrlConstant.Chat.DISSOLVE_GROUP)
+    public ResponseEntity<RestData<CommonResponseDto>> dissolveGroup(
+            @PathVariable String id,
+            @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
+        return VsResponseUtil.success(chatService.dissolveGroup(principal.getId(), id));
+    }
+
+    @Tag(name = "chat-controller")
+    @Operation(summary = "Transfer group ownership")
+    @PutMapping(UrlConstant.Chat.TRANSFER_OWNERSHIP)
+    public ResponseEntity<RestData<CommonResponseDto>> transferOwnership(
+            @PathVariable String id,
+            @RequestParam String newOwnerId,
+            @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
+        return VsResponseUtil.success(
+                chatService.transferOwnership(principal.getId(), id, newOwnerId));
     }
 }

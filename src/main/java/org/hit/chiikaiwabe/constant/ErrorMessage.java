@@ -83,6 +83,7 @@ public class ErrorMessage {
   }
 
   public static class Chat {
+    // DEV 1 - Core Chat
     public static final String ERR_CONVERSATION_NOT_FOUND = "exception.chat.conversation.not.found";
     public static final String ERR_NOT_MEMBER = "exception.chat.not.member";
     public static final String ERR_USER_BLOCKED = "exception.chat.user.blocked";
@@ -95,6 +96,7 @@ public class ErrorMessage {
     public static final String ERR_RECALL_TIMEOUT = "exception.chat.recall.timeout";
     public static final String ERR_ALREADY_LEFT = "exception.chat.already.left";
     public static final String ERR_SELF_CHAT = "exception.chat.self.chat";
+    // DEV 2 - Block, Report, Message features
     public static final String ERR_BLOCKED = "exception.chat.user.blocked";
     public static final String ERR_CANNOT_BLOCK_YOURSELF = "exception.chat.cannot.block.yourself";
     public static final String ERR_CANNOT_REPORT_YOURSELF = "cannot.report.yourself";
@@ -102,6 +104,15 @@ public class ErrorMessage {
     public static final String ERR_CANNOT_RECALL_AFTER_30_MINS = "exception.chat.recall.timeout";
     public static final String ERR_NOT_IN_CONVERSATION = "exception.chat.not.member";
     public static final String ERR_MESSAGE_ALREADY_RECALLED = "exception.chat.message.already.recalled";
+    // New features
+    public static final String ERR_NOT_OWNER = "exception.chat.not.owner";
+    public static final String ERR_ALREADY_PINNED = "exception.chat.already.pinned";
+    public static final String ERR_NOT_PINNED = "exception.chat.not.pinned";
+    public static final String ERR_CANNOT_FORWARD_RECALLED = "exception.chat.cannot.forward.recalled";
+    public static final String ERR_CANNOT_REPLY_RECALLED = "exception.chat.cannot.reply.recalled";
+    public static final String ERR_TARGET_CONVERSATION_NOT_FOUND = "exception.chat.target.conversation.not.found";
+    public static final String ERR_CANNOT_DISSOLVE_DIRECT = "exception.chat.cannot.dissolve.direct";
+    public static final String ERR_CANNOT_TRANSFER_TO_SELF = "exception.chat.cannot.transfer.to.self";
   }
 
   public static class Friendship {

@@ -34,4 +34,18 @@ public interface ConversationRepository extends JpaRepository<Conversation, Stri
             "  WHERE cm2.user.id = ?2 AND cm2.leftAt IS NULL" +
             ")")
     Optional<Conversation> findDirectConversation(String userId1, String userId2);
+
+    @Query("SELECT DISTINCT c FROM Conversation c " +
+            "JOIN ConversationMember cm ON cm.conversation.id = c.id " +
+            "WHERE cm.user.id = ?1 AND cm.leftAt IS NULL " +
+            "AND (" +
+            "  (c.type = 'GROUP' AND LOWER(c.groupName) LIKE LOWER(CONCAT('%', ?2, '%'))) " +
+            "  OR (c.type = 'DIRECT' AND c.id IN (" +
+            "    SELECT cm2.conversation.id FROM ConversationMember cm2 " +
+            "    WHERE cm2.conversation.id = c.id AND cm2.user.id <> ?1 " +
+            "    AND (LOWER(cm2.user.firstName) LIKE LOWER(CONCAT('%', ?2, '%')) " +
+            "         OR LOWER(cm2.user.lastName) LIKE LOWER(CONCAT('%', ?2, '%')))" +
+            "  ))" +
+            ") ORDER BY c.lastModifiedDate DESC")
+    Page<Conversation> searchByKeyword(String userId, String keyword, Pageable pageable);
 }

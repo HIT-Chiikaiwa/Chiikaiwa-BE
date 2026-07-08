@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -30,4 +31,16 @@ public interface MessageRepository extends JpaRepository<Message, String> {
             "LEFT JOIN FETCH m.conversation " +
             "WHERE m.id = ?1")
     Optional<Message> findByIdWithDetails(String messageId);
+
+    @Query("SELECT m FROM Message m WHERE m.conversation.id = ?1 " +
+            "AND m.id NOT IN (SELECT md.message.id FROM MessageDeletion md WHERE md.user.id = ?2) " +
+            "AND m.isRecalled = false " +
+            "AND LOWER(m.content) LIKE LOWER(CONCAT('%', ?3, '%')) " +
+            "ORDER BY m.createdDate DESC")
+    Page<Message> searchMessages(String conversationId, String userId, String keyword, Pageable pageable);
+
+    @Query("SELECT m FROM Message m WHERE m.conversation.id = ?1 " +
+            "AND m.isPinned = true " +
+            "ORDER BY m.lastModifiedDate DESC")
+    List<Message> findPinnedMessages(String conversationId);
 }

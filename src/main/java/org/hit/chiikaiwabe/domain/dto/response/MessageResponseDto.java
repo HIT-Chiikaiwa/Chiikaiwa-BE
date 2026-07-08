@@ -14,4 +14,8 @@ public class MessageResponseDto {
     private Boolean isRecalled;
     private LocalDateTime createdDate;
     private List<FileAttachmentResponseDto> attachments;
+    private ReplyMessageDto replyToMessage;
+    private ReplyMessageDto forwardedFrom;
+    private Boolean isPinned;
+    private List<ReactionSummaryDto> reactions;
 }

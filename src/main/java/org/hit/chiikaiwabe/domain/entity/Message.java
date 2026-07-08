@@ -59,7 +59,7 @@ public class Message extends DateAuditing {
             foreignKey = @ForeignKey(name = "FK_MESSAGE_FORWARDED_FROM"))
     private Message forwardedFromMessage;
 
-    @Column(name = "is_pinned", nullable = false)
+    @Column(name = "is_pinned", columnDefinition = "BOOLEAN DEFAULT FALSE")
     @Builder.Default
     private Boolean isPinned = Boolean.FALSE;
 

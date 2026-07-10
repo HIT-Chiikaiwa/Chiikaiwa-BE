@@ -8,6 +8,7 @@ import org.hit.chiikaiwabe.security.UserPrincipal;
 import org.hit.chiikaiwabe.service.FileService;
 import org.hit.chiikaiwabe.service.MessageFeatureService;
 import org.hit.chiikaiwabe.constant.SuccessMessage;
+import org.hit.chiikaiwabe.constant.UrlConstant;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -24,34 +25,32 @@ public class ChatController {
     private final FileService fileService;
     private final MessageFeatureService messageFeatureService;
 
-    @PostMapping(value = "/chat/conversations/{id}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = UrlConstant.Chat.CONVERSATIONS + UrlConstant.Chat.UPLOAD, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadFile(@PathVariable String id,
                                         @RequestParam("file") MultipartFile file,
                                         @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
         messageFeatureService.validateConversationAccess(principal.getId(), id);
         messageFeatureService.validateNotBlockedInDirectConversation(principal.getId(), id);
-        // Upload file lên Cloudinary
         String fileUrl = fileService.uploadFile(file);
-        // Tạo Message với type FILE để lưu vào cuộc hội thoại và broadcast
         return VsResponseUtil.success(
                 messageFeatureService.createFileMessage(principal.getId(), id, fileUrl, file.getOriginalFilename()));
     }
 
-    @DeleteMapping("/chat/messages/{msgId}")
+    @DeleteMapping(UrlConstant.Chat.DELETE_MESSAGE)
     public ResponseEntity<?> deleteMessageForMe(@PathVariable String msgId,
                                                 @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
         messageFeatureService.deleteMessageForMe(principal.getId(), msgId);
         return VsResponseUtil.success(SuccessMessage.Chat.MESSAGE_DELETED_SUCCESS);
     }
 
-    @PutMapping("/chat/messages/{msgId}/recall")
+    @PutMapping(UrlConstant.Chat.RECALL_MESSAGE)
     public ResponseEntity<?> recallMessage(@PathVariable String msgId,
                                            @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
         messageFeatureService.recallMessage(principal.getId(), msgId);
         return VsResponseUtil.success(SuccessMessage.Chat.MESSAGE_RECALLED_SUCCESS);
     }
 
-    @PostMapping("/chat/conversations/{id}/schedule-invite")
+    @PostMapping(UrlConstant.Chat.CONVERSATIONS + UrlConstant.Chat.SCHEDULE_INVITE)
     public ResponseEntity<?> createScheduleInvite(@PathVariable String id,
                                                   @RequestBody @Valid ScheduleInviteRequestDto requestDto,
                                                   @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {

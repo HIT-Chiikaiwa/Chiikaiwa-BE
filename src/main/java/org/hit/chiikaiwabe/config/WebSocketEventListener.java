@@ -1,6 +1,5 @@
 package org.hit.chiikaiwabe.config;
 
-import com.google.firebase.messaging.Message;
 import lombok.RequiredArgsConstructor;
 import org.hit.chiikaiwabe.service.OnlineStatusService;
 import org.springframework.context.event.EventListener;

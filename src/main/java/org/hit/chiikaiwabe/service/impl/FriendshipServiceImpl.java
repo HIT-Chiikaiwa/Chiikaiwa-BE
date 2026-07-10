@@ -12,7 +12,7 @@ import org.hit.chiikaiwabe.exception.InvalidException;
 import org.hit.chiikaiwabe.exception.NotFoundException;
 import org.hit.chiikaiwabe.repository.FriendshipRepository;
 import org.hit.chiikaiwabe.repository.UserRepository;
-import org.hit.chiikaiwabe.service.BlockReportService;
+import org.hit.chiikaiwabe.service.UserBlockService;
 import org.hit.chiikaiwabe.service.FriendshipService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class FriendshipServiceImpl implements FriendshipService {
 
     private final FriendshipRepository friendshipRepository;
     private final UserRepository userRepository;
-    private final BlockReportService blockReportService;
+    private final UserBlockService userBlockService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
@@ -47,7 +47,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         User receiver = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{targetUserId}));
 
-        if (blockReportService.isBlocked(userId, targetUserId)) {
+        if (userBlockService.isBlocked(userId, targetUserId)) {
             throw new InvalidException(ErrorMessage.Chat.ERR_USER_BLOCKED);
         }
 
@@ -165,7 +165,6 @@ public class FriendshipServiceImpl implements FriendshipService {
         User foundUser = userRepository.findByPhoneNumber(phone)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Friendship.ERR_USER_NOT_FOUND_PHONE));
 
-        // Xác định trạng thái quan hệ
         String friendshipStatus = "STRANGER";
         Optional<Friendship> friendship = friendshipRepository.findFriendshipBetween(userId, foundUser.getId());
         if (friendship.isPresent()) {
@@ -193,10 +192,8 @@ public class FriendshipServiceImpl implements FriendshipService {
                 .build();
     }
 
-    // ========================= PRIVATE HELPERS =========================
 
     private FriendshipResponseDto mapToFriendshipResponse(Friendship f, String currentUserId) {
-        // Xác định "người kia" (không phải mình)
         User otherUser = f.getRequester().getId().equals(currentUserId)
                 ? f.getReceiver() : f.getRequester();
 

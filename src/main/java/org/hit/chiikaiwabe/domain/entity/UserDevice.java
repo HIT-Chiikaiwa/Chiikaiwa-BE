@@ -1,10 +1,8 @@
 package org.hit.chiikaiwabe.domain.entity;
 
 import jakarta.persistence.*;
-import kotlin.jvm.JvmPackageName;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Nationalized;
 import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
 import org.hit.chiikaiwabe.domain.enums.DeviceType;
 

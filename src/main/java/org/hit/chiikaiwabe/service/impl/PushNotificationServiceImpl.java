@@ -27,31 +27,47 @@ public class PushNotificationServiceImpl implements PushNotificationService {
     @Transactional
     public void sendPushNotification(String userID, String title, String body) {
         List<UserDevice> devices = userDeviceRepository.findByUserIdAndIsActiveTrue(userID);
-        if(devices.isEmpty()) return;
+        if (devices.isEmpty()) return;
 
-        List<UserDevice> errorDevices = new ArrayList<>();
+        List<String> tokens = devices.stream()
+                .map(UserDevice::getFcmToken)
+                .toList();
 
-        for(UserDevice d : devices){
-            try{
-                Message message = Message.builder()
-                        .setToken(d.getFcmToken())
-                        .setNotification(Notification.builder()
-                                .setTitle(title)
-                                .setBody(body)
-                                .build())
-                        .build();
-                FirebaseMessaging.getInstance().send(message);
-            } catch (FirebaseMessagingException e) {
-                String errorCode = e.getMessagingErrorCode().name();
-                if(MessagingErrorCode.UNREGISTERED.name().equals(errorCode)
-                        || MessagingErrorCode.INVALID_ARGUMENT.name().equals(errorCode)){
-                    d.setIsActive(false);
-                    errorDevices.add(d);
+        MulticastMessage message = MulticastMessage.builder()
+                .addAllTokens(tokens)
+                .setNotification(Notification.builder()
+                        .setTitle(title)
+                        .setBody(body)
+                        .build())
+                .build();
+
+        try {
+            BatchResponse response = FirebaseMessaging.getInstance().sendEachForMulticast(message);
+
+            if (response.getFailureCount() > 0) {
+                List<UserDevice> errorDevices = new ArrayList<>();
+                List<SendResponse> responses = response.getResponses();
+
+                for (int i = 0; i < responses.size(); i++) {
+                    if (!responses.get(i).isSuccessful()) {
+                        FirebaseMessagingException e = responses.get(i).getException();
+                        MessagingErrorCode errorCode = e.getMessagingErrorCode();
+
+                        if (errorCode == MessagingErrorCode.UNREGISTERED
+                                || errorCode == MessagingErrorCode.INVALID_ARGUMENT) {
+                            UserDevice d = devices.get(i);
+                            d.setIsActive(false);
+                            errorDevices.add(d);
+                        }
+                    }
+                }
+
+                if (!errorDevices.isEmpty()) {
+                    userDeviceRepository.saveAll(errorDevices);
                 }
             }
-        }
-        if(!errorDevices.isEmpty()){
-            userDeviceRepository.saveAll(errorDevices);
+        } catch (FirebaseMessagingException e) {
+            e.printStackTrace();
         }
     }
 

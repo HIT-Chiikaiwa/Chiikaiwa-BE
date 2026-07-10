@@ -63,4 +63,13 @@ public class Message extends DateAuditing {
     @Builder.Default
     private Boolean isPinned = Boolean.FALSE;
 
+    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<MessageAttachment> attachments = new java.util.ArrayList<>();
+
+    public void addAttachment(MessageAttachment attachment) {
+        attachments.add(attachment);
+        attachment.setMessage(this);
+    }
+
 }

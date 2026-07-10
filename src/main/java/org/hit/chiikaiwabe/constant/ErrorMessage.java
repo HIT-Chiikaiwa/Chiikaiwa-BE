@@ -100,9 +100,9 @@ public class ErrorMessage {
     public static final String ERR_BLOCKED = "exception.chat.user.blocked";
     public static final String ERR_CANNOT_BLOCK_YOURSELF = "exception.chat.cannot.block.yourself";
     public static final String ERR_CANNOT_REPORT_YOURSELF = "cannot.report.yourself";
-    public static final String ERR_NOT_AUTHOR = "exception.chat.not.sender";
-    public static final String ERR_CANNOT_RECALL_AFTER_30_MINS = "exception.chat.recall.timeout";
-    public static final String ERR_NOT_IN_CONVERSATION = "exception.chat.not.member";
+    public static final String ERR_NOT_AUTHOR = "exception.chat.not_author";
+    public static final String ERR_CANNOT_RECALL_AFTER_30_MINS = "exception.chat.cannot_recall_after_30_mins";
+    public static final String ERR_NOT_IN_CONVERSATION = "exception.chat.not_in_conversation";
     public static final String ERR_MESSAGE_ALREADY_RECALLED = "exception.chat.message.already.recalled";
     // New features
     public static final String ERR_NOT_OWNER = "exception.chat.not.owner";

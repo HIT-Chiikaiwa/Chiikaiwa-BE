@@ -2,7 +2,7 @@ package org.hit.chiikaiwabe.service.impl;
 
 import org.hit.chiikaiwabe.domain.entity.User;
 import org.hit.chiikaiwabe.domain.entity.UserBlock;
-import org.hit.chiikaiwabe.exception.NotFoundException;
+
 import org.hit.chiikaiwabe.constant.ErrorMessage;
 import org.hit.chiikaiwabe.repository.UserBlockRepository;
 import org.hit.chiikaiwabe.repository.UserRepository;
@@ -36,10 +36,8 @@ public class UserBlockServiceImpl implements UserBlockService {
             return;
         }
 
-        User blocker = userRepository.findById(blockerId)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
-        User blocked = userRepository.findById(blockedId)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
+        User blocker = userRepository.getReferenceById(blockerId);
+        User blocked = userRepository.getReferenceById(blockedId);
 
         UserBlock userBlock = UserBlock.builder()
                 .blocker(blocker)
@@ -65,6 +63,6 @@ public class UserBlockServiceImpl implements UserBlockService {
 
     public boolean isBlocked(String userA, String userB) {
         return userBlockRepository.existsByBlockerIdAndBlockedId(userA, userB) ||
-               userBlockRepository.existsByBlockerIdAndBlockedId(userB, userA);
+                userBlockRepository.existsByBlockerIdAndBlockedId(userB, userA);
     }
 }

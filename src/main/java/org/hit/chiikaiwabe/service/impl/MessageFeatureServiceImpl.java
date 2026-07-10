@@ -27,6 +27,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @Transactional
@@ -40,6 +41,7 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
     private final SimpMessagingTemplate messagingTemplate;
     private final MessageMapper messageMapper;
     private final UserBlockService userBlockService;
+    private final ObjectMapper objectMapper;
 
     public MessageFeatureServiceImpl(MessageRepository messageRepository,
                                      MessageDeletionRepository messageDeletionRepository,
@@ -48,7 +50,8 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
                                      ConversationMemberRepository conversationMemberRepository,
                                      SimpMessagingTemplate messagingTemplate,
                                      MessageMapper messageMapper,
-                                     UserBlockService userBlockService) {
+                                     UserBlockService userBlockService,
+                                     ObjectMapper objectMapper) {
         this.messageRepository = messageRepository;
         this.messageDeletionRepository = messageDeletionRepository;
         this.userRepository = userRepository;
@@ -57,6 +60,7 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
         this.messagingTemplate = messagingTemplate;
         this.messageMapper = messageMapper;
         this.userBlockService = userBlockService;
+        this.objectMapper = objectMapper;
     }
 
     public void validateConversationAccess(String userId, String conversationId) {
@@ -143,12 +147,19 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Chat.ERR_CONVERSATION_NOT_FOUND));
 
-        String content = String.format("{\"subject\":\"%s\",\"location\":\"%s\",\"scheduledAt\":\"%s\",\"duration\":%s,\"note\":\"%s\"}",
-                requestDto.getSubject(),
-                requestDto.getLocation() != null ? requestDto.getLocation() : "",
-                requestDto.getScheduledAt().toString(),
-                requestDto.getDuration() != null ? requestDto.getDuration() : 0,
-                requestDto.getNote() != null ? requestDto.getNote() : "");
+        java.util.Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("subject", requestDto.getSubject());
+        payload.put("location", requestDto.getLocation() != null ? requestDto.getLocation() : "");
+        payload.put("scheduledAt", requestDto.getScheduledAt() != null ? requestDto.getScheduledAt().toString() : "");
+        payload.put("duration", requestDto.getDuration() != null ? requestDto.getDuration() : 0);
+        payload.put("note", requestDto.getNote() != null ? requestDto.getNote() : "");
+
+        String content;
+        try {
+            content = objectMapper.writeValueAsString(payload);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new RuntimeException("Failed to format schedule invite content", e);
+        }
 
         Message message = Message.builder()
                 .conversation(conversation)
@@ -187,9 +198,17 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
         Message message = Message.builder()
                 .conversation(conversation)
                 .sender(sender)
-                .content(fileUrl) // Store URL as content or you could use attachments mapping
+                .content("") // Clear content since this is a file message
                 .messageType(MessageType.FILE)
                 .build();
+
+        org.hit.chiikaiwabe.domain.entity.MessageAttachment attachment = org.hit.chiikaiwabe.domain.entity.MessageAttachment.builder()
+                .fileUrl(fileUrl)
+                .fileName(fileName)
+                .fileType("FILE")
+                .build();
+
+        message.addAttachment(attachment);
 
         message = messageRepository.save(message);
 

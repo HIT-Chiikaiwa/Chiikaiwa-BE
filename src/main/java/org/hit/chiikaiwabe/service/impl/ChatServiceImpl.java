@@ -12,7 +12,7 @@ import org.hit.chiikaiwabe.exception.ForbiddenException;
 import org.hit.chiikaiwabe.exception.InvalidException;
 import org.hit.chiikaiwabe.exception.NotFoundException;
 import org.hit.chiikaiwabe.repository.*;
-import org.hit.chiikaiwabe.service.BlockReportService;
+import org.hit.chiikaiwabe.service.UserBlockService;
 import org.hit.chiikaiwabe.service.ChatService;
 import org.hit.chiikaiwabe.service.OnlineStatusService;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +42,7 @@ public class ChatServiceImpl implements ChatService {
     private final ConversationMemberRepository memberRepository;
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
-    private final BlockReportService blockReportService;
+    private final UserBlockService userBlockService;
     private final SimpMessagingTemplate messagingTemplate;
     private final OnlineStatusService onlineStatusService;
 
@@ -197,7 +197,7 @@ public class ChatServiceImpl implements ChatService {
         User currentUser = findUserById(userId);
         User targetUser = findUserById(dto.getTargetUserId());
 
-        if (blockReportService.isBlocked(userId, dto.getTargetUserId())) {
+        if (userBlockService.isBlocked(userId, dto.getTargetUserId())) {
             throw new ForbiddenException(ErrorMessage.Chat.ERR_USER_BLOCKED);
         }
 
@@ -275,7 +275,7 @@ public class ChatServiceImpl implements ChatService {
         if (conversation.getType() == ConversationType.DIRECT) {
             List<String> memberIds = memberRepository.findActiveUserIds(dto.getConversationId());
             for (String memberId : memberIds) {
-                if (!memberId.equals(senderId) && blockReportService.isBlocked(senderId, memberId)) {
+                if (!memberId.equals(senderId) && userBlockService.isBlocked(senderId, memberId)) {
                     throw new ForbiddenException(ErrorMessage.Chat.ERR_USER_BLOCKED);
                 }
             }
@@ -295,7 +295,6 @@ public class ChatServiceImpl implements ChatService {
         MessageResponseDto responseDto = toMessageResponseDto(message);
         broadcastToConversation(dto.getConversationId(), responseDto);
 
-        // Increment unread count for other active members
         List<String> activeMemberIds = memberRepository.findActiveUserIds(dto.getConversationId());
         for (String activeMemberId : activeMemberIds) {
             if (!activeMemberId.equals(senderId)) {
@@ -471,8 +470,6 @@ public class ChatServiceImpl implements ChatService {
     }
 
 
-    // ========================= NEW FEATURES =========================
-
     @Override
     @Transactional(readOnly = true)
     public Page<ConversationResponseDto> searchConversations(String userId, String keyword, Pageable pageable) {
@@ -586,7 +583,6 @@ public class ChatServiceImpl implements ChatService {
         MessageResponseDto responseDto = toMessageResponseDto(replyMessage);
         broadcastToConversation(conversationId, responseDto);
 
-        // Increment unread count
         List<String> activeMemberIds = memberRepository.findActiveUserIds(conversationId);
         for (String memberId : activeMemberIds) {
             if (!memberId.equals(senderId)) {
@@ -627,7 +623,6 @@ public class ChatServiceImpl implements ChatService {
         MessageResponseDto responseDto = toMessageResponseDto(forwardedMessage);
         broadcastToConversation(targetConversationId, responseDto);
 
-        // Increment unread count
         List<String> activeMemberIds = memberRepository.findActiveUserIds(targetConversationId);
         for (String memberId : activeMemberIds) {
             if (!memberId.equals(senderId)) {
@@ -652,7 +647,6 @@ public class ChatServiceImpl implements ChatService {
             throw new ForbiddenException(ErrorMessage.Chat.ERR_NOT_OWNER);
         }
 
-        // Đánh dấu tất cả member đã rời
         List<ConversationMember> activeMembers = memberRepository.findActiveMembers(conversationId);
         LocalDateTime now = LocalDateTime.now();
         for (ConversationMember member : activeMembers) {
@@ -689,7 +683,6 @@ public class ChatServiceImpl implements ChatService {
 
         ConversationMember newOwner = findActiveMember(conversationId, newOwnerId);
 
-        // Chuyển quyền
         currentOwner.setRole(MemberRole.MEMBER);
         newOwner.setRole(MemberRole.OWNER);
         memberRepository.save(currentOwner);

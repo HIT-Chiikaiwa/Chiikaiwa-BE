@@ -108,7 +108,6 @@ public class ChatRestController {
                 new CommonResponseDto(true, SuccessMessage.Chat.MEMBER_REMOVED));
     }
 
-    // ========================= NEW FEATURES =========================
 
     @Tag(name = "chat-controller")
     @Operation(summary = "Search conversations by keyword (group name or user name)")

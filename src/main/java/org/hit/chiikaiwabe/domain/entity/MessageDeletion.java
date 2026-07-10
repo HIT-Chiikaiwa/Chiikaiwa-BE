@@ -31,7 +31,8 @@ public class MessageDeletion {
             foreignKey = @ForeignKey(name = "FK_DELETION_USER"))
     private User user;
 
-    @Column(name = "deleted_at", nullable = false)
-    private LocalDateTime deletedAt;
+    @Builder.Default
+    @Column(name = "deleted_at", nullable = false, updatable = false)
+    private LocalDateTime deletedAt = LocalDateTime.now();
 
 }

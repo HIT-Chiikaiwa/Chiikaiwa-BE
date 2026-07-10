@@ -7,6 +7,7 @@ import org.hit.chiikaiwabe.security.CurrentUser;
 import org.hit.chiikaiwabe.security.UserPrincipal;
 import org.hit.chiikaiwabe.service.ReportService;
 import org.hit.chiikaiwabe.constant.SuccessMessage;
+import org.hit.chiikaiwabe.constant.UrlConstant;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ public class ReportController {
 
     private final ReportService reportService;
 
-    @PostMapping("/reports")
+    @PostMapping(UrlConstant.BlockReport.REPORT)
     public ResponseEntity<?> createReport(@RequestBody @Valid ReportRequestDto requestDto,
                                           @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
         reportService.createReport(principal.getId(), requestDto);

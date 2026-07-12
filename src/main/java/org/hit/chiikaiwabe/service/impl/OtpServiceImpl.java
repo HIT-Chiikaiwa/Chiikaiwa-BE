@@ -8,6 +8,7 @@ import org.hit.chiikaiwabe.exception.InvalidException;
 import org.hit.chiikaiwabe.service.OtpService;
 import org.hit.chiikaiwabe.util.SendMailUtil;
 import org.springframework.context.MessageSource;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ public class OtpServiceImpl implements OtpService {
         return otpCode;
     }
 
+    @Async("notificationExecutor")
     @Override
     public void sendOtp(String email, String otpCode) {
         try {
@@ -52,9 +54,9 @@ public class OtpServiceImpl implements OtpService {
             dataMail.setProperties(properties);
 
             sendMailUtil.sendEmailWithHTML(dataMail, "otp-template");
+            log.info("OTP email sent successfully to {}", email);
         } catch (Exception e) {
             log.error("Failed to send OTP email to {}: {}", email, e.getMessage(), e);
-            throw new InvalidException(ErrorMessage.Mail.ERR_SEND_MAIL_FAILED);
         }
     }
 

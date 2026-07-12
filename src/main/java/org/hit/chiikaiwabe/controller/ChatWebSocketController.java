@@ -1,7 +1,7 @@
 package org.hit.chiikaiwabe.controller;
 
 import org.hit.chiikaiwabe.domain.dto.request.SendMessageRequestDto;
-import org.hit.chiikaiwabe.service.ChatService;
+import org.hit.chiikaiwabe.service.MessageActionService;
 import org.hit.chiikaiwabe.service.OnlineStatusService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,21 +16,21 @@ import java.security.Principal;
 @Controller
 public class ChatWebSocketController {
 
-    private final ChatService chatService;
+    private final MessageActionService messageActionService;
     private final OnlineStatusService onlineStatusService;
 
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload SendMessageRequestDto dto, Principal principal) {
         String senderId = principal.getName();
         log.info("WebSocket message from user {} to conversation {}", senderId, dto.getConversationId());
-        chatService.sendMessage(senderId, dto);
+        messageActionService.sendMessage(senderId, dto);
     }
 
     @MessageMapping("/chat.read")
     public void markAsRead(@Payload java.util.Map<String, String> payload, Principal principal) {
         String userId = principal.getName();
         String conversationId = payload.get("conversationId");
-        chatService.markAsRead(conversationId, userId);
+        messageActionService.markAsRead(conversationId, userId);
     }
 
     @MessageMapping("/chat.typing")

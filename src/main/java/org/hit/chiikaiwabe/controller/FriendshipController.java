@@ -34,8 +34,8 @@ public class FriendshipController {
     public ResponseEntity<RestData<CommonResponseDto>> sendFriendRequest(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @PathVariable String targetUserId) {
-        return VsResponseUtil.success(HttpStatus.CREATED,
-                friendshipService.sendFriendRequest(principal.getId(), targetUserId));
+        friendshipService.sendFriendRequest(principal.getId(), targetUserId);
+        return VsResponseUtil.success(HttpStatus.CREATED, new CommonResponseDto(true, org.hit.chiikaiwabe.constant.SuccessMessage.Friendship.REQUEST_SENT));
     }
 
     @Tag(name = "friendship-controller")
@@ -44,8 +44,8 @@ public class FriendshipController {
     public ResponseEntity<RestData<CommonResponseDto>> acceptFriendRequest(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @PathVariable String requestId) {
-        return VsResponseUtil.success(
-                friendshipService.acceptFriendRequest(principal.getId(), requestId));
+        friendshipService.acceptFriendRequest(principal.getId(), requestId);
+        return VsResponseUtil.success(new CommonResponseDto(true, org.hit.chiikaiwabe.constant.SuccessMessage.Friendship.REQUEST_ACCEPTED));
     }
 
     @Tag(name = "friendship-controller")
@@ -54,8 +54,8 @@ public class FriendshipController {
     public ResponseEntity<RestData<CommonResponseDto>> rejectFriendRequest(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @PathVariable String requestId) {
-        return VsResponseUtil.success(
-                friendshipService.rejectFriendRequest(principal.getId(), requestId));
+        friendshipService.rejectFriendRequest(principal.getId(), requestId);
+        return VsResponseUtil.success(new CommonResponseDto(true, org.hit.chiikaiwabe.constant.SuccessMessage.Friendship.REQUEST_REJECTED));
     }
 
     @Tag(name = "friendship-controller")
@@ -64,8 +64,8 @@ public class FriendshipController {
     public ResponseEntity<RestData<CommonResponseDto>> unfriend(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @PathVariable String friendId) {
-        return VsResponseUtil.success(
-                friendshipService.unfriend(principal.getId(), friendId));
+        friendshipService.unfriend(principal.getId(), friendId);
+        return VsResponseUtil.success(new CommonResponseDto(true, org.hit.chiikaiwabe.constant.SuccessMessage.Friendship.UNFRIENDED));
     }
 
     @Tag(name = "friendship-controller")

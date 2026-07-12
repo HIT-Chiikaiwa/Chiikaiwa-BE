@@ -7,7 +7,9 @@ import org.hit.chiikaiwabe.constant.SuccessMessage;
 import org.hit.chiikaiwabe.constant.UrlConstant;
 import org.hit.chiikaiwabe.domain.dto.request.*;
 import org.hit.chiikaiwabe.domain.dto.response.*;
-import org.hit.chiikaiwabe.service.ChatService;
+import org.hit.chiikaiwabe.service.ConversationManagementService;
+import org.hit.chiikaiwabe.service.MessageActionService;
+import org.hit.chiikaiwabe.service.ChatQueryService;
 import org.hit.chiikaiwabe.service.MessageReactionService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,7 +31,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 @RestApiV1
 public class ChatRestController {
 
-    private final ChatService chatService;
+    private final ConversationManagementService conversationManagementService;
+    private final MessageActionService messageActionService;
+    private final ChatQueryService chatQueryService;
     private final MessageReactionService messageReactionService;
 
 
@@ -39,7 +43,7 @@ public class ChatRestController {
     public ResponseEntity<RestData<Page<ConversationResponseDto>>> getConversations(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @PageableDefault(size = 20) Pageable pageable) {
-        return VsResponseUtil.success(chatService.getConversations(principal.getId(), pageable));
+        return VsResponseUtil.success(chatQueryService.getConversations(principal.getId(), pageable));
     }
 
     @Tag(name = "chat-controller")
@@ -49,7 +53,7 @@ public class ChatRestController {
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @Valid @RequestBody CreateDirectConversationRequestDto dto) {
         return VsResponseUtil.success(HttpStatus.CREATED,
-                chatService.getOrCreateDirectConversation(principal.getId(), dto));
+                conversationManagementService.getOrCreateDirectConversation(principal.getId(), dto));
     }
 
     @Tag(name = "chat-controller")
@@ -59,7 +63,7 @@ public class ChatRestController {
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @Valid @RequestBody CreateGroupRequestDto dto) {
         return VsResponseUtil.success(HttpStatus.CREATED,
-                chatService.createGroup(principal.getId(), dto));
+                conversationManagementService.createGroup(principal.getId(), dto));
     }
 
 
@@ -70,7 +74,7 @@ public class ChatRestController {
             @PathVariable String id,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @PageableDefault(size = 20) Pageable pageable) {
-        return VsResponseUtil.success(chatService.getMessages(id, principal.getId(), pageable));
+        return VsResponseUtil.success(chatQueryService.getMessages(id, principal.getId(), pageable));
     }
 
 
@@ -81,7 +85,7 @@ public class ChatRestController {
             @PathVariable String id,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @Valid @RequestBody UpdateGroupRequestDto dto) {
-        return VsResponseUtil.success(chatService.updateGroup(principal.getId(), id, dto));
+        return VsResponseUtil.success(conversationManagementService.updateGroup(principal.getId(), id, dto));
     }
 
     @Tag(name = "chat-controller")
@@ -91,7 +95,7 @@ public class ChatRestController {
             @PathVariable String id,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @Valid @RequestBody AddMembersRequestDto dto) {
-        chatService.addMembers(principal.getId(), id, dto);
+        conversationManagementService.addMembers(principal.getId(), id, dto);
         return VsResponseUtil.success(HttpStatus.CREATED,
                 new CommonResponseDto(true, SuccessMessage.Chat.MEMBER_ADDED));
     }
@@ -103,7 +107,7 @@ public class ChatRestController {
             @PathVariable String id,
             @PathVariable String userId,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
-        chatService.removeMember(principal.getId(), id, userId);
+        conversationManagementService.removeMember(principal.getId(), id, userId);
         return VsResponseUtil.success(
                 new CommonResponseDto(true, SuccessMessage.Chat.MEMBER_REMOVED));
     }
@@ -117,7 +121,7 @@ public class ChatRestController {
             @RequestParam String keyword,
             @PageableDefault(size = 20) Pageable pageable) {
         return VsResponseUtil.success(
-                chatService.searchConversations(principal.getId(), keyword, pageable));
+                chatQueryService.searchConversations(principal.getId(), keyword, pageable));
     }
 
     @Tag(name = "chat-controller")
@@ -129,7 +133,7 @@ public class ChatRestController {
             @RequestParam String keyword,
             @PageableDefault(size = 20) Pageable pageable) {
         return VsResponseUtil.success(
-                chatService.searchMessages(id, principal.getId(), keyword, pageable));
+                chatQueryService.searchMessages(id, principal.getId(), keyword, pageable));
     }
 
     @Tag(name = "chat-controller")
@@ -138,7 +142,8 @@ public class ChatRestController {
     public ResponseEntity<RestData<CommonResponseDto>> pinMessage(
             @PathVariable String msgId,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
-        return VsResponseUtil.success(chatService.pinMessage(principal.getId(), msgId));
+        messageActionService.pinMessage(principal.getId(), msgId);
+        return VsResponseUtil.success(new CommonResponseDto(true, SuccessMessage.Chat.MESSAGE_PINNED));
     }
 
     @Tag(name = "chat-controller")
@@ -147,7 +152,8 @@ public class ChatRestController {
     public ResponseEntity<RestData<CommonResponseDto>> unpinMessage(
             @PathVariable String msgId,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
-        return VsResponseUtil.success(chatService.unpinMessage(principal.getId(), msgId));
+        messageActionService.unpinMessage(principal.getId(), msgId);
+        return VsResponseUtil.success(new CommonResponseDto(true, SuccessMessage.Chat.MESSAGE_UNPINNED));
     }
 
     @Tag(name = "chat-controller")
@@ -156,7 +162,7 @@ public class ChatRestController {
     public ResponseEntity<RestData<java.util.List<MessageResponseDto>>> getPinnedMessages(
             @PathVariable String id,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
-        return VsResponseUtil.success(chatService.getPinnedMessages(id, principal.getId()));
+        return VsResponseUtil.success(chatQueryService.getPinnedMessages(id, principal.getId()));
     }
 
     @Tag(name = "chat-controller")
@@ -167,7 +173,7 @@ public class ChatRestController {
             @RequestParam String content,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
         return VsResponseUtil.success(HttpStatus.CREATED,
-                chatService.replyToMessage(principal.getId(), msgId, content));
+                messageActionService.replyToMessage(principal.getId(), msgId, content));
     }
 
     @Tag(name = "chat-controller")
@@ -178,7 +184,7 @@ public class ChatRestController {
             @RequestParam String targetConversationId,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
         return VsResponseUtil.success(HttpStatus.CREATED,
-                chatService.forwardMessage(principal.getId(), msgId, targetConversationId));
+                messageActionService.forwardMessage(principal.getId(), msgId, targetConversationId));
     }
 
     @Tag(name = "chat-controller")
@@ -188,8 +194,8 @@ public class ChatRestController {
             @PathVariable String msgId,
             @RequestParam String emoji,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
-        return VsResponseUtil.success(
-                messageReactionService.addReaction(principal.getId(), msgId, emoji));
+        messageReactionService.addReaction(principal.getId(), msgId, emoji);
+        return VsResponseUtil.success(new CommonResponseDto(true, SuccessMessage.Chat.REACTION_ADDED));
     }
 
     @Tag(name = "chat-controller")
@@ -198,8 +204,8 @@ public class ChatRestController {
     public ResponseEntity<RestData<CommonResponseDto>> removeReaction(
             @PathVariable String msgId,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
-        return VsResponseUtil.success(
-                messageReactionService.removeReaction(principal.getId(), msgId));
+        messageReactionService.removeReaction(principal.getId(), msgId);
+        return VsResponseUtil.success(new CommonResponseDto(true, SuccessMessage.Chat.REACTION_REMOVED));
     }
 
     @Tag(name = "chat-controller")
@@ -208,7 +214,8 @@ public class ChatRestController {
     public ResponseEntity<RestData<CommonResponseDto>> dissolveGroup(
             @PathVariable String id,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
-        return VsResponseUtil.success(chatService.dissolveGroup(principal.getId(), id));
+        conversationManagementService.dissolveGroup(principal.getId(), id);
+        return VsResponseUtil.success(new CommonResponseDto(true, SuccessMessage.Chat.GROUP_DISSOLVED));
     }
 
     @Tag(name = "chat-controller")
@@ -218,7 +225,7 @@ public class ChatRestController {
             @PathVariable String id,
             @RequestParam String newOwnerId,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
-        return VsResponseUtil.success(
-                chatService.transferOwnership(principal.getId(), id, newOwnerId));
+        conversationManagementService.transferOwnership(principal.getId(), id, newOwnerId);
+        return VsResponseUtil.success(new CommonResponseDto(true, SuccessMessage.Chat.OWNERSHIP_TRANSFERRED));
     }
 }

@@ -18,10 +18,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -33,11 +35,14 @@ public class FriendshipServiceImpl implements FriendshipService {
     private final FriendshipRepository friendshipRepository;
     private final UserRepository userRepository;
     private final UserBlockService userBlockService;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
+
+    private static final String FRIENDSHIP_CHANNEL = "friendship:notify";
 
     @Override
     @Transactional
-    public CommonResponseDto sendFriendRequest(String userId, String targetUserId) {
+    public void sendFriendRequest(String userId, String targetUserId) {
         if (userId.equals(targetUserId)) {
             throw new InvalidException(ErrorMessage.Friendship.ERR_SELF_REQUEST);
         }
@@ -76,12 +81,11 @@ public class FriendshipServiceImpl implements FriendshipService {
         notifyFriendRequest(targetUserId, requester);
 
         log.info("Friend request sent from {} to {}", userId, targetUserId);
-        return new CommonResponseDto(true, SuccessMessage.Friendship.REQUEST_SENT);
     }
 
     @Override
     @Transactional
-    public CommonResponseDto acceptFriendRequest(String userId, String requestId) {
+    public void acceptFriendRequest(String userId, String requestId) {
         Friendship friendship = friendshipRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Friendship.ERR_REQUEST_NOT_FOUND));
 
@@ -93,25 +97,20 @@ public class FriendshipServiceImpl implements FriendshipService {
         friendshipRepository.save(friendship);
 
         User accepter = friendship.getReceiver();
-        messagingTemplate.convertAndSendToUser(
-                friendship.getRequester().getId(),
-                "/queue/friendship",
-                Map.of(
-                        "type", "FRIEND_REQUEST_ACCEPTED",
-                        "userId", accepter.getId(),
-                        "firstName", accepter.getFirstName(),
-                        "lastName", accepter.getLastName(),
-                        "avatar", accepter.getAvatar() != null ? accepter.getAvatar() : ""
-                )
-        );
+        publishFriendshipEvent(friendship.getRequester().getId(), Map.of(
+                "type", "FRIEND_REQUEST_ACCEPTED",
+                "userId", accepter.getId(),
+                "firstName", accepter.getFirstName(),
+                "lastName", accepter.getLastName(),
+                "avatar", accepter.getAvatar() != null ? accepter.getAvatar() : ""
+        ));
 
         log.info("Friend request {} accepted by {}", requestId, userId);
-        return new CommonResponseDto(true, SuccessMessage.Friendship.REQUEST_ACCEPTED);
     }
 
     @Override
     @Transactional
-    public CommonResponseDto rejectFriendRequest(String userId, String requestId) {
+    public void rejectFriendRequest(String userId, String requestId) {
         Friendship friendship = friendshipRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Friendship.ERR_REQUEST_NOT_FOUND));
 
@@ -123,12 +122,11 @@ public class FriendshipServiceImpl implements FriendshipService {
         friendshipRepository.save(friendship);
 
         log.info("Friend request {} rejected by {}", requestId, userId);
-        return new CommonResponseDto(true, SuccessMessage.Friendship.REQUEST_REJECTED);
     }
 
     @Override
     @Transactional
-    public CommonResponseDto unfriend(String userId, String friendId) {
+    public void unfriend(String userId, String friendId) {
         Friendship friendship = friendshipRepository.findFriendshipBetween(userId, friendId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Friendship.ERR_NOT_FRIENDS));
 
@@ -139,7 +137,6 @@ public class FriendshipServiceImpl implements FriendshipService {
         friendshipRepository.delete(friendship);
 
         log.info("User {} unfriended {}", userId, friendId);
-        return new CommonResponseDto(true, SuccessMessage.Friendship.UNFRIENDED);
     }
 
     @Override
@@ -210,17 +207,24 @@ public class FriendshipServiceImpl implements FriendshipService {
     }
 
     private void notifyFriendRequest(String receiverUserId, User requester) {
-        messagingTemplate.convertAndSendToUser(
-                receiverUserId,
-                "/queue/friendship",
-                Map.of(
-                        "type", "FRIEND_REQUEST_RECEIVED",
-                        "userId", requester.getId(),
-                        "firstName", requester.getFirstName(),
-                        "lastName", requester.getLastName(),
-                        "avatar", requester.getAvatar() != null ? requester.getAvatar() : ""
-                )
-        );
+        publishFriendshipEvent(receiverUserId, Map.of(
+                "type", "FRIEND_REQUEST_RECEIVED",
+                "userId", requester.getId(),
+                "firstName", requester.getFirstName(),
+                "lastName", requester.getLastName(),
+                "avatar", requester.getAvatar() != null ? requester.getAvatar() : ""
+        ));
+    }
+
+    private void publishFriendshipEvent(String receiverUserId, Map<String, String> payload) {
+        try {
+            Map<String, Object> event = new HashMap<>();
+            event.put("receiverUserId", receiverUserId);
+            event.put("payload", payload);
+            redisTemplate.convertAndSend(FRIENDSHIP_CHANNEL, objectMapper.writeValueAsString(event));
+        } catch (Exception e) {
+            log.error("Failed to publish friendship event to user {}: {}", receiverUserId, e.getMessage(), e);
+        }
     }
 
 }

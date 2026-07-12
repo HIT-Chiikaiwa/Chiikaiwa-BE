@@ -24,7 +24,9 @@ public class UrlConstant {
     private static final String PRE_FIX = "/user";
     public static final String GET_USERS = PRE_FIX;
     public static final String GET_USER = PRE_FIX + "/{userId}";
+    public static final String GET_USER_ONLINE = GET_USER + "/online-status";
     public static final String GET_CURRENT_USER = PRE_FIX + "/current";
+
 
     private User() {
     }
@@ -59,6 +61,72 @@ public class UrlConstant {
     public static final String RADAR = PRE_FIX + "/radar";
 
     private Location() {
+    }
+  }
+
+  public static class Chat {
+    private static final String PRE_FIX = "/chat";
+    public static final String CONVERSATIONS = PRE_FIX + "/conversations";
+    public static final String DIRECT = CONVERSATIONS + "/direct";
+    public static final String GROUP = CONVERSATIONS + "/group";
+    public static final String MESSAGES = "/{id}/messages";
+    public static final String UPLOAD = "/{id}/upload";
+    public static final String SCHEDULE_INVITE = "/{id}/schedule-invite";
+    public static final String MEMBERS = "/{id}/members";
+    public static final String MEMBER_DETAIL = "/{id}/members/{userId}";
+
+    public static final String SEARCH_CONVERSATIONS = PRE_FIX + "/conversations/search";
+    public static final String SEARCH_MESSAGES = CONVERSATIONS + "/{id}/messages/search";
+    public static final String PIN_MESSAGE = PRE_FIX + "/messages/{msgId}/pin";
+    public static final String UNPIN_MESSAGE = PRE_FIX + "/messages/{msgId}/unpin";
+    public static final String PINNED_MESSAGES = CONVERSATIONS + "/{id}/pinned";
+    public static final String REPLY_MESSAGE = PRE_FIX + "/messages/{msgId}/reply";
+    public static final String FORWARD_MESSAGE = PRE_FIX + "/messages/{msgId}/forward";
+    public static final String MESSAGE_REACTIONS = PRE_FIX + "/messages/{msgId}/reactions";
+    public static final String DELETE_MESSAGE = PRE_FIX + "/messages/{msgId}";
+    public static final String RECALL_MESSAGE = PRE_FIX + "/messages/{msgId}/recall";
+    public static final String DISSOLVE_GROUP = CONVERSATIONS + "/{id}/dissolve";
+    public static final String TRANSFER_OWNERSHIP = CONVERSATIONS + "/{id}/transfer-ownership";
+
+    private Chat() {
+    }
+  }
+
+  public static class BlockReport {
+    public static final String BLOCK = "/users/block/{userId}";
+    public static final String BLOCKED_LIST = "/users/blocked";
+    public static final String REPORT = "/reports";
+
+    private BlockReport() {
+    }
+  }
+
+  public static class Device {
+    public static final String DEVICES = "/devices";
+    public static final String UPDATE_DEVICE = DEVICES;
+
+    private Device() {
+    }
+  }
+
+  public static class Friendship {
+    private static final String PRE_FIX = "/friends";
+    public static final String FRIENDS_LIST = PRE_FIX;
+    public static final String SEND_REQUEST = PRE_FIX + "/request/{targetUserId}";
+    public static final String ACCEPT_REQUEST = PRE_FIX + "/request/{requestId}/accept";
+    public static final String REJECT_REQUEST = PRE_FIX + "/request/{requestId}/reject";
+    public static final String UNFRIEND = PRE_FIX + "/{friendId}";
+    public static final String PENDING_REQUESTS = PRE_FIX + "/requests/pending";
+    public static final String SEARCH_FRIENDS = PRE_FIX + "/search";
+
+    private Friendship() {
+    }
+  }
+
+  public static class UserSearch {
+    public static final String SEARCH_BY_PHONE = "/users/search/phone";
+
+    private UserSearch() {
     }
   }
 

@@ -18,12 +18,10 @@ import org.hit.chiikaiwabe.repository.MessageDeletionRepository;
 import org.hit.chiikaiwabe.repository.MessageRepository;
 import org.hit.chiikaiwabe.repository.UserRepository;
 import org.hit.chiikaiwabe.service.MessageFeatureService;
+import org.hit.chiikaiwabe.service.ChatNotificationService;
 import org.hit.chiikaiwabe.service.UserBlockService;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -38,29 +36,29 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
     private final UserRepository userRepository;
     private final ConversationRepository conversationRepository;
     private final ConversationMemberRepository conversationMemberRepository;
-    private final SimpMessagingTemplate messagingTemplate;
     private final MessageMapper messageMapper;
     private final UserBlockService userBlockService;
     private final ObjectMapper objectMapper;
+    private final ChatNotificationService chatNotificationService;
 
     public MessageFeatureServiceImpl(MessageRepository messageRepository,
                                      MessageDeletionRepository messageDeletionRepository,
                                      UserRepository userRepository,
                                      ConversationRepository conversationRepository,
                                      ConversationMemberRepository conversationMemberRepository,
-                                     SimpMessagingTemplate messagingTemplate,
                                      MessageMapper messageMapper,
                                      UserBlockService userBlockService,
-                                     ObjectMapper objectMapper) {
+                                     ObjectMapper objectMapper,
+                                     ChatNotificationService chatNotificationService) {
         this.messageRepository = messageRepository;
         this.messageDeletionRepository = messageDeletionRepository;
         this.userRepository = userRepository;
         this.conversationRepository = conversationRepository;
         this.conversationMemberRepository = conversationMemberRepository;
-        this.messagingTemplate = messagingTemplate;
         this.messageMapper = messageMapper;
         this.userBlockService = userBlockService;
         this.objectMapper = objectMapper;
+        this.chatNotificationService = chatNotificationService;
     }
 
     public void validateConversationAccess(String userId, String conversationId) {
@@ -127,15 +125,8 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
         message.setIsRecalled(true);
         messageRepository.save(message);
 
-        String destination = "/topic/conversation." + message.getConversation().getId();
         MessageResponseDto messageDto = messageMapper.toDto(message);
-
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                messagingTemplate.convertAndSend(destination, messageDto);
-            }
-        });
+        chatNotificationService.broadcastSystemEvent(message.getConversation().getId(), messageDto);
     }
 
     public MessageResponseDto createScheduleInvite(String userId, String conversationId, ScheduleInviteRequestDto requestDto) {
@@ -173,15 +164,8 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
         conversation.setLastMessage(message);
         conversationRepository.save(conversation);
 
-        String destination = "/topic/conversation." + conversationId;
         MessageResponseDto messageDto = messageMapper.toDto(message);
-
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                messagingTemplate.convertAndSend(destination, messageDto);
-            }
-        });
+        chatNotificationService.broadcastSystemEvent(conversationId, messageDto);
 
         return messageDto;
     }
@@ -198,7 +182,7 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
         Message message = Message.builder()
                 .conversation(conversation)
                 .sender(sender)
-                .content("") // Clear content since this is a file message
+                .content("")
                 .messageType(MessageType.FILE)
                 .build();
 
@@ -215,15 +199,8 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
         conversation.setLastMessage(message);
         conversationRepository.save(conversation);
 
-        String destination = "/topic/conversation." + conversationId;
         MessageResponseDto messageDto = messageMapper.toDto(message);
-
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                messagingTemplate.convertAndSend(destination, messageDto);
-            }
-        });
+        chatNotificationService.broadcastSystemEvent(conversationId, messageDto);
 
         return messageDto;
     }

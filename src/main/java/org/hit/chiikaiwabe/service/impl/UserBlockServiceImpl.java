@@ -7,6 +7,8 @@ import org.hit.chiikaiwabe.constant.ErrorMessage;
 import org.hit.chiikaiwabe.repository.UserBlockRepository;
 import org.hit.chiikaiwabe.repository.UserRepository;
 import org.hit.chiikaiwabe.service.UserBlockService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class UserBlockServiceImpl implements UserBlockService {
         this.userRepository = userRepository;
     }
 
+    @CacheEvict(value = "userBlock", allEntries = true)
     public void blockUser(String blockerId, String blockedId) {
         if (blockerId.equals(blockedId)) {
             throw new IllegalArgumentException(ErrorMessage.Chat.ERR_CANNOT_BLOCK_YOURSELF);
@@ -46,6 +49,7 @@ public class UserBlockServiceImpl implements UserBlockService {
         userBlockRepository.save(userBlock);
     }
 
+    @CacheEvict(value = "userBlock", allEntries = true)
     public void unblockUser(String blockerId, String blockedId) {
         Optional<UserBlock> blockOpt = userBlockRepository.findByBlockerIdAndBlockedId(blockerId, blockedId);
         blockOpt.ifPresent(userBlockRepository::delete);
@@ -61,6 +65,7 @@ public class UserBlockServiceImpl implements UserBlockService {
                 )).collect(Collectors.toList());
     }
 
+    @Cacheable(value = "userBlock", key = "#userA + ':' + #userB")
     public boolean isBlocked(String userA, String userB) {
         return userBlockRepository.existsByBlockerIdAndBlockedId(userA, userB) ||
                 userBlockRepository.existsByBlockerIdAndBlockedId(userB, userA);

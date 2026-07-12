@@ -49,13 +49,15 @@ public class AuthController {
   @Operation(summary = "API Logout")
   @PostMapping(UrlConstant.Auth.LOGOUT)
   public ResponseEntity<?> logout(HttpServletRequest request, @Valid @RequestBody TokenRefreshRequestDto tokenRequest) {
-    return VsResponseUtil.success(authService.logout(request, tokenRequest.getRefreshToken()));
+    authService.logout(request, tokenRequest.getRefreshToken());
+    return VsResponseUtil.success(new CommonResponseDto(true, SuccessMessage.LOGOUT_SUCCESS));
   }
 
   @Operation(summary = "API Register")
   @PostMapping(UrlConstant.Auth.REGISTER)
   public ResponseEntity<?> register(@Valid @RequestBody UserCreateDto request) {
-    return VsResponseUtil.success(authService.register(request));
+    authService.register(request);
+    return VsResponseUtil.success(new CommonResponseDto(true, SuccessMessage.REGISTER_SUCCESS_CHECK_EMAIL));
   }
 
   @Operation(summary = "API Send OTP")
@@ -71,27 +73,31 @@ public class AuthController {
   @Operation(summary = "API Verify Register OTP")
   @PostMapping(UrlConstant.Auth.VERIFY_REGISTER_OTP)
   public ResponseEntity<?> verifyRegisterOtp(@Valid @RequestBody VerifyOtpRequestDto request) {
-    return VsResponseUtil.success(authService.verifyRegisterOtp(request));
+    authService.verifyRegisterOtp(request);
+    return VsResponseUtil.success(new CommonResponseDto(true, SuccessMessage.VERIFY_REGISTER_SUCCESS));
   }
 
 
   @Operation(summary = "API Forgot Password Send OTP")
   @PostMapping(UrlConstant.Auth.FORGOT_PASSWORD_SEND_OTP)
   public ResponseEntity<?> forgotPasswordSendOtp(@Valid @RequestBody SendOtpRequestDto request) {
-    return VsResponseUtil.success(authService.forgotPasswordSendOtp(request));
+    authService.forgotPasswordSendOtp(request);
+    return VsResponseUtil.success(new CommonResponseDto(true, SuccessMessage.FORGOT_PASSWORD_SEND_OTP_SUCCESS));
   }
 
   @Operation(summary = "API Verify Forgot Password OTP")
   @PostMapping(UrlConstant.Auth.FORGOT_PASSWORD_VERIFY_OTP)
   public ResponseEntity<?> verifyForgotPasswordOtp(@Valid @RequestBody VerifyOtpRequestDto request) {
-    return VsResponseUtil.success(authService.verifyForgotPasswordOtp(request));
+    authService.verifyForgotPasswordOtp(request);
+    return VsResponseUtil.success(new CommonResponseDto(true, SuccessMessage.VERIFY_OTP_SUCCESS));
   }
 
   @Operation(summary = "API Reset Password")
   @PostMapping(UrlConstant.Auth.FORGOT_PASSWORD_RESET)
   public ResponseEntity<?> resetPassword(
           @Valid @RequestBody ResetPasswordRequestDto request) {
-    return VsResponseUtil.success(authService.resetPassword(request));
+    authService.resetPassword(request);
+    return VsResponseUtil.success(new CommonResponseDto(true, SuccessMessage.RESET_PASSWORD_SUCCESS));
   }
 
 }

@@ -15,6 +15,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
@@ -113,6 +114,13 @@ public class GlobalExceptionHandler {
     String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
     log.error(message, ex);
     return VsResponseUtil.error(ex.getStatus(), message);
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<RestData<?>> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
+    log.error("Max upload size exceeded: {}", ex.getMessage());
+    String message = messageSource.getMessage(ErrorMessage.File.ERR_FILE_SIZE_EXCEED, null, LocaleContextHolder.getLocale());
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, message);
   }
 
 }

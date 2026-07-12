@@ -74,5 +74,55 @@ public class ErrorMessage {
     public static final String ERR_INVALID_COORDINATES = "exception.location.invalid.coordinates";
   }
 
+  public static class File {
+    public static final String ERR_FILE_EMPTY = "exception.file.empty";
+    public static final String ERR_FILE_SIZE_EXCEED = "exception.file.size_exceed";
+    public static final String ERR_FILE_TYPE_NOT_ALLOWED = "exception.file.type_not_allowed";
+    public static final String ERR_FILE_NAME_INVALID = "exception.file.name_invalid";
+    public static final String ERR_FILE_UPLOAD_FAILED = "exception.file.upload_failed";
+  }
+
+  public static class Chat {
+    // DEV 1 - Core Chat
+    public static final String ERR_CONVERSATION_NOT_FOUND = "exception.chat.conversation.not.found";
+    public static final String ERR_NOT_MEMBER = "exception.chat.not.member";
+    public static final String ERR_USER_BLOCKED = "exception.chat.user.blocked";
+    public static final String ERR_GROUP_FULL = "exception.chat.group.full";
+    public static final String ERR_INVALID_FILE = "exception.chat.invalid.file";
+    public static final String ERR_FILE_TOO_LARGE = "exception.chat.file.too.large";
+    public static final String ERR_ALREADY_BLOCKED = "exception.chat.already.blocked";
+    public static final String ERR_MESSAGE_NOT_FOUND = "exception.chat.message.not.found";
+    public static final String ERR_NOT_SENDER = "exception.chat.not.sender";
+    public static final String ERR_RECALL_TIMEOUT = "exception.chat.recall.timeout";
+    public static final String ERR_ALREADY_LEFT = "exception.chat.already.left";
+    public static final String ERR_SELF_CHAT = "exception.chat.self.chat";
+    // DEV 2 - Block, Report, Message features
+    public static final String ERR_BLOCKED = "exception.chat.user.blocked";
+    public static final String ERR_CANNOT_BLOCK_YOURSELF = "exception.chat.cannot.block.yourself";
+    public static final String ERR_CANNOT_REPORT_YOURSELF = "cannot.report.yourself";
+    public static final String ERR_NOT_AUTHOR = "exception.chat.not_author";
+    public static final String ERR_CANNOT_RECALL_AFTER_30_MINS = "exception.chat.cannot_recall_after_30_mins";
+    public static final String ERR_NOT_IN_CONVERSATION = "exception.chat.not_in_conversation";
+    public static final String ERR_MESSAGE_ALREADY_RECALLED = "exception.chat.message.already.recalled";
+    // New features
+    public static final String ERR_NOT_OWNER = "exception.chat.not.owner";
+    public static final String ERR_ALREADY_PINNED = "exception.chat.already.pinned";
+    public static final String ERR_NOT_PINNED = "exception.chat.not.pinned";
+    public static final String ERR_CANNOT_FORWARD_RECALLED = "exception.chat.cannot.forward.recalled";
+    public static final String ERR_CANNOT_REPLY_RECALLED = "exception.chat.cannot.reply.recalled";
+    public static final String ERR_TARGET_CONVERSATION_NOT_FOUND = "exception.chat.target.conversation.not.found";
+    public static final String ERR_CANNOT_DISSOLVE_DIRECT = "exception.chat.cannot.dissolve.direct";
+    public static final String ERR_CANNOT_TRANSFER_TO_SELF = "exception.chat.cannot.transfer.to.self";
+  }
+
+  public static class Friendship {
+    public static final String ERR_SELF_REQUEST = "exception.friendship.self.request";
+    public static final String ERR_ALREADY_FRIENDS = "exception.friendship.already.friends";
+    public static final String ERR_REQUEST_ALREADY_SENT = "exception.friendship.request.already.sent";
+    public static final String ERR_REQUEST_NOT_FOUND = "exception.friendship.request.not.found";
+    public static final String ERR_NOT_RECEIVER = "exception.friendship.not.receiver";
+    public static final String ERR_NOT_FRIENDS = "exception.friendship.not.friends";
+    public static final String ERR_USER_NOT_FOUND_PHONE = "exception.friendship.user.not.found.phone";
+  }
 
 }

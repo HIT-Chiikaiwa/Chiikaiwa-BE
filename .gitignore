@@ -34,3 +34,6 @@ build/
 
 # Environment variables
 .env
+
+# Firebase
+firebase-service-account.json

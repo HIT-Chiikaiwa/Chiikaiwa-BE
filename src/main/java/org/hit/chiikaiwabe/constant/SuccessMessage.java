@@ -17,11 +17,47 @@ public class SuccessMessage {
     public static final String LOCATION_UPDATED = "success.location.updated";
     public static final String LOCATION_REMOVED = "success.location.removed";
 
-
-
     public static class CleanupLocation{
         public static final String PROCESSING = "location.cleanup.processing";
         public static final String SUCCESS = "location.cleanup.success";
         public static final String TOTAL_COUNT_SUCCESS = "location.cleanup.total-count-success";
     }
+
+    // Chat - Unified constants (DEV 1 + DEV 2)
+    public static class Chat {
+        public static final String MESSAGE_SENT = "success.chat.message.sent";
+        public static final String GROUP_CREATED = "success.chat.group.created";
+        public static final String MEMBER_ADDED = "success.chat.member.added";
+        public static final String MEMBER_REMOVED = "success.chat.member.removed";
+        public static final String USER_BLOCKED_SUCCESS = "success.chat.user.blocked";
+        public static final String USER_UNBLOCKED_SUCCESS = "success.chat.user.unblocked";
+        public static final String REPORT_SUBMITTED_SUCCESS = "success.chat.report.submitted";
+        public static final String FILE_UPLOADED = "success.chat.file.uploaded";
+        public static final String DEVICE_REGISTERED = "success.chat.device.registered";
+        public static final String MESSAGE_DELETED_SUCCESS = "success.chat.message.deleted";
+        public static final String MESSAGE_RECALLED_SUCCESS = "success.chat.message.recalled";
+        // New features
+        public static final String MESSAGE_PINNED = "success.chat.message.pinned";
+        public static final String MESSAGE_UNPINNED = "success.chat.message.unpinned";
+        public static final String MESSAGE_FORWARDED = "success.chat.message.forwarded";
+        public static final String REACTION_ADDED = "success.chat.reaction.added";
+        public static final String REACTION_REMOVED = "success.chat.reaction.removed";
+        public static final String GROUP_DISSOLVED = "success.chat.group.dissolved";
+        public static final String OWNERSHIP_TRANSFERRED = "success.chat.ownership.transferred";
+    }
+
+    // Device
+    public static class Device {
+        public static final String REGISTER = "success.chat.device.registered";
+        public static final String UNREGISTER = "success.chat.device.unregistered";
+    }
+
+    // Friendship
+    public static class Friendship {
+        public static final String REQUEST_SENT = "success.friendship.request.sent";
+        public static final String REQUEST_ACCEPTED = "success.friendship.request.accepted";
+        public static final String REQUEST_REJECTED = "success.friendship.request.rejected";
+        public static final String UNFRIENDED = "success.friendship.unfriended";
+    }
+
 }

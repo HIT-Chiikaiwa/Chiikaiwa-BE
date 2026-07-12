@@ -50,6 +50,17 @@
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!--     WebSocket    -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+        <!--     Firebase    -->
+        <dependency>
+            <groupId>com.google.firebase</groupId>
+            <artifactId>firebase-admin</artifactId>
+            <version>9.2.0</version>
+        </dependency>
         <!--     Cache     -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -64,6 +75,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
+
         <!--    Cloudinary    -->
         <dependency>
             <groupId>com.cloudinary</groupId>
@@ -155,6 +167,7 @@
             <version>5.2.2</version>
             <scope>compile</scope>
         </dependency>
+
     </dependencies>
 
     <build>

@@ -7,9 +7,9 @@ import java.util.List;
 
 public interface MessageReactionService {
 
-    CommonResponseDto addReaction(String userId, String messageId, String emoji);
+    void addReaction(String userId, String messageId, String emoji);
 
-    CommonResponseDto removeReaction(String userId, String messageId);
+    void removeReaction(String userId, String messageId);
 
     List<ReactionSummaryDto> getReactions(String messageId);
 

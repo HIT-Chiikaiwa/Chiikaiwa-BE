@@ -60,7 +60,7 @@ public class AuthServiceImpl implements AuthService {
         throw new UnauthorizedException(ErrorMessage.Auth.ERR_ACCOUNT_NOT_VERIFIED);
       }
       Authentication authentication = authenticationManager.authenticate(
-          new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+              new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
       SecurityContextHolder.getContext().setAuthentication(authentication);
       UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
       String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
@@ -69,8 +69,8 @@ public class AuthServiceImpl implements AuthService {
       long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
       long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
 
-        redisTemplate.opsForValue().set(accessToken, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
-        redisTemplate.opsForValue().set(refreshToken, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
+      redisTemplate.opsForValue().set(accessToken, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
+      redisTemplate.opsForValue().set(refreshToken, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
 
       return new LoginResponseDto(accessToken, refreshToken, userPrincipal.getId(), authentication.getAuthorities());
     } catch (InternalAuthenticationServiceException e) {
@@ -99,8 +99,8 @@ public class AuthServiceImpl implements AuthService {
       long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
 
 
-        redisTemplate.opsForValue().set(accessToken, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
-        redisTemplate.opsForValue().set(refreshToken, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
+      redisTemplate.opsForValue().set(accessToken, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
+      redisTemplate.opsForValue().set(refreshToken, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
 
       return new TokenRefreshResponseDto(accessToken, refreshToken);
 
@@ -110,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
-  public CommonResponseDto logout(HttpServletRequest request, String refreshToken) {
+  public void logout(HttpServletRequest request, String refreshToken) {
     String bearerToken = request.getHeader("Authorization");
     if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
       String accessToken = bearerToken.substring(7);
@@ -128,12 +128,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     SecurityContextHolder.clearContext();
-    return new CommonResponseDto(true, SuccessMessage.LOGOUT_SUCCESS);
   }
 
 
   @Override
-  public CommonResponseDto register(UserCreateDto request) {
+  public void register(UserCreateDto request) {
     if (!request.getPassword().equals(request.getConfirmPassword())) {
       throw new InvalidException(ErrorMessage.Auth.ERR_CONFIRM_PASSWORD_NOT_MATCH);
     }
@@ -151,12 +150,10 @@ public class AuthServiceImpl implements AuthService {
 
     String otpCode = otpService.generateOtp(request.getEmail());
     otpService.sendOtp(request.getEmail(), otpCode);
-
-    return new CommonResponseDto(true, SuccessMessage.REGISTER_SUCCESS_CHECK_EMAIL);
   }
 
   @Override
-  public CommonResponseDto verifyRegisterOtp(VerifyOtpRequestDto request) {
+  public void verifyRegisterOtp(VerifyOtpRequestDto request) {
     boolean isValid = otpService.validateOtp(request.getEmail(), request.getOtpCode());
     if (!isValid) {
       throw new InvalidException(ErrorMessage.Auth.ERR_OTP_INCORRECT);
@@ -195,13 +192,12 @@ public class AuthServiceImpl implements AuthService {
     } catch (Exception e) {
       throw new RuntimeException(ErrorMessage.Auth.ERR_SYSTEM_PROCESS);
     }
-    return new CommonResponseDto(true, SuccessMessage.VERIFY_REGISTER_SUCCESS);
   }
 
 
 
   @Override
-  public CommonResponseDto forgotPasswordSendOtp(SendOtpRequestDto request) {
+  public void forgotPasswordSendOtp(SendOtpRequestDto request) {
     String spamKey = "OTP_RATE_LIMIT:" + request.getEmail();
 
     if (redisTemplate.hasKey(spamKey)) {
@@ -218,23 +214,19 @@ public class AuthServiceImpl implements AuthService {
     String otpCode = otpService.generateOtp(request.getEmail());
     otpService.sendOtp(request.getEmail(), otpCode);
     redisTemplate.opsForValue().set(spamKey, "BLOCKED", 60, TimeUnit.SECONDS);
-
-    return new CommonResponseDto(true, SuccessMessage.FORGOT_PASSWORD_SEND_OTP_SUCCESS);
   }
   @Override
-  public CommonResponseDto verifyForgotPasswordOtp(VerifyOtpRequestDto request) {
+  public void verifyForgotPasswordOtp(VerifyOtpRequestDto request) {
     boolean isValid = otpService.validateOtp(request.getEmail(), request.getOtpCode());
     if (!isValid) {
       throw new InvalidException(ErrorMessage.Auth.ERR_OTP_INCORRECT);
     }
     String resetTicketKey = "RESET_TICKET:" + request.getEmail();
     redisTemplate.opsForValue().set(resetTicketKey, "VALID", 5, TimeUnit.MINUTES);
-
-    return new CommonResponseDto(true, SuccessMessage.VERIFY_OTP_SUCCESS);
   }
 
   @Override
-  public CommonResponseDto resetPassword(ResetPasswordRequestDto request) {
+  public void resetPassword(ResetPasswordRequestDto request) {
     if (!request.getNewPassword().equals(request.getConfirmPassword())) {
       throw new InvalidException(ErrorMessage.Auth.ERR_CONFIRM_PASSWORD_NOT_MATCH);
     }
@@ -248,7 +240,6 @@ public class AuthServiceImpl implements AuthService {
     user.setPassword(passwordEncoder.encode(request.getNewPassword()));
     userRepository.save(user);
     redisTemplate.delete(resetTicketKey);
-    return new CommonResponseDto(true, SuccessMessage.RESET_PASSWORD_SUCCESS);
   }
 
 }

@@ -1,6 +1,7 @@
 package org.hit.chiikaiwabe.service.impl;
 
 import com.google.firebase.messaging.*;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.hit.chiikaiwabe.domain.dto.request.RegisterDeviceRequestDto;
@@ -23,8 +24,8 @@ public class PushNotificationServiceImpl implements PushNotificationService {
     private final UserDeviceRepository userDeviceRepository;
     private final UserRepository userRepository;
 
+    @Async("notificationExecutor")
     @Override
-    @Transactional
     public void sendPushNotification(String userID, String title, String body) {
         List<UserDevice> devices = userDeviceRepository.findByUserIdAndIsActiveTrue(userID);
         if (devices.isEmpty()) return;

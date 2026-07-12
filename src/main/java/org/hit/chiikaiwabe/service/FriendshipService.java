@@ -8,13 +8,13 @@ import org.springframework.data.domain.Pageable;
 
 public interface FriendshipService {
 
-    CommonResponseDto sendFriendRequest(String userId, String targetUserId);
+    void sendFriendRequest(String senderId, String receiverId);
 
-    CommonResponseDto acceptFriendRequest(String userId, String requestId);
+    void acceptFriendRequest(String userId, String requestId);
 
-    CommonResponseDto rejectFriendRequest(String userId, String requestId);
+    void rejectFriendRequest(String userId, String requestId);
 
-    CommonResponseDto unfriend(String userId, String friendId);
+    void unfriend(String userId, String friendId);
 
     Page<FriendshipResponseDto> getFriends(String userId, Pageable pageable);
 

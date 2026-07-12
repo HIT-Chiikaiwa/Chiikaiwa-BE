@@ -13,16 +13,16 @@ public interface AuthService {
 
   TokenRefreshResponseDto refresh(TokenRefreshRequestDto request);
 
-  CommonResponseDto logout(HttpServletRequest request, String refreshToken);
+  void logout(HttpServletRequest request, String refreshToken);
 
-  CommonResponseDto register(UserCreateDto request);
+  void register(UserCreateDto request);
 
-  CommonResponseDto verifyRegisterOtp(VerifyOtpRequestDto request);
+  void verifyRegisterOtp(VerifyOtpRequestDto request);
 
-  CommonResponseDto forgotPasswordSendOtp(SendOtpRequestDto request);
+  void forgotPasswordSendOtp(SendOtpRequestDto request);
 
-  CommonResponseDto verifyForgotPasswordOtp(VerifyOtpRequestDto request);
+  void verifyForgotPasswordOtp(VerifyOtpRequestDto request);
 
-  CommonResponseDto resetPassword(ResetPasswordRequestDto request);
+  void resetPassword(ResetPasswordRequestDto request);
 
 }

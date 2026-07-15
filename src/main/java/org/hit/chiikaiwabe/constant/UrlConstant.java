@@ -130,4 +130,20 @@ public class UrlConstant {
     }
   }
 
+  public static class Booking {
+    private static final String PRE_FIX = "/bookings";
+    public static final String CREATE = PRE_FIX + "/conversation/{conversationId}";
+    public static final String ACCEPT = PRE_FIX + "/{bookingId}/accept";
+    public static final String REJECT = PRE_FIX + "/{bookingId}/reject";
+    public static final String CANCEL = PRE_FIX + "/{bookingId}/cancel";
+    public static final String COMPLETE = PRE_FIX + "/{bookingId}/complete";
+    public static final String RATE = PRE_FIX + "/{bookingId}/rate";
+    public static final String LIST = PRE_FIX;
+    public static final String DETAIL = PRE_FIX + "/{bookingId}";
+    public static final String WEEKLY = PRE_FIX + "/weekly";
+
+    private Booking() {
+    }
+  }
+
 }

@@ -43,7 +43,7 @@ public class Booking extends DateAuditing {
     @Column(length = 20, nullable = false)
     private BookingStatus status;
 
-    @Column(columnDefinition = "nvarchar(255)")
+    @Column(length = 255)
     private String subject;
 
     @Column(name = "scheduled_at", nullable = false)
@@ -51,19 +51,19 @@ public class Booking extends DateAuditing {
 
     private Integer durationMinutes;
 
-    @Column(columnDefinition = "nvarchar(255)", nullable = false)
+    @Column(length = 255, nullable = false)
     private String locationName;
 
-    @Column(columnDefinition = "nvarchar(255)", nullable = false)
+    @Column(length = 255, nullable = false)
     private String locationAddress;
 
-    @Column(columnDefinition = "nvarchar(255)", nullable = false)
+    @Column(length = 255, nullable = false)
     private String locationDistrict;
 
-    @Column(columnDefinition = "nvarchar(255)", nullable = false)
+    @Column(length = 255, nullable = false)
     private String locationCity;
 
-    @Column(columnDefinition = "nvarchar(1000)")
+    @Column(length = 1000)
     private String note;
 
     @Column(nullable = false)
@@ -72,7 +72,7 @@ public class Booking extends DateAuditing {
     @Column(length = 36)
     private String cancelledBy;
 
-    @Column(columnDefinition = "ntext")
+    @Column(columnDefinition = "text")
     private String cancelReason;
 
     private Integer reminderMinutesBefore;

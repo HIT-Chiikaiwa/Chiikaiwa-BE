@@ -1,7 +1,8 @@
 package org.hit.chiikaiwabe.repository;
 
 import org.hit.chiikaiwabe.domain.entity.OfflineBooking;
-import org.hit.chiikaiwabe.domain.enums.BookingStatus;
+
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,9 +10,14 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface OfflineBookingRepository extends JpaRepository<OfflineBooking, String> {
+
+    @EntityGraph(attributePaths = {"creator", "participants", "participants.user"})
+    @Query("SELECT b FROM OfflineBooking b WHERE b.id = :id")
+    Optional<OfflineBooking> findByIdWithDetails(@Param("id") String id);
 
     @Query("SELECT COUNT(b) FROM OfflineBooking b WHERE " +
             "(b.creator.id = :userId OR EXISTS (SELECT bp FROM BookingParticipant bp WHERE bp.booking = b AND bp.user.id = :userId AND bp.status = 'ACCEPTED')) " +

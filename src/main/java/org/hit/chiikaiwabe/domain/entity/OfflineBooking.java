@@ -85,8 +85,7 @@ public class OfflineBooking extends DateAuditing {
     @Column(name = "cancelled_by", columnDefinition = "CHAR(36)")
     private String cancelledBy;
 
-    @Nationalized
-    @Column(name = "cancel_reason", columnDefinition = "NTEXT")
+    @Column(name = "cancel_reason", columnDefinition = "TEXT")
     private String cancelReason;
 
     @Column(name = "reminder_minutes_before")
@@ -95,5 +94,10 @@ public class OfflineBooking extends DateAuditing {
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<BookingParticipant> participants = new ArrayList<>();
+
+    @Version
+    @Column(name = "version")
+    @Builder.Default
+    private Long version = 0L;
 
 }

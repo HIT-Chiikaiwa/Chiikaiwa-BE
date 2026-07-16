@@ -5,6 +5,7 @@ import org.hit.chiikaiwabe.constant.UrlConstant;
 import org.hit.chiikaiwabe.domain.dto.request.CancelBookingRequestDto;
 import org.hit.chiikaiwabe.domain.dto.request.RateBookingRequestDto;
 import org.hit.chiikaiwabe.domain.dto.response.BookingResponseDto;
+import org.hit.chiikaiwabe.domain.dto.response.CommonResponseDto;
 import org.hit.chiikaiwabe.base.RestData;
 import org.hit.chiikaiwabe.base.VsResponseUtil;
 import org.hit.chiikaiwabe.security.CurrentUser;
@@ -30,21 +31,21 @@ public class BookingController {
 
     @PatchMapping(UrlConstant.Booking.CANCEL)
     @Operation(summary = "Cancel a booking")
-    public ResponseEntity<RestData<CommonResponseDto>> cancelBooking(
+    public ResponseEntity<RestData<BookingResponseDto>> cancelBooking(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @PathVariable String bookingId,
             @Valid @RequestBody CancelBookingRequestDto dto) {
         BookingResponseDto response = lifecycleService.cancelBooking(principal.getId(), bookingId, dto);
-        return VsResponseUtil.success(HttpStatus.OK, new CommonResponseDto(true, SuccessMessage.Booking.CANCELLED, response));
+        return VsResponseUtil.success(HttpStatus.OK, response);
     }
 
     @PatchMapping(UrlConstant.Booking.COMPLETE)
     @Operation(summary = "Complete a confirmed booking")
-    public ResponseEntity<RestData<CommonResponseDto>> completeBooking(
+    public ResponseEntity<RestData<BookingResponseDto>> completeBooking(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @PathVariable String bookingId) {
         BookingResponseDto response = lifecycleService.completeBooking(principal.getId(), bookingId);
-        return VsResponseUtil.success(HttpStatus.OK, new CommonResponseDto(true, SuccessMessage.Booking.COMPLETED, response));
+        return VsResponseUtil.success(HttpStatus.OK, response);
     }
 
     @PostMapping(UrlConstant.Booking.RATE)
@@ -54,7 +55,7 @@ public class BookingController {
             @PathVariable String bookingId,
             @Valid @RequestBody RateBookingRequestDto dto) {
         lifecycleService.ratePartner(principal.getId(), bookingId, dto);
-        return VsResponseUtil.success(HttpStatus.OK, new CommonResponseDto(true, SuccessMessage.Booking.RATED, null));
+        return VsResponseUtil.success(HttpStatus.OK, new CommonResponseDto(true, SuccessMessage.Booking.RATED));
     }
 
 }

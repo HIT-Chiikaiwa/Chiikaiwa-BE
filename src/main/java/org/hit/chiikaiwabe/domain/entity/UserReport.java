@@ -48,7 +48,6 @@ public class UserReport extends DateAuditing {
     @Column(nullable = false, length = 20)
     private ReportReason reason;
 
-    @Nationalized
     @Column(columnDefinition = "TEXT")
     private String description;
 

@@ -85,8 +85,7 @@ public class OfflineBooking extends DateAuditing {
     @Column(name = "cancelled_by", columnDefinition = "CHAR(36)")
     private String cancelledBy;
 
-    @Nationalized
-    @Column(name = "cancel_reason", columnDefinition = "NTEXT")
+    @Column(name = "cancel_reason", columnDefinition = "TEXT")
     private String cancelReason;
 
     @Column(name = "reminder_minutes_before")

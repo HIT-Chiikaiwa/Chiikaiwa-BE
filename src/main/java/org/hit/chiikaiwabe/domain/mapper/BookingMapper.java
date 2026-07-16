@@ -40,16 +40,20 @@ public interface BookingMapper {
     List<BookingResponseDto> toDtoList(List<OfflineBooking> bookings, @Context String currentUserId);
 
     default User getPartner(OfflineBooking booking, String currentUserId){
-        if(booking == null || booking.getParticipants() == null){
+        if(booking == null){
             return null;
         }
-        for(BookingParticipant p : booking.getParticipants()){
-            if(p.getUser() != null && !p.getUser().getId().equals(currentUserId)){
-                return p.getUser();
+        if(booking.getCreator() != null && booking.getCreator().getId().equals(currentUserId)){
+            if(booking.getParticipants() != null && !booking.getParticipants().isEmpty()){
+                return booking.getParticipants().get(0).getUser();
             }
+        }
+        else{
+            return booking.getCreator();
         }
         return null;
     }
+
 
     default String getPartnerName(OfflineBooking booking, String currentUserId){
         User partner = getPartner(booking, currentUserId);

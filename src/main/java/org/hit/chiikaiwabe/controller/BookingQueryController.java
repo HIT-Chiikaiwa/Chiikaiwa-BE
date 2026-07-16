@@ -33,8 +33,8 @@ public class BookingQueryController {
     public ResponseEntity<RestData<BookingResponseDto>> getBookingDetail(
             @PathVariable String bookingId,
             @CurrentUser UserPrincipal currentUser
-            ){
-        BookingResponseDto responseDto = bookingQueryService.getBookingDetail(bookingId, currentUser.getId());
+    ){
+        BookingResponseDto responseDto = bookingQueryService.getBookingDetail(currentUser.getId(), bookingId);
         return VsResponseUtil.success(responseDto);
     }
 
@@ -50,7 +50,7 @@ public class BookingQueryController {
     public ResponseEntity<RestData<BookingWeekResponseDto>> getWeeklySchedule(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate weekStart,
             @CurrentUser UserPrincipal currentUser){
-        BookingWeekResponseDto response = bookingQueryService.getWeeklySchedule(weekStart, currentUser.getId());
+        BookingWeekResponseDto response = bookingQueryService.getWeeklySchedule(currentUser.getId(), weekStart);
         return VsResponseUtil.success(response);
     }
 }

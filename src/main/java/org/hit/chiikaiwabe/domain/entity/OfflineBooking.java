@@ -96,4 +96,9 @@ public class OfflineBooking extends DateAuditing {
     @Builder.Default
     private List<BookingParticipant> participants = new ArrayList<>();
 
+    @Version
+    @Column(name = "version")
+    @Builder.Default
+    private Long version = 0L;
+
 }

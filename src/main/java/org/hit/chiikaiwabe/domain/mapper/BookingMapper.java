@@ -5,6 +5,7 @@ import org.hit.chiikaiwabe.domain.entity.BookingParticipant;
 import org.hit.chiikaiwabe.domain.entity.OfflineBooking;
 import org.hit.chiikaiwabe.domain.entity.User;
 import org.mapstruct.*;
+import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface BookingMapper {
@@ -22,12 +23,12 @@ public interface BookingMapper {
             @Mapping(target = "hasRated", ignore = true),
             @Mapping(target = "myRating", ignore = true)
     })
-    BookingResponseDto toDto(OfflineBooking booking, @Context String currentUserId, @Context boolean hasRated, @Context Integer myRating);
+    BookingResponseDto toDto(OfflineBooking booking, @Context String currentUserId);
+
+    List<BookingResponseDto> toDtoList(List<OfflineBooking> bookings, @Context String currentUserId);
 
     @AfterMapping
-    default void customizeDynamicFields(@MappingTarget BookingResponseDto dto, OfflineBooking booking, @Context String currentUserId, @Context boolean hasRated, @Context Integer myRating) {
-        dto.setHasRated(hasRated);
-        dto.setMyRating(myRating);
+    default void customizeDynamicFields(@MappingTarget BookingResponseDto dto, OfflineBooking booking, @Context String currentUserId) {
 
         User creator = booking.getCreator();
         if (creator != null) {

@@ -30,8 +30,8 @@ public class BookingQueryServiceImpl implements BookingQueryService {
     private final BookingMapper bookingMapper;
 
     @Override
-    public BookingResponseDto getBookingDetail(String bookingId, String currentUserId) {
-        OfflineBooking booking = offlineBookingRepository.findById(bookingId)
+    public BookingResponseDto getBookingDetail(String currentUserId, String bookingId) {
+        OfflineBooking booking = offlineBookingRepository.findByIdWithDetails(bookingId)
                 .orElseThrow(()-> new NotFoundException("Booking not found"));
         boolean isCreator = booking.getCreator() != null && booking.getCreator().getId().equals(currentUserId);
         boolean isPartner = booking.getParticipants() != null && booking.getParticipants().stream()
@@ -51,7 +51,7 @@ public class BookingQueryServiceImpl implements BookingQueryService {
     }
 
     @Override
-    public BookingWeekResponseDto getWeeklySchedule(LocalDate weekStart, String currentUserId) {
+    public BookingWeekResponseDto getWeeklySchedule(String currentUserId, LocalDate weekStart) {
         LocalDateTime startDate = weekStart.atStartOfDay();
         LocalDateTime endDate = weekStart.plusDays(6).atTime(LocalTime.MAX);
 

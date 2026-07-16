@@ -24,11 +24,13 @@ public interface OfflineBookingRepository extends JpaRepository<OfflineBooking, 
             "AND b.status IN ('PENDING', 'CONFIRMED')")
     long countActiveBookingsByUserId(@Param("userId") String userId);
 
+    @EntityGraph(attributePaths = {"creator", "participants", "participants.user"})
     @Query("SELECT b FROM OfflineBooking b WHERE " +
             "b.creator.id = :userId OR EXISTS (SELECT bp FROM BookingParticipant bp WHERE bp.booking = b AND bp.user.id = :userId) " +
             "ORDER BY b.scheduledAt DESC")
     List<OfflineBooking> findAllByUserId(@Param("userId") String userId);
 
+    @EntityGraph(attributePaths = {"creator", "participants", "participants.user"})
     @Query("SELECT b FROM OfflineBooking b WHERE " +
             "(b.creator.id = :userId OR EXISTS (SELECT bp FROM BookingParticipant bp WHERE bp.booking = b AND bp.user.id = :userId)) " +
             "AND b.scheduledAt BETWEEN :startDate AND :endDate " +

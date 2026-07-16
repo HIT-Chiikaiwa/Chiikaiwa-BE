@@ -16,8 +16,15 @@ import org.hit.chiikaiwabe.config.properties.BookingProperties;
 import org.hit.chiikaiwabe.repository.BookingRatingRepository;
 import org.hit.chiikaiwabe.repository.OfflineBookingRepository;
 import org.hit.chiikaiwabe.repository.UserRepository;
+import org.hit.chiikaiwabe.repository.BookingParticipantRepository;
 import org.hit.chiikaiwabe.service.BookingLifecycleService;
 import org.hit.chiikaiwabe.service.ChatNotificationService;
+import org.hit.chiikaiwabe.service.PushNotificationService;
+import org.hit.chiikaiwabe.component.ChatHelper;
+import org.hit.chiikaiwabe.domain.entity.Message;
+import org.hit.chiikaiwabe.domain.enums.MessageType;
+import org.hit.chiikaiwabe.domain.entity.BookingParticipant;
+import org.hit.chiikaiwabe.domain.enums.ParticipantStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,6 +48,9 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
     private final BookingMapper bookingMapper;
     private final ChatNotificationService chatNotificationService;
     private final BookingProperties bookingProperties;
+    private final BookingParticipantRepository bookingParticipantRepository;
+    private final PushNotificationService pushNotificationService;
+    private final ChatHelper chatHelper;
 
     @Override
     @Transactional
@@ -63,10 +73,17 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
         booking = bookingRepository.save(booking);
 
         if (booking.getConversation() != null) {
+            User canceler = userRepository.findById(userId).orElse(null);
+            String cancelerName = canceler != null ? (canceler.getLastName() + " " + canceler.getFirstName()) : "Người dùng";
+            String content = cancelerName + " đã hủy lịch hẹn. Lí do: " + dto.getCancelReason();
+
+            Message sysMsg = chatHelper.createSystemMessage(booking.getConversation(), content);
+            chatNotificationService.broadcastSystemEvent(booking.getConversation().getId(), chatHelper.toMessageResponseDto(sysMsg));
+
             sendBookingNotification(booking.getConversation().getId(), bookingId, BookingStatus.CANCELLED);
         }
 
-        return bookingMapper.toDto(booking, userId, false, null);
+        return bookingMapper.toDto(booking, userId);
     }
 
     @Override
@@ -86,11 +103,56 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
         booking.setStatus(BookingStatus.COMPLETED);
         booking = bookingRepository.save(booking);
 
+        if (Boolean.TRUE.equals(booking.getIsRecurring())) {
+            OfflineBooking newBooking = OfflineBooking.builder()
+                    .creator(booking.getCreator())
+                    .conversation(booking.getConversation())
+                    .status(BookingStatus.PENDING)
+                    .subject(booking.getSubject())
+                    .scheduledAt(booking.getScheduledAt().plusDays(7))
+                    .locationName(booking.getLocationName())
+                    .locationAddress(booking.getLocationAddress())
+                    .locationDistrict(booking.getLocationDistrict())
+                    .locationCity(booking.getLocationCity())
+                    .note(booking.getNote())
+                    .isRecurring(true)
+                    .durationMinutes(booking.getDurationMinutes())
+                    .reminderMinutesBefore(booking.getReminderMinutesBefore())
+                    .build();
+
+            OfflineBooking savedNewBooking = bookingRepository.save(newBooking);
+
+            if (booking.getParticipants() != null) {
+                for (BookingParticipant oldParticipant : booking.getParticipants()) {
+                    if (!oldParticipant.getUser().getId().equals(booking.getCreator().getId())) {
+                        BookingParticipant newParticipant = BookingParticipant.builder()
+                                .booking(savedNewBooking)
+                                .user(oldParticipant.getUser())
+                                .status(ParticipantStatus.PENDING)
+                                .reminderMinutesBefore(oldParticipant.getReminderMinutesBefore())
+                                .build();
+                        bookingParticipantRepository.save(newParticipant);
+
+                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                            @Override
+                            public void afterCommit() {
+                                pushNotificationService.sendPushNotification(
+                                        oldParticipant.getUser().getId(),
+                                        "Lịch hẹn cố định mới",
+                                        "Đã tạo lịch hẹn mới cho tuần sau."
+                                );
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
         if (booking.getConversation() != null) {
             sendBookingNotification(booking.getConversation().getId(), bookingId, BookingStatus.COMPLETED);
         }
 
-        return bookingMapper.toDto(booking, userId, false, null);
+        return bookingMapper.toDto(booking, userId);
     }
 
     @Override

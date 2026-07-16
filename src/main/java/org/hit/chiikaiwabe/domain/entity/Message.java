@@ -37,7 +37,6 @@ public class Message extends DateAuditing {
             foreignKey = @ForeignKey(name = "FK_MESSAGE_SENDER"))
     private User sender;
 
-    @Nationalized
     @Column(columnDefinition = "TEXT")
     private String content;
 

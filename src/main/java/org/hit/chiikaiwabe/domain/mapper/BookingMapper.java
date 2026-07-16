@@ -1,77 +1,73 @@
 package org.hit.chiikaiwabe.domain.mapper;
 
 import org.hit.chiikaiwabe.domain.dto.response.BookingResponseDto;
-import org.hit.chiikaiwabe.domain.dto.response.MessageResponseDto;
 import org.hit.chiikaiwabe.domain.entity.BookingParticipant;
-import org.hit.chiikaiwabe.domain.entity.Message;
 import org.hit.chiikaiwabe.domain.entity.OfflineBooking;
 import org.hit.chiikaiwabe.domain.entity.User;
-import org.mapstruct.Context;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Mappings;
+import org.mapstruct.*;
 
-import java.awt.print.Book;
-import java.util.List;
-
-@Mapper(componentModel = "spring", unmappedTargetPolicy = org.mapstruct.ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring")
 public interface BookingMapper {
 
     @Mappings({
-            // nguoi tao va cuoc hen
-            @Mapping(source = "creator.id", target = "creatorId"),
-            @Mapping(target = "creatorName", expression = "java(booking.getCreator() != null ? " +
-                    "booking.getCreator().getLastName() + \" \" + booking.getCreator().getFirstName() : \"System\")"),
-            @Mapping(source = "creator.avatar", target = "creatorAvatar"),
-            @Mapping(source = "conversation.id", target = "conversationId"),
             @Mapping(target = "status", expression = "java(booking.getStatus() != null ? booking.getStatus().name() : null)"),
-
-            // doi tuong hen
-            @Mapping(target = "partnerId", expression = "java(getPartner(booking, currentUserId) != null ? " +
-                    "getPartner(booking, currentUserId).getId() : null)"),
-            @Mapping(target = "partnerName", expression = "java(getPartnerName(booking, currentUserId))"),
-            @Mapping(target = "partnerAvatar", expression = "java(getPartner(booking, currentUserId) != null ? " +
-                    "getPartner(booking, currentUserId).getAvatar() : null)"),
-
-            // trang thai
-            @Mapping(target = "participantStatus", expression = "java(getMyStatus(booking, currentUserId))")
+            @Mapping(source = "conversation.id", target = "conversationId"),
+            @Mapping(target = "creatorId", ignore = true),
+            @Mapping(target = "creatorName", ignore = true),
+            @Mapping(target = "creatorAvatar", ignore = true),
+            @Mapping(target = "partnerId", ignore = true),
+            @Mapping(target = "partnerName", ignore = true),
+            @Mapping(target = "partnerAvatar", ignore = true),
+            @Mapping(target = "participantStatus", ignore = true),
+            @Mapping(target = "hasRated", ignore = true),
+            @Mapping(target = "myRating", ignore = true)
     })
-    BookingResponseDto toDto(OfflineBooking booking, @Context String currentUserId);
-    List<BookingResponseDto> toDtoList(List<OfflineBooking> bookings, @Context String currentUserId);
+    BookingResponseDto toDto(OfflineBooking booking, @Context String currentUserId, @Context boolean hasRated, @Context Integer myRating);
 
-    default User getPartner(OfflineBooking booking, String currentUserId){
-        if(booking == null){
-            return null;
+    @AfterMapping
+    default void customizeDynamicFields(@MappingTarget BookingResponseDto dto, OfflineBooking booking, @Context String currentUserId, @Context boolean hasRated, @Context Integer myRating) {
+        dto.setHasRated(hasRated);
+        dto.setMyRating(myRating);
+
+        User creator = booking.getCreator();
+        if (creator != null) {
+            dto.setCreatorId(creator.getId());
+            dto.setCreatorName(creator.getLastName() + " " + creator.getFirstName());
+            dto.setCreatorAvatar(creator.getAvatar());
         }
-        if(booking.getCreator() != null && booking.getCreator().getId().equals(currentUserId)){
-            if(booking.getParticipants() != null && !booking.getParticipants().isEmpty()){
-                return booking.getParticipants().get(0).getUser();
+
+        boolean isCreator = creator != null && creator.getId().equals(currentUserId);
+
+        if (isCreator) {
+            dto.setParticipantStatus("CREATOR");
+            BookingParticipant partner = booking.getParticipants().stream()
+                    .filter(p -> !p.getUser().getId().equals(currentUserId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (partner != null) {
+                User partnerUser = partner.getUser();
+                dto.setPartnerId(partnerUser.getId());
+                dto.setPartnerName(partnerUser.getLastName() + " " + partnerUser.getFirstName());
+                dto.setPartnerAvatar(partnerUser.getAvatar());
+            }
+        } else {
+            BookingParticipant me = booking.getParticipants().stream()
+                    .filter(p -> p.getUser().getId().equals(currentUserId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (me != null) {
+                dto.setParticipantStatus(me.getStatus().name());
+            } else {
+                dto.setParticipantStatus("NOT_INVOLVED");
+            }
+
+            if (creator != null) {
+                dto.setPartnerId(creator.getId());
+                dto.setPartnerName(creator.getLastName() + " " + creator.getFirstName());
+                dto.setPartnerAvatar(creator.getAvatar());
             }
         }
-        else{
-            return booking.getCreator();
-        }
-        return null;
-    }
-
-
-    default String getPartnerName(OfflineBooking booking, String currentUserId){
-        User partner = getPartner(booking, currentUserId);
-        if(partner != null){
-            return partner.getLastName() + " " + partner.getFirstName();
-        }
-        return null;
-    }
-
-    default String getMyStatus(OfflineBooking booking, String currentUserId){
-        if(booking == null || booking.getParticipants() == null)
-            return null;
-        for(BookingParticipant p : booking.getParticipants()){
-            if(p.getUser() != null && p.getUser().getId().equals(currentUserId)){
-                return p.getStatus() != null ? p.getStatus().name() : null;
-            }
-        }
-        return  null;
     }
 }
-

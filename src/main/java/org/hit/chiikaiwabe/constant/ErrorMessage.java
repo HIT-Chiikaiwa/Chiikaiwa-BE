@@ -140,6 +140,8 @@ public class ErrorMessage {
     public static final String ERR_NOT_YET_SCHEDULED = "exception.booking.not.yet.scheduled";
     public static final String ERR_ALREADY_RATED = "exception.booking.already.rated";
     public static final String ERR_INVALID_SCORE = "exception.booking.invalid.score";
+    public static final String ERR_CANCEL_TOO_LATE = "exception.booking.cancel.too.late";
+    public static final String ERR_COMPLETE_TOO_EARLY = "exception.booking.complete.too.early";
   }
 
 }

@@ -58,6 +58,14 @@ public class SuccessMessage {
         public static final String UNFRIENDED = "success.friendship.unfriended";
     }
 
+    // Booking
+    public static class Booking {
+        public static final String PUSH_NEW_REQUEST_TITLE = "push.booking.new.request.title";
+        public static final String PUSH_NEW_REQUEST_BODY = "push.booking.new.request.body";
+        public static final String PUSH_ACCEPTED_TITLE = "push.booking.accepted.title";
+        public static final String PUSH_ACCEPTED_BODY = "push.booking.accepted.body";
+        public static final String PUSH_REJECTED_TITLE = "push.booking.rejected.title";
+        public static final String PUSH_REJECTED_BODY = "push.booking.rejected.body";
     public static class Booking {
         public static final String CREATED = "success.booking.created";
         public static final String ACCEPTED = "success.booking.accepted";

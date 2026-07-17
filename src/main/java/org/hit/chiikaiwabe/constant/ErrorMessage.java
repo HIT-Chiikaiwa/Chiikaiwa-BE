@@ -126,6 +126,21 @@ public class ErrorMessage {
   }
 
   public static class Booking {
+    public static final String ERR_ONLY_1_ON_1 = "exception.booking.only.1.on.1";
+    public static final String ERR_PARTNER_NOT_FOUND = "exception.booking.partner.not.found";
+    public static final String ERR_SCHEDULED_AT_FUTURE = "exception.booking.scheduled.at.future";
+    public static final String ERR_NOT_FOUND = "exception.booking.not.found";
+    public static final String ERR_NOT_PARTICIPANT = "exception.booking.not.participant";
+    public static final String ERR_NOT_PENDING = "exception.booking.not.pending";
+    public static final String ERR_LIMIT_EXCEEDED = "exception.booking.limit.exceeded";
+    public static final String ERR_SERIALIZE_PAYLOAD = "exception.booking.serialize.payload";
+    
+    public static final String VAL_SCHEDULED_AT_REQUIRED = "booking.scheduledAt.required";
+    public static final String VAL_SCHEDULED_AT_FUTURE = "booking.scheduledAt.future";
+    public static final String VAL_LOCATION_NAME_REQUIRED = "booking.locationName.required";
+    public static final String VAL_LOCATION_ADDRESS_REQUIRED = "booking.locationAddress.required";
+    public static final String VAL_LOCATION_DISTRICT_REQUIRED = "booking.locationDistrict.required";
+    public static final String VAL_LOCATION_CITY_REQUIRED = "booking.locationCity.required";
     public static final String ERR_NOT_FOUND = "exception.booking.not.found";
     public static final String ERR_CONVERSATION_NOT_DIRECT = "exception.booking.conversation.not.direct";
     public static final String ERR_NOT_MEMBER = "exception.booking.not.member";

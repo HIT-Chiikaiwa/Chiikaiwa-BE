@@ -132,6 +132,9 @@ public class UrlConstant {
 
   public static class Booking {
     private static final String PRE_FIX = "/bookings";
+    public static final String CREATE_BOOKING = PRE_FIX + "/conversation/{conversationId}";
+    public static final String ACCEPT_BOOKING = PRE_FIX + "/{bookingId}/accept";
+    public static final String REJECT_BOOKING = PRE_FIX + "/{bookingId}/reject";
     public static final String CREATE = PRE_FIX + "/conversation/{conversationId}";
     public static final String ACCEPT = PRE_FIX + "/{bookingId}/accept";
     public static final String REJECT = PRE_FIX + "/{bookingId}/reject";

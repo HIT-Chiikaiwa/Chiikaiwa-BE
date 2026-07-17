@@ -83,7 +83,7 @@ public class ErrorMessage {
   }
 
   public static class Chat {
-    // DEV 1 - Core Chat
+
     public static final String ERR_CONVERSATION_NOT_FOUND = "exception.chat.conversation.not.found";
     public static final String ERR_NOT_MEMBER = "exception.chat.not.member";
     public static final String ERR_USER_BLOCKED = "exception.chat.user.blocked";
@@ -96,7 +96,7 @@ public class ErrorMessage {
     public static final String ERR_RECALL_TIMEOUT = "exception.chat.recall.timeout";
     public static final String ERR_ALREADY_LEFT = "exception.chat.already.left";
     public static final String ERR_SELF_CHAT = "exception.chat.self.chat";
-    // DEV 2 - Block, Report, Message features
+
     public static final String ERR_BLOCKED = "exception.chat.user.blocked";
     public static final String ERR_CANNOT_BLOCK_YOURSELF = "exception.chat.cannot.block.yourself";
     public static final String ERR_CANNOT_REPORT_YOURSELF = "cannot.report.yourself";
@@ -104,7 +104,7 @@ public class ErrorMessage {
     public static final String ERR_CANNOT_RECALL_AFTER_30_MINS = "exception.chat.cannot_recall_after_30_mins";
     public static final String ERR_NOT_IN_CONVERSATION = "exception.chat.not_in_conversation";
     public static final String ERR_MESSAGE_ALREADY_RECALLED = "exception.chat.message.already.recalled";
-    // New features
+
     public static final String ERR_NOT_OWNER = "exception.chat.not.owner";
     public static final String ERR_ALREADY_PINNED = "exception.chat.already.pinned";
     public static final String ERR_NOT_PINNED = "exception.chat.not.pinned";
@@ -141,6 +141,22 @@ public class ErrorMessage {
     public static final String VAL_LOCATION_ADDRESS_REQUIRED = "booking.locationAddress.required";
     public static final String VAL_LOCATION_DISTRICT_REQUIRED = "booking.locationDistrict.required";
     public static final String VAL_LOCATION_CITY_REQUIRED = "booking.locationCity.required";
+    public static final String ERR_NOT_FOUND = "exception.booking.not.found";
+    public static final String ERR_CONVERSATION_NOT_DIRECT = "exception.booking.conversation.not.direct";
+    public static final String ERR_NOT_MEMBER = "exception.booking.not.member";
+    public static final String ERR_MIN_ADVANCE_TIME = "exception.booking.min.advance.time";
+    public static final String ERR_MAX_ACTIVE_REACHED = "exception.booking.max.active.reached";
+    public static final String ERR_LOCATION_REQUIRED = "exception.booking.location.required";
+    public static final String ERR_USER_BLOCKED = "exception.booking.user.blocked";
+    public static final String ERR_INVALID_STATUS = "exception.booking.invalid.status";
+    public static final String ERR_NOT_PARTNER = "exception.booking.not.partner";
+    public static final String ERR_NOT_PARTICIPANT = "exception.booking.not.participant";
+    public static final String ERR_CANCEL_REASON_REQUIRED = "exception.booking.cancel.reason.required";
+    public static final String ERR_NOT_YET_SCHEDULED = "exception.booking.not.yet.scheduled";
+    public static final String ERR_ALREADY_RATED = "exception.booking.already.rated";
+    public static final String ERR_INVALID_SCORE = "exception.booking.invalid.score";
+    public static final String ERR_CANCEL_TOO_LATE = "exception.booking.cancel.too.late";
+    public static final String ERR_COMPLETE_TOO_EARLY = "exception.booking.complete.too.early";
   }
 
 }

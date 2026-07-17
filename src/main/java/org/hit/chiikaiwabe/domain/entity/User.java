@@ -76,6 +76,10 @@ public class User extends DateAuditing {
     @Column(nullable = false, name = "trust_score")
     private Double trustScore;
 
+    @Column(nullable = false, name = "total_rating_count")
+    @Builder.Default
+    private Integer totalRatingCount = 0;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserStatus userstatus;

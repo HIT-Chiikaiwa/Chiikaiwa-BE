@@ -8,5 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface BookingParticipantRepository extends JpaRepository<BookingParticipant, String> {
+
     Optional<BookingParticipant> findByBookingIdAndUserId(String bookingId, String userId);
+
 }

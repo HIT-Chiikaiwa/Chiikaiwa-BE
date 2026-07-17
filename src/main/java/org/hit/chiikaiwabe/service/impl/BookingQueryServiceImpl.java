@@ -37,6 +37,10 @@ public class BookingQueryServiceImpl implements BookingQueryService {
         boolean isPartner = booking.getParticipants() != null && booking.getParticipants().stream()
                 .anyMatch(p -> p.getUser() != null && p.getUser().getId().equals(currentUserId));
 
+        if (!isCreator && !isPartner) {
+            throw new ForbiddenException("You are not a participant of this booking");
+        }
+
         BookingResponseDto dto = bookingMapper.toDto(booking, currentUserId);
         boolean hasRated = bookingRatingRepository.existsByBookingIdAndRaterId(bookingId, currentUserId);
 

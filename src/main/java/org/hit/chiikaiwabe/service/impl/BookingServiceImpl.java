@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
-    private final BookingRepository bookingRepository;
+    private final OfflineBookingRepository bookingRepository;
     private final BookingParticipantRepository participantRepository;
     private final ConversationRepository conversationRepository;
     private final UserRepository userRepository;
@@ -57,10 +57,10 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponseDto createBooking(String userId, String conversationId, CreateBookingRequestDto requestDto) {
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
-        
+
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Chat.ERR_CONVERSATION_NOT_FOUND));
-                
+
         memberRepository.findByConversationIdAndUserId(conversationId, userId)
                 .orElseThrow(() -> new ForbiddenException(ErrorMessage.Chat.ERR_NOT_MEMBER));
 
@@ -68,7 +68,7 @@ public class BookingServiceImpl implements BookingService {
         if (members.size() != 2) {
             throw new InvalidException(ErrorMessage.Booking.ERR_ONLY_1_ON_1);
         }
-        
+
         User partner = members.stream()
                 .map(ConversationMember::getUser)
                 .filter(u -> !u.getId().equals(userId))
@@ -79,13 +79,13 @@ public class BookingServiceImpl implements BookingService {
             throw new InvalidException(ErrorMessage.Booking.ERR_SCHEDULED_AT_FUTURE);
         }
 
-        long activeCount = bookingRepository.countByConversationIdAndStatusIn(conversationId, 
+        long activeCount = bookingRepository.countByConversationIdAndStatusIn(conversationId,
                 List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED));
         if (activeCount >= 3) {
             throw new InvalidException(ErrorMessage.Booking.ERR_LIMIT_EXCEEDED);
         }
 
-        Booking booking = Booking.builder()
+        OfflineBooking booking = OfflineBooking.builder()
                 .creator(creator)
                 .conversation(conversation)
                 .status(BookingStatus.PENDING)
@@ -100,7 +100,7 @@ public class BookingServiceImpl implements BookingService {
                 .isRecurring(requestDto.getIsRecurring() != null ? requestDto.getIsRecurring() : false)
                 .reminderMinutesBefore(requestDto.getReminderMinutesBefore())
                 .build();
-                
+
         booking = bookingRepository.save(booking);
 
         BookingParticipant participant = BookingParticipant.builder()
@@ -109,7 +109,7 @@ public class BookingServiceImpl implements BookingService {
                 .status(ParticipantStatus.PENDING)
                 .reminderMinutesBefore(requestDto.getReminderMinutesBefore())
                 .build();
-        
+
         participant = participantRepository.save(participant);
         List<BookingParticipant> pList = new ArrayList<>();
         pList.add(participant);
@@ -139,13 +139,13 @@ public class BookingServiceImpl implements BookingService {
                 .build();
 
         message = messageRepository.save(message);
-        
+
         booking.setMessageId(message.getId());
 
         conversation.setLastMessage(message);
 
         MessageResponseDto messageDto = messageMapper.toDto(message);
-        
+
         String title = messageSource.getMessage(SuccessMessage.Booking.PUSH_NEW_REQUEST_TITLE, null, LocaleContextHolder.getLocale());
         String body = messageSource.getMessage(SuccessMessage.Booking.PUSH_NEW_REQUEST_BODY, new Object[]{creator.getFirstName() + " " + creator.getLastName()}, LocaleContextHolder.getLocale());
 
@@ -163,7 +163,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingResponseDto acceptBooking(String userId, String bookingId) {
-        Booking booking = bookingRepository.findByIdWithParticipants(bookingId)
+        OfflineBooking booking = bookingRepository.findByIdWithDetails(bookingId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Booking.ERR_NOT_FOUND));
 
         BookingParticipant participant = participantRepository.findByBookingIdAndUserId(bookingId, userId)
@@ -217,7 +217,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingResponseDto rejectBooking(String userId, String bookingId) {
-        Booking booking = bookingRepository.findByIdWithParticipants(bookingId)
+        OfflineBooking booking = bookingRepository.findByIdWithDetails(bookingId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Booking.ERR_NOT_FOUND));
 
         BookingParticipant participant = participantRepository.findByBookingIdAndUserId(bookingId, userId)
@@ -267,11 +267,11 @@ public class BookingServiceImpl implements BookingService {
 
         return mapToDto(booking);
     }
-    
-    private BookingResponseDto mapToDto(Booking booking) {
+
+    private BookingResponseDto mapToDto(OfflineBooking booking) {
         List<BookingResponseDto.ParticipantDto> participantDtos = new ArrayList<>();
         if (booking.getParticipants() != null) {
-            participantDtos = booking.getParticipants().stream().map(p -> 
+            participantDtos = booking.getParticipants().stream().map(p ->
                     BookingResponseDto.ParticipantDto.builder()
                             .id(p.getId())
                             .userId(p.getUser().getId())
@@ -281,13 +281,13 @@ public class BookingServiceImpl implements BookingService {
                             .build()
             ).collect(Collectors.toList());
         }
-    
+
         return BookingResponseDto.builder()
                 .id(booking.getId())
                 .creatorId(booking.getCreator().getId())
                 .conversationId(booking.getConversation() != null ? booking.getConversation().getId() : null)
                 .messageId(booking.getMessageId())
-                .status(booking.getStatus())
+                .status(booking.getStatus().name())
                 .subject(booking.getSubject())
                 .scheduledAt(booking.getScheduledAt())
                 .durationMinutes(booking.getDurationMinutes())

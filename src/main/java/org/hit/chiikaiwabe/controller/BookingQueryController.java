@@ -29,7 +29,7 @@ public class BookingQueryController {
     private final BookingQueryService bookingQueryService;
 
     @Operation(summary = "Get booking detail")
-    @GetMapping("/bookings/{bookingId}")
+    @GetMapping(org.hit.chiikaiwabe.constant.UrlConstant.Booking.DETAIL)
     public ResponseEntity<RestData<BookingResponseDto>> getBookingDetail(
             @PathVariable String bookingId,
             @CurrentUser UserPrincipal currentUser
@@ -39,16 +39,16 @@ public class BookingQueryController {
     }
 
     @Operation(summary = "Get my bookings")
-    @GetMapping("/bookings")
+    @GetMapping(org.hit.chiikaiwabe.constant.UrlConstant.Booking.LIST)
     public ResponseEntity<RestData<List<BookingResponseDto>>> getMyBookings(@CurrentUser UserPrincipal currentUser){
-        List<BookingResponseDto> reponse = bookingQueryService.getMyBookings(currentUser.getId());
-        return  VsResponseUtil.success(reponse);
+        List<BookingResponseDto> response = bookingQueryService.getMyBookings(currentUser.getId());
+        return VsResponseUtil.success(response);
     }
 
     @Operation(summary = "Get weekly schedule")
-    @GetMapping("/bookings/weekly")
+    @GetMapping(org.hit.chiikaiwabe.constant.UrlConstant.Booking.WEEKLY)
     public ResponseEntity<RestData<BookingWeekResponseDto>> getWeeklySchedule(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate weekStart,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStart,
             @CurrentUser UserPrincipal currentUser){
         BookingWeekResponseDto response = bookingQueryService.getWeeklySchedule(currentUser.getId(), weekStart);
         return VsResponseUtil.success(response);

@@ -27,6 +27,9 @@ public interface BookingMapper {
 
     List<BookingResponseDto> toDtoList(List<OfflineBooking> bookings, @Context String currentUserId);
 
+    @Mapping(source = "user.id", target = "userId")
+    BookingResponseDto.ParticipantDto participantToParticipantDto(BookingParticipant participant);
+
     @AfterMapping
     default void customizeDynamicFields(@MappingTarget BookingResponseDto dto, OfflineBooking booking, @Context String currentUserId) {
 

@@ -3,6 +3,7 @@ package org.hit.chiikaiwabe.domain.dto.response;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -24,7 +25,9 @@ public class BookingResponseDto {
 
     private String note;
     private Boolean isRecurring;
+    private String cancelledBy;
     private String cancelReason;
+    private Integer reminderMinutesBefore;
 
     private String creatorId;
     private String creatorName;
@@ -41,5 +44,20 @@ public class BookingResponseDto {
     private String messageId;
     private String conversationId;
     private LocalDateTime createdDate;
+    private LocalDateTime lastModifiedDate;
 
+    private List<ParticipantDto> participants;
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ParticipantDto {
+        private String id;
+        private String userId;
+        private org.hit.chiikaiwabe.domain.enums.ParticipantStatus status;
+        private Integer reminderMinutesBefore;
+        private LocalDateTime respondedAt;
+    }
 }

@@ -7,6 +7,7 @@ import org.hit.chiikaiwabe.domain.entity.OfflineBooking;
 import org.hit.chiikaiwabe.domain.mapper.BookingMapper;
 import org.hit.chiikaiwabe.exception.ForbiddenException;
 import org.hit.chiikaiwabe.exception.NotFoundException;
+import org.hit.chiikaiwabe.constant.ErrorMessage;
 import org.hit.chiikaiwabe.repository.BookingParticipantRepository;
 import org.hit.chiikaiwabe.repository.BookingRatingRepository;
 import org.hit.chiikaiwabe.repository.OfflineBookingRepository;
@@ -32,13 +33,13 @@ public class BookingQueryServiceImpl implements BookingQueryService {
     @Override
     public BookingResponseDto getBookingDetail(String currentUserId, String bookingId) {
         OfflineBooking booking = offlineBookingRepository.findByIdWithDetails(bookingId)
-                .orElseThrow(()-> new NotFoundException("Booking not found"));
+                .orElseThrow(()-> new NotFoundException(ErrorMessage.Booking.ERR_NOT_FOUND));
         boolean isCreator = booking.getCreator() != null && booking.getCreator().getId().equals(currentUserId);
         boolean isPartner = booking.getParticipants() != null && booking.getParticipants().stream()
                 .anyMatch(p -> p.getUser() != null && p.getUser().getId().equals(currentUserId));
 
         if (!isCreator && !isPartner) {
-            throw new ForbiddenException("You are not a participant of this booking");
+            throw new ForbiddenException(ErrorMessage.Booking.ERR_NOT_PARTICIPANT);
         }
 
         BookingResponseDto dto = bookingMapper.toDto(booking, currentUserId);

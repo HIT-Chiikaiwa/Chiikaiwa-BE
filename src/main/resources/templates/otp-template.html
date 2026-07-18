@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Mã Xác Thực OTP</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+        .container { background-color: #ffffff; padding: 30px; border-radius: 8px; max-width: 500px; margin: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .header { text-align: center; color: #333333; border-bottom: 2px solid #eeeeee; padding-bottom: 10px;}
+        .otp-box { text-align: center; margin: 30px 0; }
+        .otp-code { font-size: 32px; font-weight: bold; color: #4CAF50; letter-spacing: 5px; padding: 15px; border: 2px dashed #4CAF50; display: inline-block; border-radius: 8px; }
+        .footer { font-size: 12px; color: #888888; text-align: center; margin-top: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>Hệ Thống Chiikaiwa</h2>
+    </div>
+
+    <p>Xin chào <strong><span th:text="${email}"></span></strong>,</p>
+    <p>Bạn vừa yêu cầu một mã xác thực (OTP). Vui lòng sử dụng mã dưới đây để tiếp tục:</p>
+
+    <div class="otp-box">
+        <div class="otp-code" th:text="${otp}">123456</div>
+    </div>
+
+    <p><em>Mã này sẽ hết hạn sau 5 phút. Tuyệt đối không chia sẻ mã này cho bất kỳ ai.</em></p>
+
+    <div class="footer">
+        <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này.</p>
+        <p>&copy; 2026 Chiikaiwa Project. All rights reserved.</p>
+    </div>
+</div>
+</body>
+</html>

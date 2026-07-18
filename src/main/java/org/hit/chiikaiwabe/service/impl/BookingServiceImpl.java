@@ -23,6 +23,7 @@ import org.hit.chiikaiwabe.repository.*;
 import org.hit.chiikaiwabe.service.BookingService;
 import org.hit.chiikaiwabe.service.ChatNotificationService;
 import org.hit.chiikaiwabe.service.PushNotificationService;
+import org.hit.chiikaiwabe.config.properties.BookingProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -51,6 +52,7 @@ public class BookingServiceImpl implements BookingService {
     private final ObjectMapper objectMapper;
     private final MessageMapper messageMapper;
     private final MessageSource messageSource;
+    private final BookingProperties bookingProperties;
 
     @Override
     @Transactional
@@ -75,13 +77,13 @@ public class BookingServiceImpl implements BookingService {
                 .findFirst()
                 .orElseThrow(() -> new InvalidException(ErrorMessage.Booking.ERR_PARTNER_NOT_FOUND));
 
-        if (requestDto.getScheduledAt().isBefore(LocalDateTime.now().plusMinutes(30))) {
+        if (requestDto.getScheduledAt().isBefore(LocalDateTime.now().plusMinutes(bookingProperties.getMinAdvanceMinutes()))) {
             throw new InvalidException(ErrorMessage.Booking.ERR_SCHEDULED_AT_FUTURE);
         }
 
         long activeCount = bookingRepository.countByConversationIdAndStatusIn(conversationId,
                 List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED));
-        if (activeCount >= 3) {
+        if (activeCount >= bookingProperties.getMaxActiveBookings()) {
             throw new InvalidException(ErrorMessage.Booking.ERR_LIMIT_EXCEEDED);
         }
 

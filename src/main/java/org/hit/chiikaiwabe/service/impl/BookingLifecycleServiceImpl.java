@@ -22,7 +22,6 @@ import org.hit.chiikaiwabe.service.ChatNotificationService;
 import org.hit.chiikaiwabe.service.PushNotificationService;
 import org.hit.chiikaiwabe.component.ChatHelper;
 import org.hit.chiikaiwabe.domain.entity.Message;
-import org.hit.chiikaiwabe.domain.enums.MessageType;
 import org.hit.chiikaiwabe.domain.entity.BookingParticipant;
 import org.hit.chiikaiwabe.domain.enums.ParticipantStatus;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +34,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+
 
 @Slf4j
 @Service
@@ -78,9 +77,18 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
             String content = cancelerName + " đã hủy lịch hẹn. Lí do: " + dto.getCancelReason();
 
             Message sysMsg = chatHelper.createSystemMessage(booking.getConversation(), content);
-            chatNotificationService.broadcastSystemEvent(booking.getConversation().getId(), chatHelper.toMessageResponseDto(sysMsg));
+            org.hit.chiikaiwabe.domain.dto.response.MessageResponseDto sysMsgDto = chatHelper.toMessageResponseDto(sysMsg);
 
-            sendBookingNotification(booking.getConversation().getId(), bookingId, BookingStatus.CANCELLED);
+            String conversationId = booking.getConversation().getId();
+
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    chatNotificationService.broadcastSystemEvent(conversationId, sysMsgDto);
+                }
+            });
+
+            sendBookingNotification(conversationId, bookingId, BookingStatus.CANCELLED);
         }
 
         return bookingMapper.toDto(booking, userId);
@@ -171,11 +179,11 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
         User rater = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
 
-        User ratedUser = null;
+        User ratedUser;
         if (booking.getCreator().getId().equals(userId)) {
             ratedUser = booking.getParticipants().stream()
-                    .filter(p -> !p.getUser().getId().equals(userId))
-                    .map(p -> p.getUser())
+                    .map(BookingParticipant::getUser)
+                    .filter(u -> !u.getId().equals(userId))
                     .findFirst()
                     .orElseThrow(() -> new InvalidException(ErrorMessage.Booking.ERR_NOT_PARTNER));
         } else {

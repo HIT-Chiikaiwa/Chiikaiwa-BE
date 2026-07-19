@@ -13,6 +13,7 @@ import org.hit.chiikaiwabe.exception.ForbiddenException;
 import org.hit.chiikaiwabe.exception.InvalidException;
 import org.hit.chiikaiwabe.repository.ConversationMemberRepository;
 import org.hit.chiikaiwabe.repository.ConversationRepository;
+import org.hit.chiikaiwabe.repository.UserRepository;
 import org.hit.chiikaiwabe.service.ChatNotificationService;
 import org.hit.chiikaiwabe.service.ConversationManagementService;
 import org.hit.chiikaiwabe.service.UserBlockService;
@@ -33,6 +34,7 @@ public class ConversationManagementServiceImpl implements ConversationManagement
 
     private final ConversationRepository conversationRepository;
     private final ConversationMemberRepository memberRepository;
+    private final UserRepository userRepository;
     private final UserBlockService userBlockService;
     private final ChatNotificationService chatNotificationService;
     private final ChatHelper chatHelper;
@@ -97,17 +99,21 @@ public class ConversationManagementServiceImpl implements ConversationManagement
         conv = conversationRepository.save(conv);
 
         LocalDateTime now = LocalDateTime.now();
-        memberRepository.save(ConversationMember.builder()
+        java.util.List<ConversationMember> membersToSave = new java.util.ArrayList<>();
+
+        membersToSave.add(ConversationMember.builder()
                 .conversation(conv).user(owner)
                 .role(MemberRole.OWNER).joinedAt(now).lastReadAt(now).build());
 
-        for (String memberId : dto.getMemberIds()) {
-            if (memberId.equals(userId)) continue;
-            User member = chatHelper.findUserById(memberId);
-            memberRepository.save(ConversationMember.builder()
+        List<User> newUsers = userRepository.findAllById(dto.getMemberIds());
+        for (User member : newUsers) {
+            if (member.getId().equals(userId)) continue;
+            membersToSave.add(ConversationMember.builder()
                     .conversation(conv).user(member)
                     .role(MemberRole.MEMBER).joinedAt(now).lastReadAt(now).build());
         }
+
+        memberRepository.saveAll(membersToSave);
 
         String content = owner.getLastName() + " " + owner.getFirstName() + " đã tạo nhóm";
         chatHelper.createSystemMessage(conv, content);
@@ -128,11 +134,14 @@ public class ConversationManagementServiceImpl implements ConversationManagement
         }
 
         LocalDateTime now = LocalDateTime.now();
-        for (String memberId : dto.getMemberIds()) {
-            User newMember = chatHelper.findUserById(memberId);
+        List<User> newUsers = userRepository.findAllById(dto.getMemberIds());
+        List<ConversationMember> existingMembers = memberRepository.findByConversationId(conversationId);
+        List<ConversationMember> membersToSave = new java.util.ArrayList<>();
 
-            Optional<ConversationMember> existingMember =
-                    memberRepository.findByConversationIdAndUserId(conversationId, memberId);
+        for (User newMember : newUsers) {
+            Optional<ConversationMember> existingMember = existingMembers.stream()
+                    .filter(m -> m.getUser().getId().equals(newMember.getId()))
+                    .findFirst();
 
             if (existingMember.isPresent()) {
                 ConversationMember cm = existingMember.get();
@@ -140,10 +149,10 @@ public class ConversationManagementServiceImpl implements ConversationManagement
                     cm.setLeftAt(null);
                     cm.setJoinedAt(now);
                     cm.setLastReadAt(now);
-                    memberRepository.save(cm);
+                    membersToSave.add(cm);
                 }
             } else {
-                memberRepository.save(ConversationMember.builder()
+                membersToSave.add(ConversationMember.builder()
                         .conversation(conversation).user(newMember)
                         .role(MemberRole.MEMBER).joinedAt(now).lastReadAt(now).build());
             }
@@ -152,6 +161,10 @@ public class ConversationManagementServiceImpl implements ConversationManagement
                     " đã thêm " + newMember.getLastName() + " " + newMember.getFirstName();
             Message sysMsg = chatHelper.createSystemMessage(conversation, content);
             chatNotificationService.broadcastSystemEvent(conversationId, chatHelper.toMessageResponseDto(sysMsg));
+        }
+
+        if (!membersToSave.isEmpty()) {
+            memberRepository.saveAll(membersToSave);
         }
     }
 
@@ -239,8 +252,8 @@ public class ConversationManagementServiceImpl implements ConversationManagement
         LocalDateTime now = LocalDateTime.now();
         for (ConversationMember member : activeMembers) {
             member.setLeftAt(now);
-            memberRepository.save(member);
         }
+        memberRepository.saveAll(activeMembers);
 
         User ownerUser = chatHelper.findUserById(userId);
         String content = ownerUser.getLastName() + " " + ownerUser.getFirstName() + " đã giải tán nhóm";

@@ -50,8 +50,10 @@ public class BookingReminderJob {
     @Scheduled(fixedRate = 900000) //15p
     public void sendBookingReminders(){
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime oneHourLater = now.plusHours(1);
-        List<OfflineBooking> upcomingBookings = offlineBookingRepository.findUpcomingForReminder(now, oneHourLater);
+        int reminderMinutes = bookingProperties.getDefaultReminderMinutes() > 0 ?
+                bookingProperties.getDefaultReminderMinutes() : 60;
+        LocalDateTime reminderCutoff = now.plusMinutes(reminderMinutes);
+        List<OfflineBooking> upcomingBookings = offlineBookingRepository.findUpcomingForReminder(now, reminderCutoff);
         for(OfflineBooking booking : upcomingBookings){
             String redisKey = "booking:reminded:" + booking.getId();
             Boolean alreadyReminded = redisTemplate.hasKey(redisKey);

@@ -18,6 +18,7 @@ import org.hit.chiikaiwabe.constant.ErrorMessage;
 import org.hit.chiikaiwabe.constant.SuccessMessage;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.hit.chiikaiwabe.domain.mapper.BookingMapper;
 import org.hit.chiikaiwabe.domain.mapper.MessageMapper;
 import org.hit.chiikaiwabe.repository.*;
 import org.hit.chiikaiwabe.service.BookingService;
@@ -53,23 +54,24 @@ public class BookingServiceImpl implements BookingService {
     private final MessageMapper messageMapper;
     private final MessageSource messageSource;
     private final BookingProperties bookingProperties;
+    private final BookingMapper bookingMapper;
 
     @Override
     @Transactional
     public BookingResponseDto createBooking(String userId, String conversationId, CreateBookingRequestDto requestDto) {
-        User creator = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
-
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Chat.ERR_CONVERSATION_NOT_FOUND));
-
-        memberRepository.findByConversationIdAndUserId(conversationId, userId)
-                .orElseThrow(() -> new ForbiddenException(ErrorMessage.Chat.ERR_NOT_MEMBER));
 
         List<ConversationMember> members = memberRepository.findByConversationId(conversationId);
         if (members.size() != 2) {
             throw new InvalidException(ErrorMessage.Booking.ERR_ONLY_1_ON_1);
         }
+
+        User creator = members.stream()
+                .map(ConversationMember::getUser)
+                .filter(u -> u.getId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new ForbiddenException(ErrorMessage.Chat.ERR_NOT_MEMBER));
 
         User partner = members.stream()
                 .map(ConversationMember::getUser)
@@ -159,7 +161,7 @@ public class BookingServiceImpl implements BookingService {
             }
         });
 
-        return mapToDto(booking);
+        return bookingMapper.toDto(booking, userId);
     }
 
     @Override
@@ -168,7 +170,9 @@ public class BookingServiceImpl implements BookingService {
         OfflineBooking booking = bookingRepository.findByIdWithDetails(bookingId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Booking.ERR_NOT_FOUND));
 
-        BookingParticipant participant = participantRepository.findByBookingIdAndUserId(bookingId, userId)
+        BookingParticipant participant = booking.getParticipants().stream()
+                .filter(p -> p.getUser().getId().equals(userId))
+                .findFirst()
                 .orElseThrow(() -> new ForbiddenException(ErrorMessage.Booking.ERR_NOT_PARTICIPANT));
 
         if (booking.getStatus() != BookingStatus.PENDING || participant.getStatus() != ParticipantStatus.PENDING) {
@@ -213,7 +217,7 @@ public class BookingServiceImpl implements BookingService {
             });
         }
 
-        return mapToDto(booking);
+        return bookingMapper.toDto(booking, userId);
     }
 
     @Override
@@ -222,7 +226,9 @@ public class BookingServiceImpl implements BookingService {
         OfflineBooking booking = bookingRepository.findByIdWithDetails(bookingId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Booking.ERR_NOT_FOUND));
 
-        BookingParticipant participant = participantRepository.findByBookingIdAndUserId(bookingId, userId)
+        BookingParticipant participant = booking.getParticipants().stream()
+                .filter(p -> p.getUser().getId().equals(userId))
+                .findFirst()
                 .orElseThrow(() -> new ForbiddenException(ErrorMessage.Booking.ERR_NOT_PARTICIPANT));
 
         if (booking.getStatus() != BookingStatus.PENDING || participant.getStatus() != ParticipantStatus.PENDING) {
@@ -267,44 +273,8 @@ public class BookingServiceImpl implements BookingService {
             });
         }
 
-        return mapToDto(booking);
+        return bookingMapper.toDto(booking, userId);
     }
 
-    private BookingResponseDto mapToDto(OfflineBooking booking) {
-        List<BookingResponseDto.ParticipantDto> participantDtos = new ArrayList<>();
-        if (booking.getParticipants() != null) {
-            participantDtos = booking.getParticipants().stream().map(p ->
-                    BookingResponseDto.ParticipantDto.builder()
-                            .id(p.getId())
-                            .userId(p.getUser().getId())
-                            .status(p.getStatus())
-                            .reminderMinutesBefore(p.getReminderMinutesBefore())
-                            .respondedAt(p.getRespondedAt())
-                            .build()
-            ).collect(Collectors.toList());
-        }
 
-        return BookingResponseDto.builder()
-                .id(booking.getId())
-                .creatorId(booking.getCreator().getId())
-                .conversationId(booking.getConversation() != null ? booking.getConversation().getId() : null)
-                .messageId(booking.getMessageId())
-                .status(booking.getStatus().name())
-                .subject(booking.getSubject())
-                .scheduledAt(booking.getScheduledAt())
-                .durationMinutes(booking.getDurationMinutes())
-                .locationName(booking.getLocationName())
-                .locationAddress(booking.getLocationAddress())
-                .locationDistrict(booking.getLocationDistrict())
-                .locationCity(booking.getLocationCity())
-                .note(booking.getNote())
-                .isRecurring(booking.getIsRecurring())
-                .cancelledBy(booking.getCancelledBy())
-                .cancelReason(booking.getCancelReason())
-                .reminderMinutesBefore(booking.getReminderMinutesBefore())
-                .createdDate(booking.getCreatedDate())
-                .lastModifiedDate(booking.getLastModifiedDate())
-                .participants(participantDtos)
-                .build();
-    }
 }

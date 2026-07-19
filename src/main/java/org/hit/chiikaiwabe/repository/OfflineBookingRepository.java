@@ -19,7 +19,8 @@ public interface OfflineBookingRepository extends JpaRepository<OfflineBooking, 
     @Query("SELECT b FROM OfflineBooking b WHERE b.id = :id")
     Optional<OfflineBooking> findByIdWithDetails(@Param("id") String id);
 
-    long countByConversationIdAndStatusIn(String conversationId, List<org.hit.chiikaiwabe.domain.enums.BookingStatus> statuses);
+    @Query("SELECT COUNT(b) FROM OfflineBooking b WHERE b.conversation.id = :conversationId AND b.status IN :statuses")
+    long countByConversationIdAndStatusIn(@Param("conversationId") String conversationId, @Param("statuses") List<org.hit.chiikaiwabe.domain.enums.BookingStatus> statuses);
 
     @Query("SELECT COUNT(b) FROM OfflineBooking b WHERE " +
             "(b.creator.id = :userId OR EXISTS (SELECT bp FROM BookingParticipant bp WHERE bp.booking = b AND bp.user.id = :userId AND bp.status = 'ACCEPTED')) " +

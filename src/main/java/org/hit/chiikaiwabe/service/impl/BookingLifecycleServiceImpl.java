@@ -72,9 +72,11 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
         booking = bookingRepository.save(booking);
 
         if (booking.getConversation() != null) {
-            User canceler = userRepository.findById(userId).orElse(null);
+            User canceler = booking.getCreator().getId().equals(userId) ? booking.getCreator() :
+                    booking.getParticipants().stream().map(BookingParticipant::getUser)
+                            .filter(u -> u.getId().equals(userId)).findFirst().orElse(null);
             String cancelerName = canceler != null ? (canceler.getLastName() + " " + canceler.getFirstName()) : "Người dùng";
-            String content = cancelerName + " đã hủy lịch hẹn. Lí do: " + dto.getCancelReason();
+            String content = cancelerName + " đã hủy lịch hẹn. Lý do: " + dto.getCancelReason();
 
             Message sysMsg = chatHelper.createSystemMessage(booking.getConversation(), content);
             org.hit.chiikaiwabe.domain.dto.response.MessageResponseDto sysMsgDto = chatHelper.toMessageResponseDto(sysMsg);
@@ -176,8 +178,10 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
             throw new InvalidException(ErrorMessage.Booking.ERR_ALREADY_RATED);
         }
 
-        User rater = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
+        User rater = booking.getCreator().getId().equals(userId) ? booking.getCreator() :
+                booking.getParticipants().stream().map(BookingParticipant::getUser)
+                        .filter(u -> u.getId().equals(userId)).findFirst()
+                        .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
 
         User ratedUser;
         if (booking.getCreator().getId().equals(userId)) {

@@ -5,12 +5,9 @@ import org.hit.chiikaiwabe.domain.enums.UserStatus;
 import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Nationalized;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
-
 import java.time.LocalDate;
 
 @AllArgsConstructor
@@ -75,7 +72,7 @@ public class User extends DateAuditing {
     @Column(nullable = false, name = "trust_score")
     private Double trustScore;
 
-    @Column(nullable = false, name = "total_rating_count")
+    @Column(name = "total_rating_count")
     @Builder.Default
     private Integer totalRatingCount = 0;
 
@@ -83,7 +80,7 @@ public class User extends DateAuditing {
     @Column(nullable = false, length = 20)
     private UserStatus userstatus;
 
-    @Column(nullable = false, name = "buddy_active")
+    @Column(name = "buddy_active")
     @Builder.Default
     private Boolean buddyActive = Boolean.FALSE;
 
@@ -91,12 +88,13 @@ public class User extends DateAuditing {
     @Column(name = "status_tag")
     private String statusTag;
 
-    @Column(nullable = false, name = "delete_flag")
+    @Column(name = "delete_flag")
     @Builder.Default
     private Boolean deleteFlag = Boolean.FALSE;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;
+
 
 }

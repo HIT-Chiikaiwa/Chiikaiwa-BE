@@ -9,6 +9,7 @@ import org.hit.chiikaiwabe.domain.entity.MessageDeletion;
 import org.hit.chiikaiwabe.domain.entity.User;
 import org.hit.chiikaiwabe.domain.enums.MessageType;
 import org.hit.chiikaiwabe.exception.ForbiddenException;
+import org.hit.chiikaiwabe.exception.InternalServerException;
 import org.hit.chiikaiwabe.exception.InvalidException;
 import org.hit.chiikaiwabe.exception.NotFoundException;
 import org.hit.chiikaiwabe.constant.ErrorMessage;
@@ -26,7 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @Transactional
 public class MessageFeatureServiceImpl implements MessageFeatureService {
@@ -149,7 +152,8 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
         try {
             content = objectMapper.writeValueAsString(payload);
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-            throw new RuntimeException("Failed to format schedule invite content", e);
+            log.error("Failed to format schedule invite content", e);
+            throw new InternalServerException("Failed to format schedule invite content");
         }
 
         Message message = Message.builder()

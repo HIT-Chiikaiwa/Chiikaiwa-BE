@@ -10,6 +10,7 @@ import org.hit.chiikaiwabe.domain.dto.response.CommonResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.LoginResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.TokenRefreshResponseDto;
 import org.hit.chiikaiwabe.domain.entity.User;
+import org.hit.chiikaiwabe.exception.InternalServerException;
 import org.hit.chiikaiwabe.exception.InvalidException;
 import org.hit.chiikaiwabe.exception.NotFoundException;
 import org.hit.chiikaiwabe.exception.UnauthorizedException;
@@ -31,7 +32,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
 
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -145,7 +148,8 @@ public class AuthServiceImpl implements AuthService {
       String redisKey = "TEMP_USER:" + request.getEmail();
       redisTemplate.opsForValue().set(redisKey, userJson, 5, TimeUnit.MINUTES);
     } catch (Exception e) {
-      throw new RuntimeException(ErrorMessage.Auth.ERR_SYSTEM_PROCESS);
+      log.error("Failed to register user to Redis", e);
+      throw new InternalServerException(ErrorMessage.Auth.ERR_SYSTEM_PROCESS);
     }
 
     String otpCode = otpService.generateOtp(request.getEmail());
@@ -190,7 +194,8 @@ public class AuthServiceImpl implements AuthService {
       redisTemplate.delete(redisKey);
 
     } catch (Exception e) {
-      throw new RuntimeException(ErrorMessage.Auth.ERR_SYSTEM_PROCESS);
+      log.error("Failed to create user on verify OTP", e);
+      throw new InternalServerException(ErrorMessage.Auth.ERR_SYSTEM_PROCESS);
     }
   }
 

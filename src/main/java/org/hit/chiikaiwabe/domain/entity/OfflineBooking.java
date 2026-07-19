@@ -3,7 +3,6 @@ package org.hit.chiikaiwabe.domain.entity;
 import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
 import org.hit.chiikaiwabe.domain.enums.BookingStatus;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Nationalized;
 
 import jakarta.persistence.*;
@@ -26,8 +25,7 @@ import java.util.List;
 public class OfflineBooking extends DateAuditing {
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(insertable = false, updatable = false, nullable = false, columnDefinition = "CHAR(36)")
     private String id;
 

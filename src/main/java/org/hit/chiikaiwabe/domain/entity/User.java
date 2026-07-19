@@ -96,11 +96,5 @@ public class User extends DateAuditing {
     @Column(nullable = false, length = 20)
     private Role role;
 
-    @PostLoad
-    private void onPostLoad() {
-        if (totalRatingCount == null) totalRatingCount = 0;
-        if (buddyActive == null) buddyActive = false;
-        if (deleteFlag == null) deleteFlag = false;
-    }
 
 }

@@ -11,9 +11,11 @@ import java.util.Optional;
 @Repository
 public interface BookingRatingRepository extends JpaRepository<BookingRating, String> {
 
-    boolean existsByBookingIdAndRaterId(String bookingId, String raterId);
+    @Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END FROM BookingRating r WHERE r.booking.id = :bookingId AND r.rater.id = :raterId")
+    boolean existsByBookingIdAndRaterId(@Param("bookingId") String bookingId, @Param("raterId") String raterId);
 
-    Optional<BookingRating> findByBookingIdAndRaterId(String bookingId, String raterId);
+    @Query("SELECT r FROM BookingRating r WHERE r.booking.id = :bookingId AND r.rater.id = :raterId")
+    Optional<BookingRating> findByBookingIdAndRaterId(@Param("bookingId") String bookingId, @Param("raterId") String raterId);
 
     @Query("SELECT AVG(r.score) FROM BookingRating r WHERE r.ratedUser.id = :userId")
     Double findAverageScoreByRatedUserId(@Param("userId") String userId);

@@ -8,7 +8,6 @@ import org.hit.chiikaiwabe.domain.mapper.BookingMapper;
 import org.hit.chiikaiwabe.exception.ForbiddenException;
 import org.hit.chiikaiwabe.exception.NotFoundException;
 import org.hit.chiikaiwabe.constant.ErrorMessage;
-import org.hit.chiikaiwabe.repository.BookingParticipantRepository;
 import org.hit.chiikaiwabe.repository.BookingRatingRepository;
 import org.hit.chiikaiwabe.repository.OfflineBookingRepository;
 import org.hit.chiikaiwabe.service.BookingQueryService;
@@ -26,7 +25,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BookingQueryServiceImpl implements BookingQueryService {
     private final OfflineBookingRepository offlineBookingRepository;
-    private final BookingParticipantRepository bookingParticipantRepository;
     private final BookingRatingRepository bookingRatingRepository;
     private final BookingMapper bookingMapper;
 

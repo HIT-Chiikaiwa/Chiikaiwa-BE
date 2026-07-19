@@ -23,7 +23,7 @@ public class SuccessMessage {
         public static final String TOTAL_COUNT_SUCCESS = "location.cleanup.total-count-success";
     }
 
-    // Chat - Unified constants (DEV 1 + DEV 2)
+
     public static class Chat {
         public static final String MESSAGE_SENT = "success.chat.message.sent";
         public static final String GROUP_CREATED = "success.chat.group.created";
@@ -36,7 +36,7 @@ public class SuccessMessage {
         public static final String DEVICE_REGISTERED = "success.chat.device.registered";
         public static final String MESSAGE_DELETED_SUCCESS = "success.chat.message.deleted";
         public static final String MESSAGE_RECALLED_SUCCESS = "success.chat.message.recalled";
-        // New features
+
         public static final String MESSAGE_PINNED = "success.chat.message.pinned";
         public static final String MESSAGE_UNPINNED = "success.chat.message.unpinned";
         public static final String MESSAGE_FORWARDED = "success.chat.message.forwarded";
@@ -46,18 +46,33 @@ public class SuccessMessage {
         public static final String OWNERSHIP_TRANSFERRED = "success.chat.ownership.transferred";
     }
 
-    // Device
     public static class Device {
         public static final String REGISTER = "success.chat.device.registered";
         public static final String UNREGISTER = "success.chat.device.unregistered";
     }
 
-    // Friendship
     public static class Friendship {
         public static final String REQUEST_SENT = "success.friendship.request.sent";
         public static final String REQUEST_ACCEPTED = "success.friendship.request.accepted";
         public static final String REQUEST_REJECTED = "success.friendship.request.rejected";
         public static final String UNFRIENDED = "success.friendship.unfriended";
+    }
+
+    // Booking
+    public static class Booking {
+        public static final String PUSH_NEW_REQUEST_TITLE = "push.booking.new.request.title";
+        public static final String PUSH_NEW_REQUEST_BODY = "push.booking.new.request.body";
+        public static final String PUSH_ACCEPTED_TITLE = "push.booking.accepted.title";
+        public static final String PUSH_ACCEPTED_BODY = "push.booking.accepted.body";
+        public static final String PUSH_REJECTED_TITLE = "push.booking.rejected.title";
+        public static final String PUSH_REJECTED_BODY = "push.booking.rejected.body";
+
+        public static final String CREATED = "success.booking.created";
+        public static final String ACCEPTED = "success.booking.accepted";
+        public static final String REJECTED = "success.booking.rejected";
+        public static final String CANCELLED = "success.booking.cancelled";
+        public static final String COMPLETED = "success.booking.completed";
+        public static final String RATED = "success.booking.rated";
     }
 
 }

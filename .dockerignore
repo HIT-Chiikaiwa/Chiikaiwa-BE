@@ -1,5 +1,5 @@
 # Maven / Gradle Build
-target/
+# target/
 build/
 .gradle/
 .mvn/wrapper/maven-wrapper.jar

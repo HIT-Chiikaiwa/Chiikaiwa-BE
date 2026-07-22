@@ -15,12 +15,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 
 import jakarta.validation.Valid;
 import java.util.List;
 
 @RequiredArgsConstructor
 @RestApiV1
+@RateLimit(capacity = 20, durationInSeconds = 60)
 public class ProfileController {
 
     private final ProfileService profileService;

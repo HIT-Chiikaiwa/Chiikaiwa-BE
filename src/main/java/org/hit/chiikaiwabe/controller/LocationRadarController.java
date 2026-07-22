@@ -16,12 +16,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 
 import jakarta.validation.Valid;
 import java.util.List;
 
 @RequiredArgsConstructor
 @RestApiV1
+@RateLimit(capacity = 5, durationInSeconds = 60)
 public class LocationRadarController {
 
     private final LocationRadarService locationRadarService;

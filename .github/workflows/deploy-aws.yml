@@ -12,7 +12,7 @@ name: Build & Deploy to AWS EC2
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch: # Cho phép trigger thủ công từ GitHub UI
 
 env:
@@ -65,7 +65,7 @@ jobs:
           echo "Pushing to ECR..."
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          echo "✅ Image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "Image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
       # ── 7. Deploy to EC2 via SSH ──────────────────────────
       - name: Deploy to EC2
@@ -73,13 +73,49 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          CLOUD_NAME: ${{ secrets.CLOUD_NAME }}
+          CLOUD_API_KEY: ${{ secrets.CLOUD_API_KEY }}
+          CLOUD_API_SECRET: ${{ secrets.CLOUD_API_SECRET }}
+          BREVO_NAME: ${{ secrets.BREVO_NAME }}
+          BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: ECR_REGISTRY,ECR_REPOSITORY
+          envs: ECR_REGISTRY,ECR_REPOSITORY,DB_HOST,DB_PASSWORD,FIREBASE_CREDENTIALS,JWT_SECRET,CLOUD_NAME,CLOUD_API_KEY,CLOUD_API_SECRET,BREVO_NAME,BREVO_SENDER_EMAIL,BREVO_API_KEY
           script: |
-            echo "🔄 Starting deployment..."
+            echo "Starting deployment..."
+            
+            # Ghi các biến môi trường vào file .env
+            cat <<EOF > /home/ec2-user/chiikaiwa/.env
+            DB_HOST=$DB_HOST
+            DB_USERNAME=chiikaiwa_admin
+            DB_PASSWORD=$DB_PASSWORD
+            DB_NAME=chiikaiwa
+            REDIS_HOST=localhost
+            REDIS_PORT=6379
+            REDIS_PASSWORD=RedisChiikaiwa@2026
+            JWT_SECRET=$JWT_SECRET
+            CLOUD_NAME=$CLOUD_NAME
+            CLOUD_API_KEY=$CLOUD_API_KEY
+            CLOUD_API_SECRET=$CLOUD_API_SECRET
+            BREVO_NAME=$BREVO_NAME
+            BREVO_SENDER_EMAIL=$BREVO_SENDER_EMAIL
+            BREVO_API_KEY=$BREVO_API_KEY
+            FIREBASE_CREDENTIALS=$FIREBASE_CREDENTIALS
+            ADMIN_USERNAME=admin1
+            ADMIN_PASSWORD=admin1
+            ADMIN_LASTNAME=Vien
+            ADMIN_FIRSTNAME=Quan_Tri
+            DEAFULT_RADIUS_KM=5
+            MAX_RADIUS_KM=20
+            TTL_MINUTES=30
+            EOF
             
             # Login ECR
             aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
@@ -91,18 +127,17 @@ jobs:
             docker stop chiikaiwa-be 2>/dev/null || true
             docker rm chiikaiwa-be 2>/dev/null || true
             
-            # Start container mới (Dùng --network host và mount file Firebase vào container)
+            # Start container mới (Dùng --network host)
             docker run -d \
               --name chiikaiwa-be \
               --restart unless-stopped \
               --network host \
               --env-file /home/ec2-user/chiikaiwa/.env \
-              -v /home/ec2-user/chiikaiwa/firebase-service-account.json:/app/firebase-service-account.json \
               $ECR_REGISTRY/$ECR_REPOSITORY:latest
             
             # Dọn image cũ để giải phóng ổ cứng EC2
             docker image prune -f
             
-            echo "✅ Deployment complete!"
-            echo "📋 Container status:"
+            echo "Deployment complete!"
+            echo "Container status:"
             docker ps --filter name=chiikaiwa-be

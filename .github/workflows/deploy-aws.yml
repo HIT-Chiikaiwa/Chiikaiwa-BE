@@ -67,6 +67,12 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "Image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
+      - name: Prepare secrets
+        env:
+          FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
+        run: |
+          echo "FIREBASE_B64=$(echo "$FIREBASE_CREDENTIALS" | base64 -w 0)" >> $GITHUB_ENV
+
       # ── 7. Deploy to EC2 via SSH ──────────────────────────
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1
@@ -75,7 +81,7 @@ jobs:
           ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
+          FIREBASE_B64: ${{ env.FIREBASE_B64 }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           CLOUD_NAME: ${{ secrets.CLOUD_NAME }}
           CLOUD_API_KEY: ${{ secrets.CLOUD_API_KEY }}
@@ -89,13 +95,14 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: ECR_REGISTRY,ECR_REPOSITORY,DB_HOST,DB_PASSWORD,FIREBASE_CREDENTIALS,JWT_SECRET,CLOUD_NAME,CLOUD_API_KEY,CLOUD_API_SECRET,BREVO_NAME,BREVO_SENDER_EMAIL,BREVO_API_KEY,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
+          envs: ECR_REGISTRY,ECR_REPOSITORY,DB_HOST,DB_PASSWORD,FIREBASE_B64,JWT_SECRET,CLOUD_NAME,CLOUD_API_KEY,CLOUD_API_SECRET,BREVO_NAME,BREVO_SENDER_EMAIL,BREVO_API_KEY,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
           script: |
             set -e # Dừng script ngay nếu có lệnh lỗi
             echo "Starting deployment..."
             
-            # Chuyển Firebase JSON thành 1 dòng để không bị lỗi file .env
-            FIREBASE_ONELINE=$(echo "$FIREBASE_CREDENTIALS" | tr -d '\n')
+            # Giải mã Base64 và loại bỏ khoảng trắng thừa/dấu xuống dòng
+            FIREBASE_JSON=$(echo "$FIREBASE_B64" | base64 -d)
+            FIREBASE_ONELINE=$(echo "$FIREBASE_JSON" | tr -d '\n' | tr -d '\r')
             
             # Ghi các biến môi trường vào file .env
             cat <<EOF > /home/ec2-user/chiikaiwa/.env

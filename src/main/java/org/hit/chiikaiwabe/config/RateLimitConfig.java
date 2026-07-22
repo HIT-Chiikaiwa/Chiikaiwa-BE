@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 @Configuration
 public class RateLimitConfig {
@@ -18,7 +19,9 @@ public class RateLimitConfig {
 
     @Bean
     public JedisPool jedisPool() {
-        return new JedisPool(redisHost, redisPort);
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        poolConfig.setJmxEnabled(false);
+        return new JedisPool(poolConfig, redisHost, redisPort);
     }
 
     @Bean

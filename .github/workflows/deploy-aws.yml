@@ -12,7 +12,7 @@ name: Build & Deploy to AWS EC2
 
 on:
   push:
-    branches: [dev]
+    branches: [hotfix]
   workflow_dispatch: # Cho phép trigger thủ công từ GitHub UI
 
 env:
@@ -83,13 +83,19 @@ jobs:
           BREVO_NAME: ${{ secrets.BREVO_NAME }}
           BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: ECR_REGISTRY,ECR_REPOSITORY,DB_HOST,DB_PASSWORD,FIREBASE_CREDENTIALS,JWT_SECRET,CLOUD_NAME,CLOUD_API_KEY,CLOUD_API_SECRET,BREVO_NAME,BREVO_SENDER_EMAIL,BREVO_API_KEY
+          envs: ECR_REGISTRY,ECR_REPOSITORY,DB_HOST,DB_PASSWORD,FIREBASE_CREDENTIALS,JWT_SECRET,CLOUD_NAME,CLOUD_API_KEY,CLOUD_API_SECRET,BREVO_NAME,BREVO_SENDER_EMAIL,BREVO_API_KEY,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
           script: |
+            set -e # Dừng script ngay nếu có lệnh lỗi
             echo "Starting deployment..."
+            
+            # Chuyển Firebase JSON thành 1 dòng để không bị lỗi file .env
+            FIREBASE_ONELINE=$(echo "$FIREBASE_CREDENTIALS" | tr -d '\n')
             
             # Ghi các biến môi trường vào file .env
             cat <<EOF > /home/ec2-user/chiikaiwa/.env
@@ -107,7 +113,7 @@ jobs:
             BREVO_NAME=$BREVO_NAME
             BREVO_SENDER_EMAIL=$BREVO_SENDER_EMAIL
             BREVO_API_KEY=$BREVO_API_KEY
-            FIREBASE_CREDENTIALS=$FIREBASE_CREDENTIALS
+            FIREBASE_CREDENTIALS=$FIREBASE_ONELINE
             ADMIN_USERNAME=admin1
             ADMIN_PASSWORD=admin1
             ADMIN_LASTNAME=Vien
@@ -117,8 +123,8 @@ jobs:
             TTL_MINUTES=30
             EOF
             
-            # Login ECR
-            aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+            # Login ECR (Truyền credentials của IAM vào)
+            AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
             
             # Pull image mới
             docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest

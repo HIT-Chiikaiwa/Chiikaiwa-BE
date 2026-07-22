@@ -12,6 +12,7 @@ import org.hit.chiikaiwabe.service.OtpService;
 import org.hit.chiikaiwabe.validator.annotation.ValidFileImage;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -61,6 +62,7 @@ public class AuthController {
   }
 
   @Operation(summary = "API Send OTP")
+  @RateLimit(capacity = 3, durationInSeconds = 60)
   @PostMapping(UrlConstant.Auth.SEND_OTP)
   public ResponseEntity<?> sendOtp(@Valid @RequestBody SendOtpRequestDto request) {
     String otpCode = otpService.generateOtp(request.getEmail());
@@ -79,6 +81,7 @@ public class AuthController {
 
 
   @Operation(summary = "API Forgot Password Send OTP")
+  @RateLimit(capacity = 1, durationInSeconds = 60)
   @PostMapping(UrlConstant.Auth.FORGOT_PASSWORD_SEND_OTP)
   public ResponseEntity<?> forgotPasswordSendOtp(@Valid @RequestBody SendOtpRequestDto request) {
     authService.forgotPasswordSendOtp(request);

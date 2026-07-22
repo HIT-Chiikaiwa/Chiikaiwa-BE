@@ -203,12 +203,6 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public void forgotPasswordSendOtp(SendOtpRequestDto request) {
-    String spamKey = "OTP_RATE_LIMIT:" + request.getEmail();
-
-    if (redisTemplate.hasKey(spamKey)) {
-      throw new InvalidException(ErrorMessage.Auth.ERR_OTP_SPAM);
-    }
-
     User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME,
                     new String[]{request.getEmail()}));
@@ -218,7 +212,6 @@ public class AuthServiceImpl implements AuthService {
 
     String otpCode = otpService.generateOtp(request.getEmail());
     otpService.sendOtp(request.getEmail(), otpCode);
-    redisTemplate.opsForValue().set(spamKey, "BLOCKED", 60, TimeUnit.SECONDS);
   }
   @Override
   public void verifyForgotPasswordOtp(VerifyOtpRequestDto request) {

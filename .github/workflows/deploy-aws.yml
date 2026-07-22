@@ -12,7 +12,7 @@ name: Build & Deploy to AWS EC2
 
 on:
   push:
-    branches: [hotfix]
+    branches: [dev]
   workflow_dispatch: # Cho phép trigger thủ công từ GitHub UI
 
 env:

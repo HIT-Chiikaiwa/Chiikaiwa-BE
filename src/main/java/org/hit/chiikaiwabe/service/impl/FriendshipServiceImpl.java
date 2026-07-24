@@ -8,12 +8,14 @@ import org.hit.chiikaiwabe.domain.dto.response.UserSearchResponseDto;
 import org.hit.chiikaiwabe.domain.entity.Friendship;
 import org.hit.chiikaiwabe.domain.entity.User;
 import org.hit.chiikaiwabe.domain.enums.FriendshipStatus;
+import org.hit.chiikaiwabe.domain.enums.PointAction;
 import org.hit.chiikaiwabe.exception.InvalidException;
 import org.hit.chiikaiwabe.exception.NotFoundException;
 import org.hit.chiikaiwabe.repository.FriendshipRepository;
 import org.hit.chiikaiwabe.repository.UserRepository;
 import org.hit.chiikaiwabe.service.UserBlockService;
 import org.hit.chiikaiwabe.service.FriendshipService;
+import org.hit.chiikaiwabe.service.LeaderboardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,6 +39,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     private final UserBlockService userBlockService;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
+    private final LeaderboardService leaderboardService;
 
     private static final String FRIENDSHIP_CHANNEL = "friendship:notify";
 
@@ -106,6 +109,12 @@ public class FriendshipServiceImpl implements FriendshipService {
         ));
 
         log.info("Friend request {} accepted by {}", requestId, userId);
+
+        // Cộng EXP cho cả 2 bên
+        leaderboardService.awardPoints(friendship.getRequester().getId(),
+                PointAction.FRIENDSHIP_ACCEPTED, friendship.getId());
+        leaderboardService.awardPoints(friendship.getReceiver().getId(),
+                PointAction.FRIENDSHIP_ACCEPTED, friendship.getId());
     }
 
     @Override

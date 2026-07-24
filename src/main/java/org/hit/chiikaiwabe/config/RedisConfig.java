@@ -50,6 +50,7 @@ public class RedisConfig {
 
         Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
         cacheConfigs.put("userBlock", defaultConfig.entryTtl(Duration.ofMinutes(5)));
+        cacheConfigs.put("leaderboard", defaultConfig.entryTtl(Duration.ofMinutes(5)));
 
         return RedisCacheManager.builder(factory)
                 .cacheDefaults(defaultConfig)

@@ -8,6 +8,7 @@ import org.hit.chiikaiwabe.domain.entity.BookingRating;
 import org.hit.chiikaiwabe.domain.entity.OfflineBooking;
 import org.hit.chiikaiwabe.domain.entity.User;
 import org.hit.chiikaiwabe.domain.enums.BookingStatus;
+import org.hit.chiikaiwabe.domain.enums.PointAction;
 import org.hit.chiikaiwabe.domain.mapper.BookingMapper;
 import org.hit.chiikaiwabe.exception.ForbiddenException;
 import org.hit.chiikaiwabe.exception.InvalidException;
@@ -19,6 +20,7 @@ import org.hit.chiikaiwabe.repository.UserRepository;
 import org.hit.chiikaiwabe.repository.BookingParticipantRepository;
 import org.hit.chiikaiwabe.service.BookingLifecycleService;
 import org.hit.chiikaiwabe.service.ChatNotificationService;
+import org.hit.chiikaiwabe.service.LeaderboardService;
 import org.hit.chiikaiwabe.service.PushNotificationService;
 import org.hit.chiikaiwabe.component.ChatHelper;
 import org.hit.chiikaiwabe.domain.entity.Message;
@@ -50,6 +52,7 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
     private final BookingParticipantRepository bookingParticipantRepository;
     private final PushNotificationService pushNotificationService;
     private final ChatHelper chatHelper;
+    private final LeaderboardService leaderboardService;
 
     @Override
     @Transactional
@@ -70,6 +73,9 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
         booking.setCancelReason(dto.getCancelReason());
 
         booking = bookingRepository.save(booking);
+
+        // Trừ EXP người hủy
+        leaderboardService.awardPoints(userId, PointAction.BOOKING_CANCELLED, bookingId);
 
         if (booking.getConversation() != null) {
             User canceler = booking.getCreator().getId().equals(userId) ? booking.getCreator() :
@@ -112,6 +118,16 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
 
         booking.setStatus(BookingStatus.COMPLETED);
         booking = bookingRepository.save(booking);
+
+        // Cộng EXP cho cả creator và participants
+        leaderboardService.awardPoints(booking.getCreator().getId(),
+                PointAction.BOOKING_COMPLETED, bookingId);
+        for (BookingParticipant p : booking.getParticipants()) {
+            if (!p.getUser().getId().equals(booking.getCreator().getId())) {
+                leaderboardService.awardPoints(p.getUser().getId(),
+                        PointAction.BOOKING_COMPLETED, bookingId);
+            }
+        }
 
         if (Boolean.TRUE.equals(booking.getIsRecurring())) {
             OfflineBooking newBooking = OfflineBooking.builder()
@@ -203,6 +219,17 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
         ratingRepository.saveAndFlush(rating);
 
         userRepository.updateTrustScoreMovingAverage(ratedUser.getId(), dto.getScore());
+
+        // EXP cho người đánh giá
+        leaderboardService.awardPoints(userId, PointAction.BOOKING_RATED, bookingId);
+        // Bonus/phạt EXP cho người được đánh giá
+        if (dto.getScore() == 5) {
+            leaderboardService.awardPoints(ratedUser.getId(),
+                    PointAction.RATING_5_STAR_RECEIVED, bookingId);
+        } else if (dto.getScore() == 1) {
+            leaderboardService.awardPoints(ratedUser.getId(),
+                    PointAction.RATING_1_STAR_RECEIVED, bookingId);
+        }
     }
 
     private OfflineBooking getBookingAndVerifyInvolvement(String userId, String bookingId) {

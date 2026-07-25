@@ -8,6 +8,7 @@ import org.hit.chiikaiwabe.domain.dto.response.ReactionSummaryDto;
 import org.hit.chiikaiwabe.repository.ConversationMemberRepository;
 import org.hit.chiikaiwabe.service.ChatNotificationService;
 import org.hit.chiikaiwabe.service.OnlineStatusService;
+import org.hit.chiikaiwabe.service.PushNotificationService;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class ChatNotificationServiceImpl implements ChatNotificationService {
 
     private final StringRedisTemplate redisTemplate;
     private final OnlineStatusService onlineStatusService;
+    private final PushNotificationService pushNotificationService;
     private final ConversationMemberRepository memberRepository;
     private final ObjectMapper objectMapper;
 
@@ -38,10 +40,25 @@ public class ChatNotificationServiceImpl implements ChatNotificationService {
             event.put("payload", dto);
             redisTemplate.convertAndSend(CHAT_CHANNEL, objectMapper.writeValueAsString(event));
 
-            List<String> memberIds = memberRepository.findActiveUserIds(conversationId);
-            for (String memberId : memberIds) {
+            List<org.hit.chiikaiwabe.domain.entity.ConversationMember> members = memberRepository.findActiveMembers(conversationId);
+            for (org.hit.chiikaiwabe.domain.entity.ConversationMember member : members) {
+                String memberId = member.getUser().getId();
                 if (!memberId.equals(senderId)) {
                     onlineStatusService.incrementUnread(conversationId, memberId);
+
+                    if (!Boolean.TRUE.equals(member.getIsMuted()) && !onlineStatusService.isOnline(memberId)) {
+                        String title = dto.getSenderName() + " đã gửi một tin nhắn";
+                        String body = dto.getMessageType().equals("TEXT") ?
+                                dto.getContent() : "Đã gửi một " + dto.getMessageType().toLowerCase();
+
+                        Map<String, String> payloadData = Map.of(
+                                "type", "CHAT_MESSAGE",
+                                "conversationId", conversationId,
+                                "messageId", dto.getId()
+                        );
+
+                        pushNotificationService.sendPushNotification(memberId, title, body, payloadData);
+                    }
                 }
             }
         } catch (Exception e) {

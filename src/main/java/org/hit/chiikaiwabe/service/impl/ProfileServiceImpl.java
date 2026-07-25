@@ -20,6 +20,8 @@ import org.hit.chiikaiwabe.service.ProfileService;
 import org.hit.chiikaiwabe.util.UploadFileUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -52,6 +54,7 @@ public class ProfileServiceImpl implements ProfileService {
 
 
     @Override
+    @Cacheable(value = "publicProfile", key = "#userId")
     public PublicProfileDto getPublicProfile(String userId) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
@@ -85,6 +88,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
+    @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
     public UserDto updatePersonalInfo(String userId, PersonalInfoUpdateDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
@@ -107,6 +111,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
+    @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
     public UserDto uploadAvatar(String userId, MultipartFile file) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
@@ -127,6 +132,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
+    @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
     public void deleteUser(String userId) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
@@ -154,6 +160,7 @@ public class ProfileServiceImpl implements ProfileService {
 
 
     @Override
+    @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
     public UserDto updateAcademicInfo(String userId, AcademicInfoUpdateDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
@@ -166,6 +173,7 @@ public class ProfileServiceImpl implements ProfileService {
 
 
     @Override
+    @CacheEvict(value = "publicProfile", key = "#userId")
     public SubjectDto addSubject(String userId, SubjectCreateDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
@@ -202,6 +210,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
+    @CacheEvict(value = "publicProfile", key = "#userId")
     public void deleteSubject(String userId, String subjectId) {
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Subject.ERR_NOT_FOUND_ID, new String[]{subjectId}));
@@ -215,6 +224,7 @@ public class ProfileServiceImpl implements ProfileService {
 
 
     @Override
+    @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
     public UserDto updateBuddyStatus(String userId, StatusUpdateDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
@@ -228,6 +238,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
+    @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
     public UserDto updateStatusTag(String userId, StatusTagUpdateDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
@@ -238,6 +249,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
+    @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
     public UserDto updateLocation(String userId, LocationUpdateDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);

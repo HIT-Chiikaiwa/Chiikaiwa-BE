@@ -40,4 +40,12 @@ public class PublicProfileDto {
 
     private List<SubjectDto> subjects;
 
+    private Long expPoints;
+
+    private String title;
+
+    private String titleIcon;
+
+    private Long rank;
+
 }

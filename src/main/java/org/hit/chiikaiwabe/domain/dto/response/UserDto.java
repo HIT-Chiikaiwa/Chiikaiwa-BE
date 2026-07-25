@@ -50,4 +50,12 @@ public class UserDto extends DateAuditingDto {
 
   private String roleName;
 
+  private Long expPoints;
+
+  private String title;
+
+  private String titleIcon;
+
+  private Long rank;
+
 }

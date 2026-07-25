@@ -62,7 +62,7 @@ public class AuthController {
   }
 
   @Operation(summary = "API Send OTP")
-  @RateLimit(capacity = 3, durationInSeconds = 60)
+  @RateLimit(capacity = 1, durationInSeconds = 30)
   @PostMapping(UrlConstant.Auth.SEND_OTP)
   public ResponseEntity<?> sendOtp(@Valid @RequestBody SendOtpRequestDto request) {
     String otpCode = otpService.generateOtp(request.getEmail());
@@ -81,7 +81,7 @@ public class AuthController {
 
 
   @Operation(summary = "API Forgot Password Send OTP")
-  @RateLimit(capacity = 1, durationInSeconds = 60)
+  @RateLimit(capacity = 1, durationInSeconds = 30)
   @PostMapping(UrlConstant.Auth.FORGOT_PASSWORD_SEND_OTP)
   public ResponseEntity<?> forgotPasswordSendOtp(@Valid @RequestBody SendOtpRequestDto request) {
     authService.forgotPasswordSendOtp(request);

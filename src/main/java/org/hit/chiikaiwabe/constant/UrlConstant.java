@@ -145,5 +145,14 @@ public class UrlConstant {
     private Booking() {
     }
   }
+  public static class Leaderboard {
+    private static final String PRE_FIX = "/leaderboard";
+    public static final String TOP = PRE_FIX + "/top";
+    public static final String MY_RANK = PRE_FIX + "/me";
+    public static final String HISTORY = PRE_FIX + "/history";
+
+    private Leaderboard() {
+    }
+  }
 
 }

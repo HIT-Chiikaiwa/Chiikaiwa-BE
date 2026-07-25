@@ -58,7 +58,6 @@ public class SuccessMessage {
         public static final String UNFRIENDED = "success.friendship.unfriended";
     }
 
-    // Booking
     public static class Booking {
         public static final String PUSH_NEW_REQUEST_TITLE = "push.booking.new.request.title";
         public static final String PUSH_NEW_REQUEST_BODY = "push.booking.new.request.body";
@@ -73,6 +72,10 @@ public class SuccessMessage {
         public static final String CANCELLED = "success.booking.cancelled";
         public static final String COMPLETED = "success.booking.completed";
         public static final String RATED = "success.booking.rated";
+    }
+
+    public static class Leaderboard {
+        public static final String POINTS_AWARDED = "success.leaderboard.points.awarded";
     }
 
 }

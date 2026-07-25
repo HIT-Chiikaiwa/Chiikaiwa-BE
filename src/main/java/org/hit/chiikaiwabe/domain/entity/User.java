@@ -10,13 +10,17 @@ import org.hibernate.annotations.Nationalized;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
+import java.time.LocalDate;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @Builder
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        @Index(name = "IDX_USER_EXP_POINTS", columnList = "exp_points")
+})
 public class User extends DateAuditing {
 
     @Id
@@ -76,6 +80,15 @@ public class User extends DateAuditing {
     @Builder.Default
     private Integer totalRatingCount = 0;
 
+    @Column(name = "exp_points", nullable = false)
+    @Builder.Default
+    private Long expPoints = 0L;
+
+    @Nationalized
+    @Column(name = "title", length = 30)
+    @Builder.Default
+    private String title = "Tân Binh";
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserStatus userstatus;
@@ -96,5 +109,13 @@ public class User extends DateAuditing {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    @PostLoad
+    private void onPostLoad() {
+        if (totalRatingCount == null) totalRatingCount = 0;
+        if (buddyActive == null) buddyActive = false;
+        if (deleteFlag == null) deleteFlag = false;
+        if (expPoints == null) expPoints = 0L;
+        if (title == null) title = "Tân Binh";
+    }
 
 }

@@ -37,6 +37,7 @@ public class ProfileController {
 
     @Tag(name = "profile-controller")
     @Operation(summary = "Update personal info")
+    @RateLimit(capacity = 1, durationInSeconds = 120)
     @PutMapping(UrlConstant.Profile.UPDATE_PERSONAL_INFO)
     public ResponseEntity<RestData<UserDto>> updatePersonalInfo(
             @PathVariable String userId,
@@ -58,6 +59,7 @@ public class ProfileController {
 
     @Tag(name = "profile-controller")
     @Operation(summary = "Upload avatar")
+    @RateLimit(capacity = 1, durationInSeconds = 120)
     @PostMapping(UrlConstant.Profile.UPLOAD_AVATAR)
     public ResponseEntity<RestData<UserDto>> uploadAvatar(
             @PathVariable String userId,
@@ -78,6 +80,7 @@ public class ProfileController {
 
     @Tag(name = "profile-controller")
     @Operation(summary = "Update academic info (university, major)")
+    @RateLimit(capacity = 1, durationInSeconds = 120)
     @PutMapping(UrlConstant.Profile.UPDATE_ACADEMIC_INFO)
     public ResponseEntity<RestData<UserDto>> updateAcademicInfo(
             @PathVariable String userId,
@@ -128,6 +131,7 @@ public class ProfileController {
 
     @Tag(name = "profile-controller")
     @Operation(summary = "Update status tag")
+    @RateLimit(capacity = 1, durationInSeconds = 120)
     @PutMapping(UrlConstant.Profile.UPDATE_STATUS_TAG)
     public ResponseEntity<RestData<UserDto>> updateStatusTag(
             @PathVariable String userId,
@@ -137,6 +141,7 @@ public class ProfileController {
 
     @Tag(name = "profile-controller")
     @Operation(summary = "Update location")
+    @RateLimit(capacity = 1, durationInSeconds = 120)
     @PutMapping(UrlConstant.Profile.UPDATE_LOCATION)
     public ResponseEntity<RestData<UserDto>> updateLocation(
             @PathVariable String userId,

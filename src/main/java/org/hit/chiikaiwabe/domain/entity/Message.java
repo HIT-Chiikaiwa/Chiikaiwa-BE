@@ -15,8 +15,7 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "messages",
         indexes = {
-                @Index(name = "IDX_MESSAGE_CONVERSATION_DATE",
-                        columnList = "conversation_id, createdDate DESC")
+                @Index(name = "IDX_MESSAGE_CONVERSATION_DATE", columnList = "conversation_id, created_date DESC, sender_id")
         })
 public class Message extends DateAuditing {
 

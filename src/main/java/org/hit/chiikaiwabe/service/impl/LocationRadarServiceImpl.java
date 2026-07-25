@@ -28,6 +28,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class LocationRadarServiceImpl implements LocationRadarService {
 
     private final StringRedisTemplate redisTemplate;
+    private final org.springframework.data.redis.core.RedisTemplate<String, Object> objectRedisTemplate;
     private final UserRepository userRepository;
     private final LocationMapper locationMapper;
     private final RadarProperties radarProperties;
@@ -115,24 +116,63 @@ public class LocationRadarServiceImpl implements LocationRadarService {
             return new ArrayList<>();
         }
 
-        List<User> users = userRepository.findAllByIdInAndDeleteFlagFalseAndBuddyActiveTrue(nearbyUserIds);
+        List<String> cacheKeys = nearbyUserIds.stream()
+                .map(id -> "radarUserInfo::" + id)
+                .collect(java.util.stream.Collectors.toList());
+
+        List<Object> cachedObjects = objectRedisTemplate.opsForValue().multiGet(cacheKeys);
+        List<String> missIds = new ArrayList<>();
+        Map<String, NearbyUserDto> cachedUsers = new HashMap<>();
+
+        for (int i = 0; i < nearbyUserIds.size(); i++) {
+            String uid = nearbyUserIds.get(i);
+            Object obj = cachedObjects != null ? cachedObjects.get(i) : null;
+            if (obj instanceof NearbyUserDto) {
+                cachedUsers.put(uid, (NearbyUserDto) obj);
+            } else {
+                missIds.add(uid);
+            }
+        }
+
+        if (!missIds.isEmpty()) {
+            List<User> users = userRepository.findAllByIdInAndDeleteFlagFalseAndBuddyActiveTrue(missIds);
+            Map<String, Object> toCache = new HashMap<>();
+            for (User user : users) {
+                NearbyUserDto dto = locationMapper.toNearbyUserDto(user);
+                cachedUsers.put(user.getId(), dto);
+                toCache.put("radarUserInfo::" + user.getId(), dto);
+            }
+            if (!toCache.isEmpty()) {
+                objectRedisTemplate.opsForValue().multiSet(toCache);
+                for (String key : toCache.keySet()) {
+                    objectRedisTemplate.expire(key, java.time.Duration.ofHours(1));
+                }
+            }
+        }
 
         List<NearbyUserDto> result = new ArrayList<>();
-        for (User user : users) {
-            NearbyUserDto dto = locationMapper.toNearbyUserDto(user);
+        for (String uid : nearbyUserIds) {
+            NearbyUserDto dto = cachedUsers.get(uid);
+            if (dto != null) {
+                NearbyUserDto out = new NearbyUserDto(
+                        dto.getUserId(), dto.getFirstName(), dto.getLastName(), dto.getAvatar(),
+                        dto.getUniversity(), dto.getMajorName(), dto.getStatusTag(),
+                        null, null, null
+                );
 
-            Double dist = distanceMap.get(user.getId());
-            if (dist != null) {
-                dto.setDistanceKm(dist);
+                Double dist = distanceMap.get(uid);
+                if (dist != null) {
+                    out.setDistanceKm(dist);
+                }
+
+                double[] coords = locationDataMap.get(uid);
+                if (coords != null) {
+                    out.setLatitude(coords[0]);
+                    out.setLongitude(coords[1]);
+                }
+
+                result.add(out);
             }
-
-            double[] coords = locationDataMap.get(user.getId());
-            if (coords != null) {
-                dto.setLatitude(coords[0]);
-                dto.setLongitude(coords[1]);
-            }
-
-            result.add(dto);
         }
 
         result.sort((a, b) -> Double.compare(a.getDistanceKm(), b.getDistanceKm()));

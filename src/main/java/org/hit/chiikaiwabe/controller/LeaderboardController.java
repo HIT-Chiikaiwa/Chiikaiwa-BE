@@ -29,7 +29,7 @@ public class LeaderboardController {
     private final LeaderboardService leaderboardService;
 
     @GetMapping(UrlConstant.Leaderboard.TOP)
-    @Operation(summary = "Lấy bảng xếp hạng top users")
+    @Operation(summary = "Get the top user rankings.")
     public ResponseEntity<RestData<PaginationResponseDto<LeaderboardEntryDto>>> getLeaderboard(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {

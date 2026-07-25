@@ -27,7 +27,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @RequiredArgsConstructor
 public class LocationRadarServiceImpl implements LocationRadarService {
 
-    private final StringRedisTemplate redisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
     private final org.springframework.data.redis.core.RedisTemplate<String, Object> objectRedisTemplate;
     private final UserRepository userRepository;
     private final LocationMapper locationMapper;
@@ -46,14 +46,14 @@ public class LocationRadarServiceImpl implements LocationRadarService {
             throw new ForbiddenException(ErrorMessage.Location.ERR_BUDDY_INACTIVE);
         }
 
-        redisTemplate.opsForGeo().add(BUDDY_LOCATIONS_KEY, new Point(lon, lat), userId);
-        redisTemplate.opsForHash().put(TIME_KEY, userId, String.valueOf(System.currentTimeMillis()));
+        stringRedisTemplate.opsForGeo().add(BUDDY_LOCATIONS_KEY, new Point(lon, lat), userId);
+        stringRedisTemplate.opsForHash().put(TIME_KEY, userId, String.valueOf(System.currentTimeMillis()));
     }
 
     @Override
     public void removeLocation(String userId) {
-        redisTemplate.opsForGeo().remove(BUDDY_LOCATIONS_KEY, userId);
-        redisTemplate.opsForHash().delete(TIME_KEY, userId);
+        stringRedisTemplate.opsForGeo().remove(BUDDY_LOCATIONS_KEY, userId);
+        stringRedisTemplate.opsForHash().delete(TIME_KEY, userId);
     }
 
     @Override
@@ -83,7 +83,7 @@ public class LocationRadarServiceImpl implements LocationRadarService {
                 .limit(50);
 
         GeoResults<RedisGeoCommands.GeoLocation<String>> geoResults =
-                redisTemplate.opsForGeo().radius(BUDDY_LOCATIONS_KEY, circle, args);
+                stringRedisTemplate.opsForGeo().radius(BUDDY_LOCATIONS_KEY, circle, args);
 
         if (geoResults == null) {
             return new ArrayList<>();

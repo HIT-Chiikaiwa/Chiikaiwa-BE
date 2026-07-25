@@ -25,6 +25,8 @@ public class DatabaseSetupConfig {
 
             jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_conversation_name_trgm ON conversations USING gin (group_name gin_trgm_ops);");
 
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_user_exp_points ON users (exp_points);");
+
             log.info("Advanced database indexes have been successfully created/verified.");
         } catch (Exception e) {
             log.warn("Could not create advanced database indexes. Error: {}", e.getMessage());

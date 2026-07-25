@@ -157,4 +157,8 @@ public class ErrorMessage {
     public static final String ERR_COMPLETE_TOO_EARLY = "exception.booking.complete.too.early";
   }
 
+  public static class Leaderboard {
+    public static final String ERR_USER_NOT_FOUND = "exception.leaderboard.user.not.found";
+  }
+
 }

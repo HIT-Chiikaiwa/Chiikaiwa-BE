@@ -7,6 +7,7 @@ import org.hit.chiikaiwabe.domain.dto.response.SubjectDto;
 import org.hit.chiikaiwabe.domain.dto.response.UserDto;
 import org.hit.chiikaiwabe.domain.entity.Subject;
 import org.hit.chiikaiwabe.domain.entity.User;
+import org.hit.chiikaiwabe.domain.enums.UserTitle;
 import org.hit.chiikaiwabe.domain.mapper.SubjectMapper;
 import org.hit.chiikaiwabe.domain.mapper.UserMapper;
 import org.hit.chiikaiwabe.exception.ForbiddenException;
@@ -72,6 +73,13 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setBuddyActive(user.getBuddyActive());
         dto.setStatusTag(user.getStatusTag());
         dto.setSubjects(subjects);
+
+        // Leaderboard fields
+        dto.setExpPoints(user.getExpPoints());
+        dto.setTitle(user.getTitle());
+        UserTitle userTitle = UserTitle.fromExp(user.getExpPoints());
+        dto.setTitleIcon(userTitle.getIcon());
+        dto.setRank(userRepository.getUserRank(user.getExpPoints()));
 
         return dto;
     }

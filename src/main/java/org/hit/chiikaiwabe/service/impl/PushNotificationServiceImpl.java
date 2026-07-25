@@ -27,6 +27,12 @@ public class PushNotificationServiceImpl implements PushNotificationService {
     @Async("notificationExecutor")
     @Override
     public void sendPushNotification(String userID, String title, String body) {
+        sendPushNotification(userID, title, body, null);
+    }
+
+    @Async("notificationExecutor")
+    @Override
+    public void sendPushNotification(String userID, String title, String body, java.util.Map<String, String> data) {
         List<UserDevice> devices = userDeviceRepository.findByUserIdAndIsActiveTrue(userID);
         if (devices.isEmpty()) return;
 
@@ -34,13 +40,18 @@ public class PushNotificationServiceImpl implements PushNotificationService {
                 .map(UserDevice::getFcmToken)
                 .toList();
 
-        MulticastMessage message = MulticastMessage.builder()
+        MulticastMessage.Builder messageBuilder = MulticastMessage.builder()
                 .addAllTokens(tokens)
                 .setNotification(Notification.builder()
                         .setTitle(title)
                         .setBody(body)
-                        .build())
-                .build();
+                        .build());
+
+        if (data != null && !data.isEmpty()) {
+            messageBuilder.putAllData(data);
+        }
+
+        MulticastMessage message = messageBuilder.build();
 
         try {
             BatchResponse response = FirebaseMessaging.getInstance().sendEachForMulticast(message);

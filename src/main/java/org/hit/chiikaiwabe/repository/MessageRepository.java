@@ -16,7 +16,7 @@ public interface MessageRepository extends JpaRepository<Message, String> {
 
     @Query("SELECT m FROM Message m WHERE m.conversation.id = ?1 " +
             "AND m.id NOT IN (SELECT md.message.id FROM MessageDeletion md WHERE md.user.id = ?2) " +
-            "AND (?3 IS NULL OR m.createdDate <= ?3) " +
+            "AND (CAST(?3 AS timestamp) IS NULL OR m.createdDate <= ?3) " +
             "ORDER BY m.createdDate DESC")
     Page<Message> findByConversationIdForUser(String conversationId, String userId,
                                               LocalDateTime leftAt, Pageable pageable);

@@ -53,15 +53,18 @@ public class ChatQueryServiceImpl implements ChatQueryService {
         Map<String, Conversation> fetchedMap = fetched.stream()
                 .collect(Collectors.toMap(Conversation::getId, Function.identity()));
 
-        List<Object[]> countResults = memberRepository.countActiveMembersInBatch(conversationIds);
-        Map<String, Integer> memberCountMap = countResults.stream()
+        // BUG-06 FIX: Dùng batch query thay vì gọi DB trong stream (N queries → 1 query)
+        Map<String, Integer> memberCountMap = memberRepository
+                .countActiveMembersByConversationIds(conversationIds)
+                .stream()
                 .collect(Collectors.toMap(
                         row -> (String) row[0],
-                        row -> ((Number) row[1]).intValue()
+                        row -> ((Long) row[1]).intValue()
                 ));
 
-        List<ConversationMember> members = memberRepository.findByConversationIdsAndUserId(conversationIds, userId);
-        Map<String, ConversationMember> membershipMap = members.stream()
+        Map<String, ConversationMember> membershipMap = memberRepository
+                .findByUserIdAndConversationIdIn(userId, conversationIds)
+                .stream()
                 .collect(Collectors.toMap(m -> m.getConversation().getId(), Function.identity()));
 
         List<ConversationResponseDto> result = conversationPage.getContent().stream()
@@ -100,15 +103,18 @@ public class ChatQueryServiceImpl implements ChatQueryService {
             return new PageImpl<>(new ArrayList<>(), pageable, 0);
         }
 
-        List<Object[]> countResults = memberRepository.countActiveMembersInBatch(conversationIds);
-        Map<String, Integer> memberCountMap = countResults.stream()
+        // BUG-06 FIX: Dùng batch query thay vì gọi DB trong stream
+        Map<String, Integer> memberCountMap = memberRepository
+                .countActiveMembersByConversationIds(conversationIds)
+                .stream()
                 .collect(Collectors.toMap(
                         row -> (String) row[0],
-                        row -> ((Number) row[1]).intValue()
+                        row -> ((Long) row[1]).intValue()
                 ));
 
-        List<ConversationMember> members = memberRepository.findByConversationIdsAndUserId(conversationIds, userId);
-        Map<String, ConversationMember> membershipMap = members.stream()
+        Map<String, ConversationMember> membershipMap = memberRepository
+                .findByUserIdAndConversationIdIn(userId, conversationIds)
+                .stream()
                 .collect(Collectors.toMap(m -> m.getConversation().getId(), Function.identity()));
 
         List<ConversationResponseDto> result = conversations.getContent().stream()

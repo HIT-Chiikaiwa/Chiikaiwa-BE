@@ -162,8 +162,6 @@ public class ConversationManagementServiceImpl implements ConversationManagement
             memberRepository.saveAll(membersToSave);
         }
 
-        // BUG-12 FIX: Gộp tất cả tên vào 1 system message duy nhất thay vì N messages.
-        // Trước đây: N lần INSERT + N lần broadcastSystemEvent khi thêm nhiều người.
         String addedNames = newUsers.stream()
                 .map(u -> u.getLastName() + " " + u.getFirstName())
                 .collect(java.util.stream.Collectors.joining(", "));

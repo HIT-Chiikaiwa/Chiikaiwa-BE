@@ -20,6 +20,7 @@ import org.hit.chiikaiwabe.service.UserBlockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +39,7 @@ public class ConversationManagementServiceImpl implements ConversationManagement
     private final UserBlockService userBlockService;
     private final ChatNotificationService chatNotificationService;
     private final ChatHelper chatHelper;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Value("${chat.max-group-members:30}")
     private int maxGroupMembers;
@@ -56,12 +58,22 @@ public class ConversationManagementServiceImpl implements ConversationManagement
             throw new ForbiddenException(ErrorMessage.Chat.ERR_USER_BLOCKED);
         }
 
-        Optional<Conversation> existingConv = conversationRepository
-                .findDirectConversation(userId, dto.getTargetUserId());
+        String lockKey = userId.compareTo(dto.getTargetUserId()) < 0 ?
+                "chat:lock:direct:" + userId + ":" + dto.getTargetUserId() :
+                "chat:lock:direct:" + dto.getTargetUserId() + ":" + userId;
 
-        if (existingConv.isPresent()) {
-            return chatHelper.toConversationResponseDto(existingConv.get(), userId);
+        Boolean acquired = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, "1", java.time.Duration.ofSeconds(10));
+        if (Boolean.FALSE.equals(acquired)) {
+            throw new InvalidException(ErrorMessage.ERR_EXCEPTION_GENERAL);
         }
+
+        try {
+            Optional<Conversation> existingConv = conversationRepository
+                    .findDirectConversation(userId, dto.getTargetUserId());
+
+            if (existingConv.isPresent()) {
+                return chatHelper.toConversationResponseDto(existingConv.get(), userId);
+            }
 
         Conversation conv = Conversation.builder()
                 .type(ConversationType.DIRECT)
@@ -78,6 +90,9 @@ public class ConversationManagementServiceImpl implements ConversationManagement
                 .role(MemberRole.MEMBER).joinedAt(now).lastReadAt(now).build());
 
         return chatHelper.toConversationResponseDto(conv, userId);
+        } finally {
+            stringRedisTemplate.delete(lockKey);
+        }
     }
 
     @Override
@@ -160,15 +175,15 @@ public class ConversationManagementServiceImpl implements ConversationManagement
 
         if (!membersToSave.isEmpty()) {
             memberRepository.saveAll(membersToSave);
-        }
 
-        String addedNames = newUsers.stream()
-                .map(u -> u.getLastName() + " " + u.getFirstName())
-                .collect(java.util.stream.Collectors.joining(", "));
-        String content = adder.getLastName() + " " + adder.getFirstName() +
-                " đã thêm " + addedNames + " vào nhóm";
-        Message sysMsg = chatHelper.createSystemMessage(conversation, content);
-        chatNotificationService.broadcastSystemEvent(conversationId, chatHelper.toMessageResponseDto(sysMsg));
+            String addedNames = membersToSave.stream()
+                    .map(m -> m.getUser().getLastName() + " " + m.getUser().getFirstName())
+                    .collect(java.util.stream.Collectors.joining(", "));
+            String content = adder.getLastName() + " " + adder.getFirstName() +
+                    " đã thêm " + addedNames + " vào nhóm";
+            Message sysMsg = chatHelper.createSystemMessage(conversation, content);
+            chatNotificationService.broadcastSystemEvent(conversationId, chatHelper.toMessageResponseDto(sysMsg));
+        }
     }
 
     @Override

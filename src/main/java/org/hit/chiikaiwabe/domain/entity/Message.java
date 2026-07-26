@@ -60,6 +60,7 @@ public class Message extends DateAuditing {
     private Boolean isPinned = Boolean.FALSE;
 
     @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
+    @org.hibernate.annotations.BatchSize(size = 50)
     @Builder.Default
     private java.util.List<MessageAttachment> attachments = new java.util.ArrayList<>();
 

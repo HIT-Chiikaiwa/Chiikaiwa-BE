@@ -85,7 +85,7 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setTitle(user.getTitle());
         UserTitle userTitle = UserTitle.fromExp(user.getExpPoints());
         dto.setTitleIcon(userTitle.getIcon());
-        dto.setRank(leaderboardService.getUserRank(userId).getRank());
+        dto.setRank(leaderboardService.getUserRankNumber(userId, user.getExpPoints()));
 
         return dto;
     }

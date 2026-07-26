@@ -20,7 +20,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,7 +70,6 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         long start = (long) page * size;
         long end = start + size - 1;
 
-  
         Long totalInZSet = redisTemplate.opsForZSet().zCard(ZSET_KEY);
         boolean zsetIsEmpty = (totalInZSet == null || totalInZSet == 0);
 
@@ -164,20 +162,11 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
 
-        Long zRank = redisTemplate.opsForZSet().reverseRank(ZSET_KEY, userId);
+        // Tận dụng gọi hàm getUserRankNumber để DRY code
+        long rank = getUserRankNumber(userId, user.getExpPoints());
 
-        long rank;
-        long totalUsers;
-
-        if (zRank != null) {
-            rank = zRank + 1;
-            Long zCard = redisTemplate.opsForZSet().zCard(ZSET_KEY);
-            totalUsers = (zCard != null) ? zCard : userRepository.count();
-        } else {
-            log.warn("User {} not found in ZSET, falling back to Database rank query.", userId);
-            rank = userRepository.getUserRank(user.getExpPoints());
-            totalUsers = userRepository.count();
-        }
+        Long zCard = redisTemplate.opsForZSet().zCard(ZSET_KEY);
+        long totalUsers = (zCard != null) ? zCard : userRepository.count();
 
         UserTitle currentTitle = UserTitle.fromExp(user.getExpPoints());
         UserTitle nextTitle = currentTitle.next();

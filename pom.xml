@@ -45,8 +45,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
-        <!-- BUG-14 FIX: Đã xóa mysql-connector-j vì project dùng PostgreSQL (xem application.properties).
-             Driver MySQL làm nặng JAR ~1MB mà không dùng đến. -->
         <!--     WebSocket    -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

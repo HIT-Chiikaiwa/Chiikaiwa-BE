@@ -16,6 +16,7 @@ import org.hit.chiikaiwabe.exception.NotFoundException;
 import org.hit.chiikaiwabe.repository.PointHistoryRepository;
 import org.hit.chiikaiwabe.repository.UserRepository;
 import org.hit.chiikaiwabe.service.LeaderboardService;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -42,6 +43,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
     public void awardPoints(String userId, PointAction action, String referenceId) {
         userRepository.updateExpPoints(userId, action.getPoints());
 
@@ -143,6 +145,17 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 "DESC");
 
         return new PaginationResponseDto<>(meta, entries);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Long getUserRankNumber(String userId, Long expPoints) {
+        Long zRank = redisTemplate.opsForZSet().reverseRank(ZSET_KEY, userId);
+        if (zRank != null) {
+            return zRank + 1;
+        }
+        log.warn("User {} not found in ZSET, falling back to Database rank query.", userId);
+        return userRepository.getUserRank(expPoints);
     }
 
     @Override

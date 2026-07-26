@@ -12,6 +12,7 @@ import org.hit.chiikaiwabe.repository.BookingRatingRepository;
 import org.hit.chiikaiwabe.repository.OfflineBookingRepository;
 import org.hit.chiikaiwabe.service.BookingQueryService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BookingQueryServiceImpl implements BookingQueryService {
     private final OfflineBookingRepository offlineBookingRepository;
     private final BookingRatingRepository bookingRatingRepository;

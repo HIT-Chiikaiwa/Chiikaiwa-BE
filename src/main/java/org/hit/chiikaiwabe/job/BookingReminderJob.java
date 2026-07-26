@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +27,7 @@ public class BookingReminderJob {
     private final BookingProperties bookingProperties;
 
     @Scheduled(fixedRate = 300000) //5p
+    @Transactional
     public void expirePendingBookings(){
         int expireMinutes = bookingProperties.getPendingExpireMinutes() > 0 ?
                 bookingProperties.getPendingExpireMinutes() : 30;
@@ -34,7 +36,6 @@ public class BookingReminderJob {
 
         for(OfflineBooking booking : pendingBookings){
             booking.setStatus(BookingStatus.EXPIRED);
-            offlineBookingRepository.save(booking);
 
             notifyWebSocket(booking.getCreator().getId(), booking);
             if(booking.getParticipants() != null){
@@ -45,6 +46,7 @@ public class BookingReminderJob {
                 }
             }
         }
+        offlineBookingRepository.saveAll(pendingBookings);
     }
 
     @Scheduled(fixedRate = 900000) //15p
@@ -75,6 +77,7 @@ public class BookingReminderJob {
     }
 
     @Scheduled(fixedRate = 3600000)//1h
+    @Transactional
     public void expireConfirmedBookings(){
         int expireHours = bookingProperties.getConfirmedExpireHours() > 0 ?
                 bookingProperties.getConfirmedExpireHours() : 24;
@@ -82,8 +85,8 @@ public class BookingReminderJob {
         List<OfflineBooking> confirmBookings = offlineBookingRepository.findExpiredConfirmed(threshold);
         for(OfflineBooking b : confirmBookings){
             b.setStatus(BookingStatus.EXPIRED);
-            offlineBookingRepository.save(b);
         }
+        offlineBookingRepository.saveAll(confirmBookings);
     }
 
     private void notifyWebSocket(String userId, OfflineBooking booking){

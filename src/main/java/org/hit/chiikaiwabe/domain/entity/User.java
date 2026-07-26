@@ -18,9 +18,7 @@ import java.time.LocalDate;
 @Setter
 @Builder
 @Entity
-@Table(name = "users", indexes = {
-        @Index(name = "IDX_USER_EXP_POINTS", columnList = "exp_points")
-})
+@Table(name = "users")
 public class User extends DateAuditing {
 
     @Id

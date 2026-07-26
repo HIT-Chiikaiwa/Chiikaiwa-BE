@@ -39,8 +39,8 @@ public class ProfileServiceImpl implements ProfileService {
     private final UploadFileUtil uploadFileUtil;
     private final PasswordEncoder passwordEncoder;
     private final LocationRadarService locationRadarService;
-    // BUG-16 FIX: Inject LeaderboardService để lấy rank từ Redis O(log N)
-    // thay vì query SQL COUNT(*) trên toàn bảng users mỗi lần xem profile.
+
+
     private final org.hit.chiikaiwabe.service.LeaderboardService leaderboardService;
 
 
@@ -80,13 +80,11 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setStatusTag(user.getStatusTag());
         dto.setSubjects(subjects);
 
-        // Leaderboard fields
+
         dto.setExpPoints(user.getExpPoints());
         dto.setTitle(user.getTitle());
         UserTitle userTitle = UserTitle.fromExp(user.getExpPoints());
         dto.setTitleIcon(userTitle.getIcon());
-        // BUG-16 FIX: Dùng leaderboardService.getUserRank() lấy rank từ Redis (O(log N))
-        // thay vì userRepository.getUserRank() bắn SQL COUNT(*) trên toàn bảng mỗi lần xem profile.
         dto.setRank(leaderboardService.getUserRank(userId).getRank());
 
         return dto;

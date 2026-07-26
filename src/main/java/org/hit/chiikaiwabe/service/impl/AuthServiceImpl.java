@@ -54,7 +54,6 @@ public class AuthServiceImpl implements AuthService {
 
   private final ObjectMapper objectMapper;
 
-  // Inject RedisTemplate<String,Object> để ghi vào ZSET Leaderboard (BUG-11)
   private final org.springframework.data.redis.core.RedisTemplate<String, Object> objectRedisTemplate;
 
   private static final String LEADERBOARD_ZSET_KEY = "leaderboard_zset";
@@ -179,7 +178,7 @@ public class AuthServiceImpl implements AuthService {
       if (userRepository.existsByEmail(userDto.getEmail())) {
         throw new InvalidException(ErrorMessage.Auth.ERR_ACCOUNT_ALREADY_EXISTS);
       }
-      // BUG-18: age là NOT NULL nên vẫn tính khi đăng ký, nhưng ProfileService sẽ cập nhật lại khi user cập nhật thông tin.
+     
       int age = java.time.Period.between(userDto.getDateOfBirth(), java.time.LocalDate.now()).getYears();
 
       User newUser = User.builder()
@@ -197,16 +196,11 @@ public class AuthServiceImpl implements AuthService {
               .build();
 
       User savedUser = userRepository.save(newUser);
-      // BUG-11 FIX: Thêm user mới vào Redis ZSET với score=0 ngay khi đăng ký
-      // để user xuất hiện ngay trên bảng xếp hạng mà không cần chờ đến khi nhận điểm đầu tiên.
       objectRedisTemplate.opsForZSet().add(LEADERBOARD_ZSET_KEY, savedUser.getId(), 0);
       redisTemplate.delete(redisKey);
 
-    // BUG-04 FIX: Catch cụ thể JsonProcessingException thay vì Exception.
-    // Trước đây catch(Exception e) sẽ nuốt cả InvalidException (lỗi nghiệp vụ)
-    // và convert thành InternalServerException (HTTP 500) — sai hoàn toàn.
     } catch (InvalidException e) {
-      throw e; // Re-throw để GlobalExceptionHandler xử lý đúng
+      throw e;
     } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
       log.error("Failed to deserialize temp user data on verify OTP", e);
       throw new InternalServerException(ErrorMessage.Auth.ERR_SYSTEM_PROCESS);

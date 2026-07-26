@@ -35,6 +35,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -149,7 +150,6 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
             OfflineBooking savedNewBooking = bookingRepository.save(newBooking);
 
             if (booking.getParticipants() != null) {
-                // BUG-13 FIX: Gom participants vào List rồi saveAll() 1 lần thay vì save() trong vòng for.
                 List<BookingParticipant> newParticipants = new java.util.ArrayList<>();
                 List<BookingParticipant> participantsToNotify = new java.util.ArrayList<>();
 

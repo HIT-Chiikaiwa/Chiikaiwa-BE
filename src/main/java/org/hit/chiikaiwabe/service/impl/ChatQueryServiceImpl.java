@@ -53,7 +53,6 @@ public class ChatQueryServiceImpl implements ChatQueryService {
         Map<String, Conversation> fetchedMap = fetched.stream()
                 .collect(Collectors.toMap(Conversation::getId, Function.identity()));
 
-        // BUG-06 FIX: Dùng batch query thay vì gọi DB trong stream (N queries → 1 query)
         Map<String, Integer> memberCountMap = memberRepository
                 .countActiveMembersByConversationIds(conversationIds)
                 .stream()
@@ -103,7 +102,6 @@ public class ChatQueryServiceImpl implements ChatQueryService {
             return new PageImpl<>(new ArrayList<>(), pageable, 0);
         }
 
-        // BUG-06 FIX: Dùng batch query thay vì gọi DB trong stream
         Map<String, Integer> memberCountMap = memberRepository
                 .countActiveMembersByConversationIds(conversationIds)
                 .stream()

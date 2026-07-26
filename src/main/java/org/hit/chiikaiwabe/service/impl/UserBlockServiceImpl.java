@@ -29,8 +29,6 @@ public class UserBlockServiceImpl implements UserBlockService {
         this.userRepository = userRepository;
     }
 
-    // BUG-09 FIX: Dùng key cụ thể thay vì allEntries=true.
-    // Trước đây: mỗi lần block/unblock 1 user sẽ xóa toàn bộ cache của mọi người trong hệ thống.
     @CacheEvict(value = "userBlock", key = "#blockerId + ':' + #blockedId")
     public void blockUser(String blockerId, String blockedId) {
         if (blockerId.equals(blockedId)) {

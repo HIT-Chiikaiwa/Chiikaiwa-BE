@@ -15,8 +15,6 @@ import java.util.Optional;
 @Repository
 public interface MessageRepository extends JpaRepository<Message, String> {
 
-    // BUG-07 FIX: Thêm @EntityGraph để JOIN FETCH sender, attachments, replyToMessage cùng 1 query.
-    // Trước đây: mỗi tin nhắn sẽ bắn thêm 2 query ẩn khi chatHelper truy cập sender và attachments.
     @EntityGraph(attributePaths = {"sender", "attachments", "replyToMessage"})
     @Query("SELECT m FROM Message m WHERE m.conversation.id = ?1 " +
             "AND m.id NOT IN (SELECT md.message.id FROM MessageDeletion md WHERE md.user.id = ?2) " +
@@ -36,7 +34,6 @@ public interface MessageRepository extends JpaRepository<Message, String> {
             "WHERE m.id = ?1")
     Optional<Message> findByIdWithDetails(String messageId);
 
-    // BUG-07 FIX: Thêm @EntityGraph cho searchMessages để tránh N+1 khi hiển thị kết quả tìm kiếm.
     @EntityGraph(attributePaths = {"sender", "attachments"})
     @Query("SELECT m FROM Message m WHERE m.conversation.id = ?1 " +
             "AND m.id NOT IN (SELECT md.message.id FROM MessageDeletion md WHERE md.user.id = ?2) " +

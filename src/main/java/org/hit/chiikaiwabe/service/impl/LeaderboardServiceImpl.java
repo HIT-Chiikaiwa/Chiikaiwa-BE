@@ -48,9 +48,6 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
 
-        // BUG-03 FIX: dùng incrementScore() thay vì add() để cộng điểm atomically.
-        // add() ghi đè điểm tuyệt đối → có thể bị race condition nếu 2 thread
-        // đọc DB cùng lúc rồi ghi vào Redis → thread chậm hơn sẽ ghi đè thread nhanh.
         redisTemplate.opsForZSet().incrementScore(ZSET_KEY, userId, action.getPoints());
 
         PointHistory history = PointHistory.builder()
@@ -72,10 +69,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         long start = (long) page * size;
         long end = start + size - 1;
 
-        // BUG-10 FIX: Kiểm tra tổng số phần tử trong ZSET TRƯỚC KHI query range.
-        // Trước đây: fallback khi reverseRange() trả về empty → sai vì có thể ZSET
-        // có 15 phần tử, page=2 trả về empty → fallback với OFFSET 20 → bỏ qua user 16-20.
-        // Bây giờ: chỉ fallback khi ZSET thực sự rỗng (zCard = 0 hoặc null).
+  
         Long totalInZSet = redisTemplate.opsForZSet().zCard(ZSET_KEY);
         boolean zsetIsEmpty = (totalInZSet == null || totalInZSet == 0);
 

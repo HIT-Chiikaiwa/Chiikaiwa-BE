@@ -41,6 +41,9 @@ public class ProfileServiceImpl implements ProfileService {
     private final LocationRadarService locationRadarService;
 
 
+    private final org.hit.chiikaiwabe.service.LeaderboardService leaderboardService;
+
+
     private User findUserById(String userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{userId}));
@@ -77,12 +80,12 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setStatusTag(user.getStatusTag());
         dto.setSubjects(subjects);
 
-        // Leaderboard fields
+
         dto.setExpPoints(user.getExpPoints());
         dto.setTitle(user.getTitle());
         UserTitle userTitle = UserTitle.fromExp(user.getExpPoints());
         dto.setTitleIcon(userTitle.getIcon());
-        dto.setRank(userRepository.getUserRank(user.getExpPoints()));
+        dto.setRank(leaderboardService.getUserRankNumber(userId, user.getExpPoints()));
 
         return dto;
     }

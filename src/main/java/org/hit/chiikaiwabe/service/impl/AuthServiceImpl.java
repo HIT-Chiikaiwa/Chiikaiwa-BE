@@ -72,8 +72,11 @@ public class AuthServiceImpl implements AuthService {
       long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
       long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
 
-      redisTemplate.opsForValue().set(accessToken, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
-      redisTemplate.opsForValue().set(refreshToken, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
+      String accessJti = jwtTokenProvider.extractJtiFromJwt(accessToken);
+      String refreshJti = jwtTokenProvider.extractJtiFromJwt(refreshToken);
+
+      redisTemplate.opsForValue().set(accessJti, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
+      redisTemplate.opsForValue().set(refreshJti, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
 
       return new LoginResponseDto(accessToken, refreshToken, userPrincipal.getId(), authentication.getAuthorities());
     } catch (InternalAuthenticationServiceException e) {
@@ -87,27 +90,30 @@ public class AuthServiceImpl implements AuthService {
   public TokenRefreshResponseDto refresh(TokenRefreshRequestDto request) {
     try {
       String oldRefreshToken = request.getRefreshToken();
+      String oldJti = jwtTokenProvider.extractJtiFromJwt(oldRefreshToken);
 
-      if (!redisTemplate.hasKey(oldRefreshToken)) {
+      if (!Boolean.TRUE.equals(redisTemplate.hasKey(oldJti))) {
         throw new UnauthorizedException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
       }
-      Authentication authentication = jwtTokenProvider.getAuthenticationByRefreshToken(request.getRefreshToken());
+      Authentication authentication = jwtTokenProvider.getAuthenticationByRefreshToken(oldRefreshToken);
       String identifier = authentication.getName();
       UserPrincipal userPrincipal = (UserPrincipal) customUserDetailsService.loadUserByUsername(identifier);
       String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
       String refreshToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.TRUE);
 
-      redisTemplate.delete(oldRefreshToken);
+      redisTemplate.delete(oldJti);
       long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
       long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
 
+      String accessJti = jwtTokenProvider.extractJtiFromJwt(accessToken);
+      String refreshJti = jwtTokenProvider.extractJtiFromJwt(refreshToken);
 
-      redisTemplate.opsForValue().set(accessToken, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
-      redisTemplate.opsForValue().set(refreshToken, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
+      redisTemplate.opsForValue().set(accessJti, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
+      redisTemplate.opsForValue().set(refreshJti, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
 
       return new TokenRefreshResponseDto(accessToken, refreshToken);
 
-    } catch (Exception e) {
+    } catch (io.jsonwebtoken.JwtException | IllegalArgumentException e) {
       throw new UnauthorizedException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
     }
   }
@@ -117,16 +123,26 @@ public class AuthServiceImpl implements AuthService {
     String bearerToken = request.getHeader("Authorization");
     if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
       String accessToken = bearerToken.substring(7);
-      long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
-      if (accessTtl > 0) {
-        redisTemplate.opsForValue().set("BLACKLIST:" + accessToken, "LOGGED_OUT", accessTtl, TimeUnit.MILLISECONDS);
+      try {
+        String accessJti = jwtTokenProvider.extractJtiFromJwt(accessToken);
+        long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
+        if (accessTtl > 0) {
+          redisTemplate.opsForValue().set("BLACKLIST:" + accessJti, "LOGGED_OUT", accessTtl, TimeUnit.MILLISECONDS);
+        }
+      } catch (Exception e) {
+        log.warn("Invalid access token on logout", e);
       }
     }
 
     if (StringUtils.hasText(refreshToken)) {
-      long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
-      if (refreshTtl > 0) {
-        redisTemplate.opsForValue().set("BLACKLIST:" + refreshToken, "LOGGED_OUT", refreshTtl, TimeUnit.MILLISECONDS);
+      try {
+        String refreshJti = jwtTokenProvider.extractJtiFromJwt(refreshToken);
+        long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
+        if (refreshTtl > 0) {
+          redisTemplate.opsForValue().set("BLACKLIST:" + refreshJti, "LOGGED_OUT", refreshTtl, TimeUnit.MILLISECONDS);
+        }
+      } catch (Exception e) {
+        log.warn("Invalid refresh token on logout", e);
       }
     }
 
@@ -136,6 +152,9 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public void register(UserCreateDto request) {
+    if (request.getEmail() == null || !request.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+      throw new InvalidException("Email không hợp lệ");
+    }
     if (!request.getPassword().equals(request.getConfirmPassword())) {
       throw new InvalidException(ErrorMessage.Auth.ERR_CONFIRM_PASSWORD_NOT_MATCH);
     }

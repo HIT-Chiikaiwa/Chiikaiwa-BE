@@ -47,6 +47,7 @@ public class JwtTokenProvider {
     if (isRefreshToken) {
       return Jwts.builder()
               .setClaims(claim)
+              .setId(UUID.randomUUID().toString())
               .setIssuedAt(new Date(System.currentTimeMillis()))
               .setExpiration(new Date(System.currentTimeMillis() + (EXPIRATION_TIME_REFRESH_TOKEN * 60 * 1000L)))
               .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
@@ -54,6 +55,7 @@ public class JwtTokenProvider {
     }
     return Jwts.builder()
             .setClaims(claim)
+            .setId(UUID.randomUUID().toString())
             .setSubject(userPrincipal.getId())
             .setIssuedAt(new Date(System.currentTimeMillis()))
             .setExpiration(new Date(System.currentTimeMillis() + (EXPIRATION_TIME_ACCESS_TOKEN * 60 * 1000L)))
@@ -83,6 +85,10 @@ public class JwtTokenProvider {
     return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody().getSubject();
   }
 
+  public String extractJtiFromJwt(String token) {
+    return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody().getId();
+  }
+
   public Date extractExpirationFromJwt(String token) {
     return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody().getExpiration();
   }
@@ -110,6 +116,6 @@ public class JwtTokenProvider {
   }
 
 
-  
+
 
 }

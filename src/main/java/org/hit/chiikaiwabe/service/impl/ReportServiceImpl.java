@@ -36,14 +36,14 @@ public class ReportServiceImpl implements ReportService {
     }
 
     public void createReport(String reporterId, ReportRequestDto requestDto) {
+        if (reporterId.equals(requestDto.getReportedId())) {
+            throw new org.hit.chiikaiwabe.exception.InvalidException(ErrorMessage.Chat.ERR_CANNOT_REPORT_YOURSELF);
+        }
+
         User reporter = userRepository.findById(reporterId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
         User reported = userRepository.findById(requestDto.getReportedId())
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
-
-        if (reporterId.equals(requestDto.getReportedId())) {
-            throw new org.hit.chiikaiwabe.exception.InvalidException(ErrorMessage.Chat.ERR_CANNOT_REPORT_YOURSELF);
-        }
 
         Conversation conversation = null;
         if (requestDto.getConversationId() != null) {

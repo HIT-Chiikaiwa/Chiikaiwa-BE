@@ -21,7 +21,7 @@ public class LocationCleanupJob {
     private final RadarProperties radarProperties;
     private final LocationRadarService locationRadarService;
 
-    @Scheduled(fixedRateString = "60000")
+    @Scheduled(fixedRateString = "300000") // 5 minutes
     public void cleanupStaleLocation(){
         log.debug(SuccessMessage.CleanupLocation.PROCESSING);
         long currentTimeMillis = System.currentTimeMillis();

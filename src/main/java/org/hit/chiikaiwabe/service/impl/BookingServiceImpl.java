@@ -170,62 +170,16 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingResponseDto acceptBooking(String userId, String bookingId) {
-        OfflineBooking booking = bookingRepository.findByIdWithDetails(bookingId)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.Booking.ERR_NOT_FOUND));
-
-        BookingParticipant participant = booking.getParticipants().stream()
-                .filter(p -> p.getUser().getId().equals(userId))
-                .findFirst()
-                .orElseThrow(() -> new ForbiddenException(ErrorMessage.Booking.ERR_NOT_PARTICIPANT));
-
-        if (booking.getStatus() != BookingStatus.PENDING || participant.getStatus() != ParticipantStatus.PENDING) {
-            throw new InvalidException(ErrorMessage.Booking.ERR_NOT_PENDING);
-        }
-
-        participant.setStatus(ParticipantStatus.ACCEPTED);
-        participant.setRespondedAt(LocalDateTime.now());
-
-        booking.setStatus(BookingStatus.CONFIRMED);
-
-        String title = messageSource.getMessage(SuccessMessage.Booking.PUSH_ACCEPTED_TITLE, null, LocaleContextHolder.getLocale());
-        String body = messageSource.getMessage(SuccessMessage.Booking.PUSH_ACCEPTED_BODY, new Object[]{participant.getUser().getFirstName() + " " + participant.getUser().getLastName()}, LocaleContextHolder.getLocale());
-        if (booking.getMessageId() != null) {
-            messageRepository.findById(booking.getMessageId()).ifPresent(msg -> {
-                try {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> payload = objectMapper.readValue(msg.getContent(), Map.class);
-                    payload.put("status", BookingStatus.CONFIRMED.name());
-                    msg.setContent(objectMapper.writeValueAsString(payload));
-
-                    MessageResponseDto messageDto = messageMapper.toDto(msg);
-
-                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            chatNotificationService.broadcastSystemEvent(booking.getConversation().getId(), messageDto);
-                            pushNotificationService.sendPushNotification(booking.getCreator().getId(), title, body);
-                        }
-                    });
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
-                    throw new InternalServerException(ErrorMessage.Booking.ERR_SERIALIZE_PAYLOAD);
-                }
-            });
-        } else {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    pushNotificationService.sendPushNotification(booking.getCreator().getId(), title, body);
-                }
-            });
-        }
-
-        return bookingMapper.toDto(booking, userId);
+        return respondToBooking(userId, bookingId, true);
     }
 
     @Override
     @Transactional
     public BookingResponseDto rejectBooking(String userId, String bookingId) {
+        return respondToBooking(userId, bookingId, false);
+    }
+
+    private BookingResponseDto respondToBooking(String userId, String bookingId, boolean accept) {
         OfflineBooking booking = bookingRepository.findByIdWithDetails(bookingId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Booking.ERR_NOT_FOUND));
 
@@ -238,23 +192,27 @@ public class BookingServiceImpl implements BookingService {
             throw new InvalidException(ErrorMessage.Booking.ERR_NOT_PENDING);
         }
 
-        participant.setStatus(ParticipantStatus.REJECTED);
+        if (accept) {
+            participant.setStatus(ParticipantStatus.ACCEPTED);
+            booking.setStatus(BookingStatus.CONFIRMED);
+        } else {
+            participant.setStatus(ParticipantStatus.REJECTED);
+            booking.setStatus(BookingStatus.REJECTED);
+            leaderboardService.awardPoints(booking.getCreator().getId(), PointAction.BOOKING_REJECTED, bookingId);
+        }
         participant.setRespondedAt(LocalDateTime.now());
 
-        booking.setStatus(BookingStatus.REJECTED);
+        String titleKey = accept ? SuccessMessage.Booking.PUSH_ACCEPTED_TITLE : SuccessMessage.Booking.PUSH_REJECTED_TITLE;
+        String bodyKey = accept ? SuccessMessage.Booking.PUSH_ACCEPTED_BODY : SuccessMessage.Booking.PUSH_REJECTED_BODY;
 
-        // Trừ EXP creator (người tạo booking bị reject)
-        leaderboardService.awardPoints(booking.getCreator().getId(),
-                PointAction.BOOKING_REJECTED, bookingId);
-
-        String title = messageSource.getMessage(SuccessMessage.Booking.PUSH_REJECTED_TITLE, null, LocaleContextHolder.getLocale());
-        String body = messageSource.getMessage(SuccessMessage.Booking.PUSH_REJECTED_BODY, new Object[]{participant.getUser().getFirstName() + " " + participant.getUser().getLastName()}, LocaleContextHolder.getLocale());
+        String title = messageSource.getMessage(titleKey, null, LocaleContextHolder.getLocale());
+        String body = messageSource.getMessage(bodyKey, new Object[]{participant.getUser().getFirstName() + " " + participant.getUser().getLastName()}, LocaleContextHolder.getLocale());
         if (booking.getMessageId() != null) {
             messageRepository.findById(booking.getMessageId()).ifPresent(msg -> {
                 try {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> payload = objectMapper.readValue(msg.getContent(), Map.class);
-                    payload.put("status", BookingStatus.REJECTED.name());
+                    payload.put("status", booking.getStatus().name());
                     msg.setContent(objectMapper.writeValueAsString(payload));
 
                     MessageResponseDto messageDto = messageMapper.toDto(msg);

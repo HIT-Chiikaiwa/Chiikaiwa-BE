@@ -3,6 +3,7 @@ package org.hit.chiikaiwabe.repository;
 import org.hit.chiikaiwabe.domain.entity.Message;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -14,6 +15,9 @@ import java.util.Optional;
 @Repository
 public interface MessageRepository extends JpaRepository<Message, String> {
 
+    // BUG-07 FIX: Thêm @EntityGraph để JOIN FETCH sender, attachments, replyToMessage cùng 1 query.
+    // Trước đây: mỗi tin nhắn sẽ bắn thêm 2 query ẩn khi chatHelper truy cập sender và attachments.
+    @EntityGraph(attributePaths = {"sender", "attachments", "replyToMessage"})
     @Query("SELECT m FROM Message m WHERE m.conversation.id = ?1 " +
             "AND m.id NOT IN (SELECT md.message.id FROM MessageDeletion md WHERE md.user.id = ?2) " +
             "AND (CAST(?3 AS timestamp) IS NULL OR m.createdDate <= ?3) " +
@@ -32,6 +36,8 @@ public interface MessageRepository extends JpaRepository<Message, String> {
             "WHERE m.id = ?1")
     Optional<Message> findByIdWithDetails(String messageId);
 
+    // BUG-07 FIX: Thêm @EntityGraph cho searchMessages để tránh N+1 khi hiển thị kết quả tìm kiếm.
+    @EntityGraph(attributePaths = {"sender", "attachments"})
     @Query("SELECT m FROM Message m WHERE m.conversation.id = ?1 " +
             "AND m.id NOT IN (SELECT md.message.id FROM MessageDeletion md WHERE md.user.id = ?2) " +
             "AND m.isRecalled = false " +

@@ -26,6 +26,16 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
     @Query("SELECT cm FROM ConversationMember cm JOIN FETCH cm.user WHERE cm.conversation.id = ?1")
     List<ConversationMember> findByConversationId(String conversationId);
 
+    // BUG-06 FIX: Batch query đếm số member theo nhiều conversation ID cùng lúc (1 SQL thay vì N).
+    @Query("SELECT cm.conversation.id, COUNT(cm) FROM ConversationMember cm " +
+            "WHERE cm.conversation.id IN ?1 AND cm.leftAt IS NULL " +
+            "GROUP BY cm.conversation.id")
+    List<Object[]> countActiveMembersByConversationIds(List<String> conversationIds);
+
+    // BUG-06 FIX: Batch query lấy membership của user trong nhiều conversation cùng lúc (1 SQL thay vì N).
+    @Query("SELECT cm FROM ConversationMember cm WHERE cm.user.id = ?1 AND cm.conversation.id IN ?2")
+    List<ConversationMember> findByUserIdAndConversationIdIn(String userId, List<String> conversationIds);
+}
     @Query("SELECT cm.conversation.id, COUNT(cm) FROM ConversationMember cm WHERE cm.conversation.id IN ?1 AND cm.leftAt IS NULL GROUP BY cm.conversation.id")
     List<Object[]> countActiveMembersInBatch(List<String> conversationIds);
 

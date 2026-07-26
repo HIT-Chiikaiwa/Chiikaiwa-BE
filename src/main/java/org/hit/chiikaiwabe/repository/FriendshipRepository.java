@@ -23,17 +23,24 @@ public interface FriendshipRepository extends JpaRepository<Friendship, String> 
     Optional<Friendship> findFriendshipBetween(@Param("userId1") String userId1,
                                                @Param("userId2") String userId2);
 
-    @Query("SELECT f FROM Friendship f WHERE " +
-            "(f.requester.id = :userId OR f.receiver.id = :userId) " +
+    // BUG-08 FIX: Thêm JOIN FETCH để tải requester và receiver cùng 1 query.
+    // Trước đây: mapToFriendshipResponse() truy cập requester/receiver → N+N queries ẩn.
+    @Query("SELECT f FROM Friendship f " +
+            "JOIN FETCH f.requester JOIN FETCH f.receiver " +
+            "WHERE (f.requester.id = :userId OR f.receiver.id = :userId) " +
             "AND f.status = 'ACCEPTED'")
     Page<Friendship> findAcceptedFriendsByUserId(@Param("userId") String userId, Pageable pageable);
 
-    @Query("SELECT f FROM Friendship f WHERE " +
-            "f.receiver.id = :userId AND f.status = 'PENDING'")
+    // BUG-08 FIX: Thêm JOIN FETCH cho pending requests.
+    @Query("SELECT f FROM Friendship f " +
+            "JOIN FETCH f.requester JOIN FETCH f.receiver " +
+            "WHERE f.receiver.id = :userId AND f.status = 'PENDING'")
     Page<Friendship> findPendingRequestsForUser(@Param("userId") String userId, Pageable pageable);
 
-    @Query("SELECT f FROM Friendship f WHERE " +
-            "(f.requester.id = :userId OR f.receiver.id = :userId) " +
+    // BUG-08 FIX: Thêm JOIN FETCH cho search friends.
+    @Query("SELECT f FROM Friendship f " +
+            "JOIN FETCH f.requester JOIN FETCH f.receiver " +
+            "WHERE (f.requester.id = :userId OR f.receiver.id = :userId) " +
             "AND f.status = 'ACCEPTED' " +
             "AND (LOWER(CASE WHEN f.requester.id = :userId THEN f.receiver.firstName ELSE f.requester.firstName END) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "OR LOWER(CASE WHEN f.requester.id = :userId THEN f.receiver.lastName ELSE f.requester.lastName END) LIKE LOWER(CONCAT('%', :keyword, '%')))")

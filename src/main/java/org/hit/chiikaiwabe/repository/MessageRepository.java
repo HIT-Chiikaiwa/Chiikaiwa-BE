@@ -15,7 +15,7 @@ import java.util.Optional;
 @Repository
 public interface MessageRepository extends JpaRepository<Message, String> {
 
-    @EntityGraph(attributePaths = {"sender", "attachments", "replyToMessage"})
+    @EntityGraph(attributePaths = {"sender", "replyToMessage"})
     @Query("SELECT m FROM Message m WHERE m.conversation.id = ?1 " +
             "AND m.id NOT IN (SELECT md.message.id FROM MessageDeletion md WHERE md.user.id = ?2) " +
             "AND (CAST(?3 AS timestamp) IS NULL OR m.createdDate <= ?3) " +
@@ -34,7 +34,7 @@ public interface MessageRepository extends JpaRepository<Message, String> {
             "WHERE m.id = ?1")
     Optional<Message> findByIdWithDetails(String messageId);
 
-    @EntityGraph(attributePaths = {"sender", "attachments"})
+    @EntityGraph(attributePaths = {"sender"})
     @Query("SELECT m FROM Message m WHERE m.conversation.id = ?1 " +
             "AND m.id NOT IN (SELECT md.message.id FROM MessageDeletion md WHERE md.user.id = ?2) " +
             "AND m.isRecalled = false " +

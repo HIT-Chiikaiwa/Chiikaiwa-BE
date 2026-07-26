@@ -33,9 +33,4 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
 
     @Query("SELECT cm FROM ConversationMember cm WHERE cm.user.id = ?1 AND cm.conversation.id IN ?2")
     List<ConversationMember> findByUserIdAndConversationIdIn(String userId, List<String> conversationIds);
-    @Query("SELECT cm.conversation.id, COUNT(cm) FROM ConversationMember cm WHERE cm.conversation.id IN ?1 AND cm.leftAt IS NULL GROUP BY cm.conversation.id")
-    List<Object[]> countActiveMembersInBatch(List<String> conversationIds);
-
-    @Query("SELECT cm FROM ConversationMember cm WHERE cm.conversation.id IN ?1 AND cm.user.id = ?2")
-    List<ConversationMember> findByConversationIdsAndUserId(List<String> conversationIds, String userId);
 }

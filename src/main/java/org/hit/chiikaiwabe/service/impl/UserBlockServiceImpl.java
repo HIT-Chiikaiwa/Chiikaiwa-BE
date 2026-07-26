@@ -29,7 +29,9 @@ public class UserBlockServiceImpl implements UserBlockService {
         this.userRepository = userRepository;
     }
 
-    @CacheEvict(value = "userBlock", allEntries = true)
+    // BUG-09 FIX: Dùng key cụ thể thay vì allEntries=true.
+    // Trước đây: mỗi lần block/unblock 1 user sẽ xóa toàn bộ cache của mọi người trong hệ thống.
+    @CacheEvict(value = "userBlock", key = "#blockerId + ':' + #blockedId")
     public void blockUser(String blockerId, String blockedId) {
         if (blockerId.equals(blockedId)) {
             throw new IllegalArgumentException(ErrorMessage.Chat.ERR_CANNOT_BLOCK_YOURSELF);
@@ -49,7 +51,7 @@ public class UserBlockServiceImpl implements UserBlockService {
         userBlockRepository.save(userBlock);
     }
 
-    @CacheEvict(value = "userBlock", allEntries = true)
+    @CacheEvict(value = "userBlock", key = "#blockerId + ':' + #blockedId")
     public void unblockUser(String blockerId, String blockedId) {
         Optional<UserBlock> blockOpt = userBlockRepository.findByBlockerIdAndBlockedId(blockerId, blockedId);
         blockOpt.ifPresent(userBlockRepository::delete);

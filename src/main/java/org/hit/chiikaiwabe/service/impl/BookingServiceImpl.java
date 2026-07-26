@@ -10,7 +10,6 @@ import org.hit.chiikaiwabe.domain.entity.*;
 import org.hit.chiikaiwabe.domain.enums.BookingStatus;
 import org.hit.chiikaiwabe.domain.enums.MessageType;
 import org.hit.chiikaiwabe.domain.enums.ParticipantStatus;
-import org.hit.chiikaiwabe.domain.enums.PointAction;
 import org.hit.chiikaiwabe.exception.ForbiddenException;
 import org.hit.chiikaiwabe.exception.InternalServerException;
 import org.hit.chiikaiwabe.exception.InvalidException;
@@ -24,7 +23,6 @@ import org.hit.chiikaiwabe.domain.mapper.MessageMapper;
 import org.hit.chiikaiwabe.repository.*;
 import org.hit.chiikaiwabe.service.BookingService;
 import org.hit.chiikaiwabe.service.ChatNotificationService;
-import org.hit.chiikaiwabe.service.LeaderboardService;
 import org.hit.chiikaiwabe.service.PushNotificationService;
 import org.hit.chiikaiwabe.config.properties.BookingProperties;
 import org.springframework.stereotype.Service;
@@ -57,7 +55,6 @@ public class BookingServiceImpl implements BookingService {
     private final MessageSource messageSource;
     private final BookingProperties bookingProperties;
     private final BookingMapper bookingMapper;
-    private final LeaderboardService leaderboardService;
 
     @Override
     @Transactional
@@ -242,10 +239,6 @@ public class BookingServiceImpl implements BookingService {
         participant.setRespondedAt(LocalDateTime.now());
 
         booking.setStatus(BookingStatus.REJECTED);
-
-        // Trừ EXP creator (người tạo booking bị reject)
-        leaderboardService.awardPoints(booking.getCreator().getId(),
-                PointAction.BOOKING_REJECTED, bookingId);
 
         String title = messageSource.getMessage(SuccessMessage.Booking.PUSH_REJECTED_TITLE, null, LocaleContextHolder.getLocale());
         String body = messageSource.getMessage(SuccessMessage.Booking.PUSH_REJECTED_BODY, new Object[]{participant.getUser().getFirstName() + " " + participant.getUser().getLastName()}, LocaleContextHolder.getLocale());

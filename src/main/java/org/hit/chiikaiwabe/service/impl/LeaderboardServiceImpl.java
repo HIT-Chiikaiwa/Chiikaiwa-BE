@@ -48,7 +48,10 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
 
-        redisTemplate.opsForZSet().add(ZSET_KEY, userId, user.getExpPoints());
+        // BUG-03 FIX: dùng incrementScore() thay vì add() để cộng điểm atomically.
+        // add() ghi đè điểm tuyệt đối → có thể bị race condition nếu 2 thread
+        // đọc DB cùng lúc rồi ghi vào Redis → thread chậm hơn sẽ ghi đè thread nhanh.
+        redisTemplate.opsForZSet().incrementScore(ZSET_KEY, userId, action.getPoints());
 
         PointHistory history = PointHistory.builder()
                 .user(user)
@@ -69,45 +72,46 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         long start = (long) page * size;
         long end = start + size - 1;
 
-        Set<Object> userIdsRaw = redisTemplate.opsForZSet().reverseRange(ZSET_KEY, start, end);
+        // BUG-10 FIX: Kiểm tra tổng số phần tử trong ZSET TRƯỚC KHI query range.
+        // Trước đây: fallback khi reverseRange() trả về empty → sai vì có thể ZSET
+        // có 15 phần tử, page=2 trả về empty → fallback với OFFSET 20 → bỏ qua user 16-20.
+        // Bây giờ: chỉ fallback khi ZSET thực sự rỗng (zCard = 0 hoặc null).
+        Long totalInZSet = redisTemplate.opsForZSet().zCard(ZSET_KEY);
+        boolean zsetIsEmpty = (totalInZSet == null || totalInZSet == 0);
 
-        if (userIdsRaw != null && !userIdsRaw.isEmpty()) {
-            List<String> userIds = userIdsRaw.stream().map(Object::toString).collect(Collectors.toList());
-            List<User> users = userRepository.findAllById(userIds);
-            Map<String, User> userMap = users.stream().collect(Collectors.toMap(User::getId, u -> u));
+        if (!zsetIsEmpty) {
+            Set<Object> userIdsRaw = redisTemplate.opsForZSet().reverseRange(ZSET_KEY, start, end);
+            List<String> userIds = (userIdsRaw != null)
+                    ? userIdsRaw.stream().map(Object::toString).collect(Collectors.toList())
+                    : new ArrayList<>();
 
             List<LeaderboardEntryDto> entries = new ArrayList<>();
-            long rank = start + 1;
 
-            for (String uid : userIds) {
-                User u = userMap.get(uid);
-                if (u != null) {
-                    UserTitle title = UserTitle.fromExp(u.getExpPoints());
-                    entries.add(LeaderboardEntryDto.builder()
-                            .rank(rank++)
-                            .userId(u.getId())
-                            .firstName(u.getFirstName())
-                            .lastName(u.getLastName())
-                            .avatar(u.getAvatar())
-                            .expPoints(u.getExpPoints())
-                            .title(title.getDisplayName())
-                            .titleIcon(title.getIcon())
-                            .build());
+            if (!userIds.isEmpty()) {
+                List<User> users = userRepository.findAllById(userIds);
+                Map<String, User> userMap = users.stream().collect(Collectors.toMap(User::getId, u -> u));
+                long rank = start + 1;
+
+                for (String uid : userIds) {
+                    User u = userMap.get(uid);
+                    if (u != null) {
+                        UserTitle title = UserTitle.fromExp(u.getExpPoints());
+                        entries.add(LeaderboardEntryDto.builder()
+                                .rank(rank++)
+                                .userId(u.getId())
+                                .firstName(u.getFirstName())
+                                .lastName(u.getLastName())
+                                .avatar(u.getAvatar())
+                                .expPoints(u.getExpPoints())
+                                .title(title.getDisplayName())
+                                .titleIcon(title.getIcon())
+                                .build());
+                    }
                 }
             }
 
-            Long totalElements = redisTemplate.opsForZSet().zCard(ZSET_KEY);
-            if (totalElements == null) totalElements = 0L;
-            int totalPages = (int) Math.ceil((double) totalElements / size);
-
-            PagingMeta meta = new PagingMeta(
-                    totalElements,
-                    totalPages,
-                    page,
-                    size,
-                    "expPoints",
-                    "DESC");
-
+            int totalPages = (int) Math.ceil((double) totalInZSet / size);
+            PagingMeta meta = new PagingMeta(totalInZSet, totalPages, page, size, "expPoints", "DESC");
             return new PaginationResponseDto<>(meta, entries);
         }
 

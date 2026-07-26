@@ -35,6 +35,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -149,6 +150,9 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
             OfflineBooking savedNewBooking = bookingRepository.save(newBooking);
 
             if (booking.getParticipants() != null) {
+                List<BookingParticipant> newParticipants = new java.util.ArrayList<>();
+                List<BookingParticipant> participantsToNotify = new java.util.ArrayList<>();
+
                 for (BookingParticipant oldParticipant : booking.getParticipants()) {
                     if (!oldParticipant.getUser().getId().equals(booking.getCreator().getId())) {
                         BookingParticipant newParticipant = BookingParticipant.builder()
@@ -157,19 +161,24 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
                                 .status(ParticipantStatus.PENDING)
                                 .reminderMinutesBefore(oldParticipant.getReminderMinutesBefore())
                                 .build();
-                        bookingParticipantRepository.save(newParticipant);
-
-                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                            @Override
-                            public void afterCommit() {
-                                pushNotificationService.sendPushNotification(
-                                        oldParticipant.getUser().getId(),
-                                        "Lịch hẹn cố định mới",
-                                        "Đã tạo lịch hẹn mới cho tuần sau."
-                                );
-                            }
-                        });
+                        newParticipants.add(newParticipant);
+                        participantsToNotify.add(oldParticipant);
                     }
+                }
+
+                bookingParticipantRepository.saveAll(newParticipants); // 1 batch INSERT thay vì N
+
+                for (BookingParticipant oldParticipant : participantsToNotify) {
+                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            pushNotificationService.sendPushNotification(
+                                    oldParticipant.getUser().getId(),
+                                    "Lịch hẹn cố định mới",
+                                    "Đã tạo lịch hẹn mới cho tuần sau."
+                            );
+                        }
+                    });
                 }
             }
         }

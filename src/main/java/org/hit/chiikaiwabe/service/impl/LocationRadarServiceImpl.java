@@ -37,7 +37,6 @@ public class LocationRadarServiceImpl implements LocationRadarService {
     private static final String TIME_KEY = "buddy_timestamps";
 
     @Override
-    @Transactional(readOnly = true)
     public void updateLocation(String userId, double lat, double lon) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{userId}));
@@ -175,7 +174,7 @@ public class LocationRadarServiceImpl implements LocationRadarService {
             }
         }
 
-        result.sort((a, b) -> Double.compare(a.getDistanceKm(), b.getDistanceKm()));
+        result.sort(java.util.Comparator.comparingDouble(d -> d.getDistanceKm() != null ? d.getDistanceKm() : Double.MAX_VALUE));
 
         return result;
     }

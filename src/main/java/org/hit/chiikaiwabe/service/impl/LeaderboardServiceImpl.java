@@ -16,10 +16,10 @@ import org.hit.chiikaiwabe.exception.NotFoundException;
 import org.hit.chiikaiwabe.repository.PointHistoryRepository;
 import org.hit.chiikaiwabe.repository.UserRepository;
 import org.hit.chiikaiwabe.service.LeaderboardService;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,13 +42,14 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
     public void awardPoints(String userId, PointAction action, String referenceId) {
         userRepository.updateExpPoints(userId, action.getPoints());
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
 
-        redisTemplate.opsForZSet().add(ZSET_KEY, userId, user.getExpPoints());
+        redisTemplate.opsForZSet().incrementScore(ZSET_KEY, userId, action.getPoints());
 
         PointHistory history = PointHistory.builder()
                 .user(user)
@@ -69,45 +70,42 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         long start = (long) page * size;
         long end = start + size - 1;
 
-        Set<Object> userIdsRaw = redisTemplate.opsForZSet().reverseRange(ZSET_KEY, start, end);
+        Long totalInZSet = redisTemplate.opsForZSet().zCard(ZSET_KEY);
+        boolean zsetIsEmpty = (totalInZSet == null || totalInZSet == 0);
 
-        if (userIdsRaw != null && !userIdsRaw.isEmpty()) {
-            List<String> userIds = userIdsRaw.stream().map(Object::toString).collect(Collectors.toList());
-            List<User> users = userRepository.findAllById(userIds);
-            Map<String, User> userMap = users.stream().collect(Collectors.toMap(User::getId, u -> u));
+        if (!zsetIsEmpty) {
+            Set<Object> userIdsRaw = redisTemplate.opsForZSet().reverseRange(ZSET_KEY, start, end);
+            List<String> userIds = (userIdsRaw != null)
+                    ? userIdsRaw.stream().map(Object::toString).collect(Collectors.toList())
+                    : new ArrayList<>();
 
             List<LeaderboardEntryDto> entries = new ArrayList<>();
-            long rank = start + 1;
 
-            for (String uid : userIds) {
-                User u = userMap.get(uid);
-                if (u != null) {
-                    UserTitle title = UserTitle.fromExp(u.getExpPoints());
-                    entries.add(LeaderboardEntryDto.builder()
-                            .rank(rank++)
-                            .userId(u.getId())
-                            .firstName(u.getFirstName())
-                            .lastName(u.getLastName())
-                            .avatar(u.getAvatar())
-                            .expPoints(u.getExpPoints())
-                            .title(title.getDisplayName())
-                            .titleIcon(title.getIcon())
-                            .build());
+            if (!userIds.isEmpty()) {
+                List<User> users = userRepository.findAllById(userIds);
+                Map<String, User> userMap = users.stream().collect(Collectors.toMap(User::getId, u -> u));
+                long rank = start + 1;
+
+                for (String uid : userIds) {
+                    User u = userMap.get(uid);
+                    if (u != null) {
+                        UserTitle title = UserTitle.fromExp(u.getExpPoints());
+                        entries.add(LeaderboardEntryDto.builder()
+                                .rank(rank++)
+                                .userId(u.getId())
+                                .firstName(u.getFirstName())
+                                .lastName(u.getLastName())
+                                .avatar(u.getAvatar())
+                                .expPoints(u.getExpPoints())
+                                .title(title.getDisplayName())
+                                .titleIcon(title.getIcon())
+                                .build());
+                    }
                 }
             }
 
-            Long totalElements = redisTemplate.opsForZSet().zCard(ZSET_KEY);
-            if (totalElements == null) totalElements = 0L;
-            int totalPages = (int) Math.ceil((double) totalElements / size);
-
-            PagingMeta meta = new PagingMeta(
-                    totalElements,
-                    totalPages,
-                    page,
-                    size,
-                    "expPoints",
-                    "DESC");
-
+            int totalPages = (int) Math.ceil((double) totalInZSet / size);
+            PagingMeta meta = new PagingMeta(totalInZSet, totalPages, page, size, "expPoints", "DESC");
             return new PaginationResponseDto<>(meta, entries);
         }
 
@@ -149,24 +147,26 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
     @Override
     @Transactional(readOnly = true)
+    public Long getUserRankNumber(String userId, Long expPoints) {
+        Long zRank = redisTemplate.opsForZSet().reverseRank(ZSET_KEY, userId);
+        if (zRank != null) {
+            return zRank + 1;
+        }
+        log.warn("User {} not found in ZSET, falling back to Database rank query.", userId);
+        return userRepository.getUserRank(expPoints);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public UserRankDto getUserRank(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID));
 
-        Long zRank = redisTemplate.opsForZSet().reverseRank(ZSET_KEY, userId);
+        // Tận dụng gọi hàm getUserRankNumber để DRY code
+        long rank = getUserRankNumber(userId, user.getExpPoints());
 
-        long rank;
-        long totalUsers;
-
-        if (zRank != null) {
-            rank = zRank + 1;
-            Long zCard = redisTemplate.opsForZSet().zCard(ZSET_KEY);
-            totalUsers = (zCard != null) ? zCard : userRepository.count();
-        } else {
-            log.warn("User {} not found in ZSET, falling back to Database rank query.", userId);
-            rank = userRepository.getUserRank(user.getExpPoints());
-            totalUsers = userRepository.count();
-        }
+        Long zCard = redisTemplate.opsForZSet().zCard(ZSET_KEY);
+        long totalUsers = (zCard != null) ? zCard : userRepository.count();
 
         UserTitle currentTitle = UserTitle.fromExp(user.getExpPoints());
         UserTitle nextTitle = currentTitle.next();

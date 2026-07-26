@@ -14,5 +14,7 @@ public interface LeaderboardService {
 
     UserRankDto getUserRank(String userId);
 
+    Long getUserRankNumber(String userId, Long expPoints);
+
     PaginationResponseDto<PointHistoryDto> getPointHistory(String userId, int page, int size);
 }

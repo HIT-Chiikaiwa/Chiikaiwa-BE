@@ -12,7 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import org.hit.chiikaiwabe.domain.enums.AuthProvider;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -32,8 +32,8 @@ public interface UserRepository extends JpaRepository<User, String> {
   @Query("SELECT u FROM User u WHERE u.phone = ?1")
   Optional<User> findByPhoneNumber(String phone);
 
-  @Query("SELECT u FROM User u WHERE u.authProvider = ?1 AND u.providerId = ?2")
-  Optional<User> findByAuthProviderAndProviderId(AuthProvider authProvider, String providerId);
+
+
 
   boolean existsByEmail(String email);
 
@@ -54,7 +54,7 @@ public interface UserRepository extends JpaRepository<User, String> {
   @Query("SELECT u FROM User u WHERE u.deleteFlag = false ORDER BY u.expPoints DESC")
   Page<User> findTopByExpPoints(Pageable pageable);
 
-  @Query("SELECT COUNT(u) FROM User u WHERE u.deleteFlag = false AND u.expPoints > :exp")
+  @Query("SELECT COUNT(u)  FROM User u WHERE u.deleteFlag = false AND u.expPoints > :exp")
   long getUserRank(@Param("exp") long exp);
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)

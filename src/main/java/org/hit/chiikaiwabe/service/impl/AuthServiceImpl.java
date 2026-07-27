@@ -6,10 +6,12 @@ import org.hit.chiikaiwabe.constant.SuccessMessage;
 import org.hit.chiikaiwabe.domain.enums.Role;
 import org.hit.chiikaiwabe.domain.enums.UserStatus;
 import org.hit.chiikaiwabe.domain.dto.request.*;
-import org.hit.chiikaiwabe.domain.dto.response.CommonResponseDto;
+import org.hit.chiikaiwabe.domain.dto.response.CompleteProfileResponseDto;
+import org.hit.chiikaiwabe.domain.dto.response.GoogleLoginResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.LoginResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.TokenRefreshResponseDto;
 import org.hit.chiikaiwabe.domain.entity.User;
+import org.hit.chiikaiwabe.domain.enums.AuthProvider;
 import org.hit.chiikaiwabe.exception.InternalServerException;
 import org.hit.chiikaiwabe.exception.InvalidException;
 import org.hit.chiikaiwabe.exception.NotFoundException;
@@ -31,7 +33,13 @@ import org.springframework.stereotype.Service;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.time.Period;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -84,6 +92,96 @@ public class AuthServiceImpl implements AuthService {
     } catch (BadCredentialsException e) {
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_INCORRECT_PASSWORD);
     }
+  }
+
+  @Override
+  public GoogleLoginResponseDto loginWithGoogle(GoogleLoginRequestDto request) {
+    try {
+      FirebaseToken firebaseToken = FirebaseAuth.getInstance().verifyIdToken(request.getIdToken());
+      String email = firebaseToken.getEmail();
+      String uid = firebaseToken.getUid();
+      String picture = firebaseToken.getPicture();
+
+      Optional<User> existingUser = userRepository.findByEmail(email);
+
+      if (existingUser.isPresent()) {
+        User user = existingUser.get();
+
+        if (user.getUserstatus() == UserStatus.INCOMPLETE_PROFILE) {
+          return new GoogleLoginResponseDto(email, user.getId());
+        }
+
+        UserPrincipal userPrincipal = UserPrincipal.create(user);
+        String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
+        String refreshToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.TRUE);
+
+        long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
+        long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
+
+        String accessJti = jwtTokenProvider.extractJtiFromJwt(accessToken);
+        String refreshJti = jwtTokenProvider.extractJtiFromJwt(refreshToken);
+
+        redisTemplate.opsForValue().set(accessJti, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
+        redisTemplate.opsForValue().set(refreshJti, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
+
+        return new GoogleLoginResponseDto(email, user.getId(), accessToken, refreshToken);
+      } else {
+        User newUser = User.builder()
+                .username(email)
+                .email(email)
+                .password(null)
+                // .avatar(picture) // User doesn't want avatar from Google
+                .authProvider(AuthProvider.GOOGLE)
+                .providerId(uid)
+                .userstatus(UserStatus.INCOMPLETE_PROFILE)
+                .trustScore(100.0)
+                .role(Role.USER)
+                .build();
+
+        userRepository.save(newUser);
+        return new GoogleLoginResponseDto(email, newUser.getId());
+      }
+    } catch (FirebaseAuthException e) {
+      log.error("Firebase auth error", e);
+      throw new UnauthorizedException(ErrorMessage.Auth.ERR_FIREBASE_TOKEN_INVALID);
+    } catch (Exception e) {
+      log.error("Google login error", e);
+      throw new InternalServerException(ErrorMessage.Auth.ERR_GOOGLE_LOGIN_FAILED);
+    }
+  }
+
+  @Override
+  public CompleteProfileResponseDto completeGoogleProfile(CompleteProfileRequestDto request) {
+    User user = userRepository.findById(request.getUserId())
+            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{request.getUserId()}));
+
+    if (user.getUserstatus() != UserStatus.INCOMPLETE_PROFILE) {
+      throw new InvalidException(ErrorMessage.Auth.ERR_PROFILE_ALREADY_COMPLETE);
+    }
+
+    user.setFirstName(request.getFirstName());
+    user.setLastName(request.getLastName());
+    user.setGender(request.getGender());
+    user.setDateOfBirth(request.getDateOfBirth());
+    user.setAge(Period.between(request.getDateOfBirth(), LocalDate.now()).getYears());
+    user.setUserstatus(UserStatus.ACTIVE);
+
+    userRepository.save(user);
+
+    UserPrincipal userPrincipal = UserPrincipal.create(user);
+    String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
+    String refreshToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.TRUE);
+
+    long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
+    long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
+
+    String accessJti = jwtTokenProvider.extractJtiFromJwt(accessToken);
+    String refreshJti = jwtTokenProvider.extractJtiFromJwt(refreshToken);
+
+    redisTemplate.opsForValue().set(accessJti, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
+    redisTemplate.opsForValue().set(refreshJti, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
+
+    return new CompleteProfileResponseDto("Bearer", accessToken, refreshToken, user.getId(), true);
   }
 
   @Override
@@ -225,6 +323,11 @@ public class AuthServiceImpl implements AuthService {
     User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME,
                     new String[]{request.getEmail()}));
+
+    if (user.getAuthProvider() == AuthProvider.GOOGLE) {
+      throw new InvalidException(ErrorMessage.Auth.ERR_GOOGLE_USER_NO_PASSWORD);
+    }
+
     if (user.getUserstatus() !=  UserStatus.ACTIVE) {
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_FORGOT_PASS_NOT_VERIFIED);
     }
@@ -244,6 +347,13 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public void resetPassword(ResetPasswordRequestDto request) {
+    User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{request.getEmail()}));
+
+    if (user.getAuthProvider() == AuthProvider.GOOGLE) {
+      throw new InvalidException(ErrorMessage.Auth.ERR_GOOGLE_USER_NO_PASSWORD);
+    }
+
     if (!request.getNewPassword().equals(request.getConfirmPassword())) {
       throw new InvalidException(ErrorMessage.Auth.ERR_CONFIRM_PASSWORD_NOT_MATCH);
     }
@@ -251,8 +361,6 @@ public class AuthServiceImpl implements AuthService {
     if (!redisTemplate.hasKey(resetTicketKey)) {
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_RESET_TICKET_EXPIRED);
     }
-    User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{request.getEmail()}));
 
     user.setPassword(passwordEncoder.encode(request.getNewPassword()));
     userRepository.save(user);

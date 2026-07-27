@@ -37,8 +37,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
+import org.hit.chiikaiwabe.service.FirebaseService;
 import com.google.firebase.auth.FirebaseToken;
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,6 +60,8 @@ public class AuthServiceImpl implements AuthService {
   private final StringRedisTemplate redisTemplate;
 
   private final ObjectMapper objectMapper;
+
+  private final FirebaseService firebaseService;
 
   @Override
   public LoginResponseDto login(LoginRequestDto request) {
@@ -97,19 +98,14 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public GoogleLoginResponseDto loginWithGoogle(GoogleLoginRequestDto request) {
     try {
-      FirebaseToken firebaseToken = FirebaseAuth.getInstance().verifyIdToken(request.getIdToken());
+      FirebaseToken firebaseToken = firebaseService.verifyIdToken(request.getIdToken());
       String email = firebaseToken.getEmail();
       String uid = firebaseToken.getUid();
-      String picture = firebaseToken.getPicture();
 
       Optional<User> existingUser = userRepository.findByEmail(email);
 
       if (existingUser.isPresent()) {
         User user = existingUser.get();
-
-        if (user.getUserstatus() == UserStatus.INCOMPLETE_PROFILE) {
-          return new GoogleLoginResponseDto(email, user.getId());
-        }
 
         UserPrincipal userPrincipal = UserPrincipal.create(user);
         String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
@@ -124,64 +120,77 @@ public class AuthServiceImpl implements AuthService {
         redisTemplate.opsForValue().set(accessJti, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
         redisTemplate.opsForValue().set(refreshJti, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
 
-        return new GoogleLoginResponseDto(email, user.getId(), accessToken, refreshToken);
+        return new GoogleLoginResponseDto(email, accessToken, refreshToken);
       } else {
-        User newUser = User.builder()
-                .username(email)
-                .email(email)
-                .password(null)
-                // .avatar(picture) // User doesn't want avatar from Google
-                .authProvider(AuthProvider.GOOGLE)
-                .providerId(uid)
-                .userstatus(UserStatus.INCOMPLETE_PROFILE)
-                .trustScore(100.0)
-                .role(Role.USER)
-                .build();
+        String ticket = java.util.UUID.randomUUID().toString();
+        GoogleRegistrationTempData tempData = new GoogleRegistrationTempData(email, uid);
+        String redisKey = "google_reg:" + ticket;
+        redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(tempData), 15, TimeUnit.MINUTES);
 
-        userRepository.save(newUser);
-        return new GoogleLoginResponseDto(email, newUser.getId());
+        return new GoogleLoginResponseDto(email, ticket);
       }
-    } catch (FirebaseAuthException e) {
-      log.error("Firebase auth error", e);
-      throw new UnauthorizedException(ErrorMessage.Auth.ERR_FIREBASE_TOKEN_INVALID);
     } catch (Exception e) {
       log.error("Google login error", e);
-      throw new InternalServerException(ErrorMessage.Auth.ERR_GOOGLE_LOGIN_FAILED);
+      throw new UnauthorizedException(ErrorMessage.Auth.ERR_FIREBASE_TOKEN_INVALID);
     }
   }
 
   @Override
   public CompleteProfileResponseDto completeGoogleProfile(CompleteProfileRequestDto request) {
-    User user = userRepository.findById(request.getUserId())
-            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{request.getUserId()}));
+    String redisKey = "google_reg:" + request.getTicket();
+    String jsonStr = redisTemplate.opsForValue().get(redisKey);
 
-    if (user.getUserstatus() != UserStatus.INCOMPLETE_PROFILE) {
-      throw new InvalidException(ErrorMessage.Auth.ERR_PROFILE_ALREADY_COMPLETE);
+    if (jsonStr == null) {
+      throw new InvalidException(ErrorMessage.Auth.ERR_SESSION_EXPIRED);
     }
 
-    user.setFirstName(request.getFirstName());
-    user.setLastName(request.getLastName());
-    user.setGender(request.getGender());
-    user.setDateOfBirth(request.getDateOfBirth());
-    user.setAge(Period.between(request.getDateOfBirth(), LocalDate.now()).getYears());
-    user.setUserstatus(UserStatus.ACTIVE);
+    try {
+      GoogleRegistrationTempData tempData = objectMapper.readValue(jsonStr, GoogleRegistrationTempData.class);
 
-    userRepository.save(user);
+      if (userRepository.existsByEmail(tempData.getEmail())) {
+        throw new InvalidException(ErrorMessage.Auth.ERR_ACCOUNT_ALREADY_EXISTS);
+      }
 
-    UserPrincipal userPrincipal = UserPrincipal.create(user);
-    String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
-    String refreshToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.TRUE);
+      String randomPassword = java.util.UUID.randomUUID().toString();
 
-    long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
-    long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
+      User newUser = User.builder()
+              .username(tempData.getEmail())
+              .email(tempData.getEmail())
+              .password(passwordEncoder.encode(randomPassword))
+              .firstName(request.getFirstName())
+              .lastName(request.getLastName())
+              .gender(request.getGender())
+              .dateOfBirth(request.getDateOfBirth())
+              .age(Period.between(request.getDateOfBirth(), LocalDate.now()).getYears())
+              .authProvider(AuthProvider.GOOGLE)
+              .providerId(tempData.getProviderId())
+              .userstatus(UserStatus.ACTIVE)
+              .trustScore(100.0)
+              .role(Role.USER)
+              .build();
 
-    String accessJti = jwtTokenProvider.extractJtiFromJwt(accessToken);
-    String refreshJti = jwtTokenProvider.extractJtiFromJwt(refreshToken);
+      userRepository.save(newUser);
+      redisTemplate.delete(redisKey);
 
-    redisTemplate.opsForValue().set(accessJti, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
-    redisTemplate.opsForValue().set(refreshJti, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
+      UserPrincipal userPrincipal = UserPrincipal.create(newUser);
+      String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
+      String refreshToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.TRUE);
 
-    return new CompleteProfileResponseDto("Bearer", accessToken, refreshToken, user.getId(), true);
+      long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
+      long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
+
+      String accessJti = jwtTokenProvider.extractJtiFromJwt(accessToken);
+      String refreshJti = jwtTokenProvider.extractJtiFromJwt(refreshToken);
+
+      redisTemplate.opsForValue().set(accessJti, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
+      redisTemplate.opsForValue().set(refreshJti, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
+
+      return new CompleteProfileResponseDto("Bearer", accessToken, refreshToken, newUser.getId(), true);
+
+    } catch (Exception e) {
+      log.error("Complete profile error", e);
+      throw new InternalServerException(ErrorMessage.Auth.ERR_SYSTEM_PROCESS);
+    }
   }
 
   @Override

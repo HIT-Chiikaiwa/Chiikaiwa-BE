@@ -9,23 +9,21 @@ import lombok.Setter;
 @NoArgsConstructor
 public class GoogleLoginResponseDto {
     private String email;
-    private String userId;
+    private String ticket;
     private boolean profileComplete;
 
     private String tokenType;
     private String accessToken;
     private String refreshToken;
 
-    public GoogleLoginResponseDto(String email, String userId) {
+    public GoogleLoginResponseDto(String email, String ticket) {
         this.email = email;
-        this.userId = userId;
+        this.ticket = ticket;
         this.profileComplete = false;
     }
 
-    public GoogleLoginResponseDto(String email, String userId,
-                                  String accessToken, String refreshToken) {
+    public GoogleLoginResponseDto(String email, String accessToken, String refreshToken) {
         this.email = email;
-        this.userId = userId;
         this.profileComplete = true;
         this.tokenType = "Bearer";
         this.accessToken = accessToken;

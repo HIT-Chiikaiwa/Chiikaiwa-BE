@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class CompleteProfileRequestDto {
     @NotBlank
-    private String userId;
+    private String ticket;
     @NotBlank
     private String firstName;
     @NotBlank

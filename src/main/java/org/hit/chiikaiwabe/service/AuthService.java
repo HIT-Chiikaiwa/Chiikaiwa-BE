@@ -2,6 +2,8 @@ package org.hit.chiikaiwabe.service;
 
 import org.hit.chiikaiwabe.domain.dto.request.*;
 import org.hit.chiikaiwabe.domain.dto.response.CommonResponseDto;
+import org.hit.chiikaiwabe.domain.dto.response.CompleteProfileResponseDto;
+import org.hit.chiikaiwabe.domain.dto.response.GoogleLoginResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.LoginResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.TokenRefreshResponseDto;
 
@@ -10,6 +12,10 @@ import jakarta.servlet.http.HttpServletRequest;
 public interface AuthService {
 
   LoginResponseDto login(LoginRequestDto request);
+
+  GoogleLoginResponseDto loginWithGoogle(GoogleLoginRequestDto request);
+
+  CompleteProfileResponseDto completeGoogleProfile(CompleteProfileRequestDto request);
 
   TokenRefreshResponseDto refresh(TokenRefreshRequestDto request);
 

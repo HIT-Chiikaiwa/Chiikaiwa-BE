@@ -54,8 +54,8 @@ public interface UserRepository extends JpaRepository<User, String> {
   @Query("SELECT u FROM User u WHERE u.deleteFlag = false ORDER BY u.expPoints DESC")
   Page<User> findTopByExpPoints(Pageable pageable);
 
-  @Query("SELECT COUNT(u)  FROM User u WHERE u.deleteFlag = false AND u.expPoints > :exp")
-  long getUserRank(@Param("exp") long exp);
+  @Query("SELECT COUNT(u)  FROM User u WHERE u.deleteFlag = false AND u.expPoints > :targetExp")
+  long getUserRank(@Param("targetExp") long targetExp);
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query("UPDATE User u SET " +

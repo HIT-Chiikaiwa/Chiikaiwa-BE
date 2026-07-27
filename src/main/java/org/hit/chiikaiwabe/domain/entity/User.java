@@ -30,16 +30,16 @@ public class User extends DateAuditing {
     @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
     @JsonIgnore
     private String password;
 
     @Nationalized
-    @Column(nullable = true)
+    @Column(nullable = false)
     private String firstName;
 
     @Nationalized
-    @Column(nullable = true)
+    @Column(nullable = false)
     private String lastName;
 
     @Column(unique = true)
@@ -59,11 +59,11 @@ public class User extends DateAuditing {
     @Column(nullable = true)
     private String university;
 
-    @Column(nullable = true, length = 10)
+    @Column(nullable = false, length = 10)
     private String gender;
 
-    @Column(nullable = true)
-    private Integer age;
+    @Column(nullable = false)
+    private int age;
 
     @Column(name = "date_of_birth",nullable = true)
     private LocalDate dateOfBirth;

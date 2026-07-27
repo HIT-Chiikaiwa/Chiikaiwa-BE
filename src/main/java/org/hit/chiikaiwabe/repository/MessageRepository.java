@@ -19,7 +19,7 @@ public interface MessageRepository extends JpaRepository<Message, String> {
     @EntityGraph(attributePaths = {"sender", "replyToMessage"})
     @Query("SELECT m FROM Message m WHERE m.conversation.id = :conversationId " +
             "AND NOT EXISTS (SELECT 1 FROM MessageDeletion md WHERE md.message.id = m.id AND md.user.id = :userId) " +
-            "AND (:leftAt IS NULL OR m.createdDate <= :leftAt) " +
+            "AND (cast(:leftAt as timestamp) IS NULL OR m.createdDate <= cast(:leftAt as timestamp)) " +
             "ORDER BY m.createdDate DESC")
     Page<Message> findByConversationIdForUser(@Param("conversationId") String conversationId,
                                               @Param("userId") String userId,

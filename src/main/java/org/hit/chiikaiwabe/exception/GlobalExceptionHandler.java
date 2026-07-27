@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 
 import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
@@ -121,6 +122,13 @@ public class GlobalExceptionHandler {
     log.error("Max upload size exceeded: {}", ex.getMessage());
     String message = messageSource.getMessage(ErrorMessage.File.ERR_FILE_SIZE_EXCEED, null, LocaleContextHolder.getLocale());
     return VsResponseUtil.error(HttpStatus.BAD_REQUEST, message);
+  }
+
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+  public ResponseEntity<RestData<?>> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
+    log.warn("Method not allowed: {}", ex.getMessage());
+    return VsResponseUtil.error(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage());
   }
 
 }

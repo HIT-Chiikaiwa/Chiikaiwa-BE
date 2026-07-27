@@ -36,8 +36,8 @@ public interface FriendshipRepository extends JpaRepository<Friendship, String> 
             "JOIN FETCH f.requester JOIN FETCH f.receiver " +
             "WHERE (f.requester.id = :userId OR f.receiver.id = :userId) " +
             "AND f.status = 'ACCEPTED' " +
-            "AND (LOWER(CASE WHEN f.requester.id = :userId THEN f.receiver.firstName ELSE f.requester.firstName END) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-            "OR LOWER(CASE WHEN f.requester.id = :userId THEN f.receiver.lastName ELSE f.requester.lastName END) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+            "AND (LOWER(CASE WHEN f.requester.id = :userId THEN f.receiver.firstName ELSE f.requester.firstName END) LIKE LOWER(:keyword) " +
+            "OR LOWER(CASE WHEN f.requester.id = :userId THEN f.receiver.lastName ELSE f.requester.lastName END) LIKE LOWER(:keyword))")
     Page<Friendship> searchFriendsByName(@Param("userId") String userId,
                                          @Param("keyword") String keyword,
                                          Pageable pageable);

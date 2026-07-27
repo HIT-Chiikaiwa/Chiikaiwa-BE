@@ -16,6 +16,10 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +27,16 @@ import java.util.Map;
 @EnableCaching
 @Configuration
 public class RedisConfig {
+
+    private GenericJackson2JsonRedisSerializer createJsonSerializer() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.findAndRegisterModules();
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        objectMapper.activateDefaultTyping(objectMapper.getPolymorphicTypeValidator(),
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY);
+        return new GenericJackson2JsonRedisSerializer(objectMapper);
+    }
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
@@ -32,7 +46,7 @@ public class RedisConfig {
         template.setKeySerializer(new StringRedisSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
 
-        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer();
+        GenericJackson2JsonRedisSerializer jsonSerializer = createJsonSerializer();
         template.setValueSerializer(jsonSerializer);
         template.setHashValueSerializer(jsonSerializer);
 
@@ -46,7 +60,7 @@ public class RedisConfig {
                 .entryTtl(Duration.ofMinutes(5))
                 .serializeValuesWith(
                         RedisSerializationContext.SerializationPair
-                                .fromSerializer(new GenericJackson2JsonRedisSerializer()));
+                                .fromSerializer(createJsonSerializer()));
 
         Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
         cacheConfigs.put("userBlock", defaultConfig.entryTtl(Duration.ofMinutes(5)));

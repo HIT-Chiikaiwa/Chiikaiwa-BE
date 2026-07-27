@@ -82,7 +82,9 @@ public class ChatQueryServiceImpl implements ChatQueryService {
         ConversationMember member = memberRepository.findByConversationIdAndUserId(conversationId, userId)
                 .orElseThrow(() -> new ForbiddenException(ErrorMessage.Chat.ERR_NOT_MEMBER));
 
-        LocalDateTime leftAt = member.getLeftAt();
+        LocalDateTime leftAt = member.getLeftAt() != null
+                ? member.getLeftAt()
+                : LocalDateTime.of(9999, 12, 31, 23, 59, 59);
 
         Page<Message> messages = messageRepository
                 .findByConversationIdForUser(conversationId, userId, leftAt, pageable);

@@ -153,7 +153,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
             return zRank + 1;
         }
         log.warn("User {} not found in ZSET, falling back to Database rank query.", userId);
-        return userRepository.getUserRank(expPoints);
+        return userRepository.getUserRank(expPoints) + 1;
     }
 
     @Override

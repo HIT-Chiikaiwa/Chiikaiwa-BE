@@ -43,7 +43,7 @@ public interface MessageRepository extends JpaRepository<Message, String> {
     @Query("SELECT m FROM Message m WHERE m.conversation.id = :conversationId " +
             "AND NOT EXISTS (SELECT 1 FROM MessageDeletion md WHERE md.message.id = m.id AND md.user.id = :userId) " +
             "AND m.isRecalled = false " +
-            "AND LOWER(m.content) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+            "AND LOWER(m.content) LIKE LOWER(:keyword) " +
             "ORDER BY m.createdDate DESC")
     Page<Message> searchMessages(@Param("conversationId") String conversationId,
                                  @Param("userId") String userId,

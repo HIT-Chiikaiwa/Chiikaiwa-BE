@@ -162,7 +162,7 @@ public class FriendshipServiceImpl implements FriendshipService {
 
     @Override
     public Page<FriendshipResponseDto> searchFriendsByName(String userId, String keyword, Pageable pageable) {
-        String searchKeyword = "%" + (keyword == null ? "" : keyword.trim()) + "%";
+        String searchKeyword = "%" + (keyword == null ? "" : keyword.trim().toLowerCase()) + "%";
         Page<Friendship> friends = friendshipRepository.searchFriendsByName(userId, searchKeyword, pageable);
         return friends.map(f -> mapToFriendshipResponse(f, userId));
     }

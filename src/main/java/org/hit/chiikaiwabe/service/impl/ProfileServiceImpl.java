@@ -187,7 +187,8 @@ public class ProfileServiceImpl implements ProfileService {
             throw new InvalidException(ErrorMessage.Subject.ERR_INVALID_TYPE);
         }
 
-        List<Subject> existing = subjectRepository.findByUserIdAndName(userId, dto.getName());
+        String searchName = dto.getName() == null ? "" : dto.getName().trim().toLowerCase();
+        List<Subject> existing = subjectRepository.findByUserIdAndName(userId, searchName);
         if (!existing.isEmpty()) {
             throw new InvalidException(ErrorMessage.Subject.ERR_DUPLICATE_NAME);
         }

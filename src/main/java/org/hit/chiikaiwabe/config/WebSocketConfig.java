@@ -27,7 +27,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         taskScheduler.initialize();
 
         config.enableSimpleBroker("/topic", "/queue")
-                .setHeartbeatValue(new long[]{10000, 10000})
+                .setHeartbeatValue(new long[]{10000, 0})
                 .setTaskScheduler(taskScheduler);
         config.setApplicationDestinationPrefixes("/app");
         config.setUserDestinationPrefix("/user");
@@ -35,6 +35,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws")
+                .addInterceptors(jwtHandshakeInterceptor)
+                .setAllowedOriginPatterns("*");
+
         registry.addEndpoint("/ws")
                 .addInterceptors(jwtHandshakeInterceptor)
                 .setAllowedOriginPatterns("*")

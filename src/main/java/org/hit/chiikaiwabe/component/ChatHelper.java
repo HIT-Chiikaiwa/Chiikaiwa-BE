@@ -22,6 +22,9 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.hit.chiikaiwabe.domain.dto.response.FileAttachmentResponseDto;
+import org.hit.chiikaiwabe.domain.entity.MessageAttachment;
 
 @Component
 @RequiredArgsConstructor
@@ -88,6 +91,16 @@ public class ChatHelper {
                     .build();
         }
 
+        List<FileAttachmentResponseDto> attachmentDtos = mapAttachments(msg.getAttachments());
+        String msgType = msg.getMessageType() != null ? msg.getMessageType().name() : null;
+        if ("FILE".equals(msgType) && !attachmentDtos.isEmpty() && isImageAttachment(attachmentDtos.get(0))) {
+            msgType = "IMAGE";
+        }
+        String content = msg.getIsRecalled() ? null : msg.getContent();
+        if (!msg.getIsRecalled() && "IMAGE".equals(msgType) && (content == null || content.isEmpty()) && !attachmentDtos.isEmpty()) {
+            content = attachmentDtos.get(0).getFileUrl();
+        }
+
         return MessageResponseDto.builder()
                 .id(msg.getId())
                 .conversationId(msg.getConversation().getId())
@@ -95,16 +108,35 @@ public class ChatHelper {
                 .senderName(msg.getSender() != null ?
                         msg.getSender().getLastName() + " " + msg.getSender().getFirstName() : "System")
                 .senderAvatar(msg.getSender() != null ? msg.getSender().getAvatar() : null)
-                .content(msg.getIsRecalled() ? null : msg.getContent())
-                .messageType(msg.getMessageType().name())
+                .content(content)
+                .messageType(msgType)
                 .isRecalled(msg.getIsRecalled())
                 .createdDate(msg.getCreatedDate())
-                .attachments(new ArrayList<>())
+                .attachments(attachmentDtos)
                 .replyToMessage(replyDto)
                 .forwardedFrom(forwardDto)
                 .isPinned(msg.getIsPinned())
                 .reactions(new ArrayList<>())
                 .build();
+    }
+
+    private List<FileAttachmentResponseDto> mapAttachments(List<MessageAttachment> attachments) {
+        if (attachments == null) return new ArrayList<>();
+        return attachments.stream().map(a -> FileAttachmentResponseDto.builder()
+                .id(a.getId())
+                .fileUrl(a.getFileUrl())
+                .fileName(a.getFileName())
+                .fileType(a.getFileType())
+                .fileSize(a.getFileSize())
+                .build()).collect(Collectors.toList());
+    }
+
+    private boolean isImageAttachment(FileAttachmentResponseDto att) {
+        if ("IMAGE".equalsIgnoreCase(att.getFileType())) return true;
+        String fileName = att.getFileName();
+        if (fileName == null || !fileName.contains(".")) return false;
+        String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+        return java.util.Arrays.asList("png", "jpg", "jpeg", "webp", "gif", "bmp", "heic", "heif").contains(ext);
     }
 
     public ConversationResponseDto toConversationResponseDto(Conversation conv, String userId,

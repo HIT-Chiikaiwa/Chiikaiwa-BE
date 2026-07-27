@@ -93,7 +93,7 @@ public class ChatQueryServiceImpl implements ChatQueryService {
     @Override
     @Transactional(readOnly = true)
     public Page<ConversationResponseDto> searchConversations(String userId, String keyword, Pageable pageable) {
-        String searchKeyword = "%" + (keyword == null ? "" : keyword.trim()) + "%";
+        String searchKeyword = "%" + (keyword == null ? "" : keyword.trim().toLowerCase()) + "%";
         Page<Conversation> conversations = conversationRepository.searchByKeyword(userId, searchKeyword, pageable);
 
         List<String> conversationIds = conversations.getContent().stream()
@@ -127,7 +127,7 @@ public class ChatQueryServiceImpl implements ChatQueryService {
     @Transactional(readOnly = true)
     public Page<MessageResponseDto> searchMessages(String conversationId, String userId, String keyword, Pageable pageable) {
         chatHelper.findActiveMember(conversationId, userId);
-        String searchKeyword = "%" + (keyword == null ? "" : keyword.trim()) + "%";
+        String searchKeyword = "%" + (keyword == null ? "" : keyword.trim().toLowerCase()) + "%";
         Page<Message> messages = messageRepository.searchMessages(conversationId, userId, searchKeyword, pageable);
         return messages.map(chatHelper::toMessageResponseDto);
     }

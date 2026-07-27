@@ -18,8 +18,19 @@ public interface MessageMapper {
             @Mapping(target = "replyToMessage", ignore = true),
             @Mapping(target = "forwardedFrom", ignore = true),
             @Mapping(target = "reactions", ignore = true),
-            @Mapping(target = "attachments", ignore = true),
+            @Mapping(target = "attachments", expression = "java(mapAttachments(message.getAttachments()))"),
             @Mapping(source = "isPinned", target = "isPinned")
     })
     MessageResponseDto toDto(Message message);
+
+    default java.util.List<org.hit.chiikaiwabe.domain.dto.response.FileAttachmentResponseDto> mapAttachments(java.util.List<org.hit.chiikaiwabe.domain.entity.MessageAttachment> attachments) {
+        if (attachments == null) return new java.util.ArrayList<>();
+        return attachments.stream().map(a -> org.hit.chiikaiwabe.domain.dto.response.FileAttachmentResponseDto.builder()
+                .id(a.getId())
+                .fileUrl(a.getFileUrl())
+                .fileName(a.getFileName())
+                .fileType(a.getFileType())
+                .fileSize(a.getFileSize())
+                .build()).collect(java.util.stream.Collectors.toList());
+    }
 }

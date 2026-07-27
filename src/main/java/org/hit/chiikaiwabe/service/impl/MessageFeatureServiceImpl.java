@@ -183,17 +183,21 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Chat.ERR_CONVERSATION_NOT_FOUND));
 
+        boolean isImage = isImageFile(fileName);
+        MessageType type = isImage ? MessageType.IMAGE : MessageType.FILE;
+        String attachmentType = isImage ? "IMAGE" : "FILE";
+
         Message message = Message.builder()
                 .conversation(conversation)
                 .sender(sender)
-                .content("")
-                .messageType(MessageType.FILE)
+                .content(fileUrl)
+                .messageType(type)
                 .build();
 
         org.hit.chiikaiwabe.domain.entity.MessageAttachment attachment = org.hit.chiikaiwabe.domain.entity.MessageAttachment.builder()
                 .fileUrl(fileUrl)
                 .fileName(fileName)
-                .fileType("FILE")
+                .fileType(attachmentType)
                 .build();
 
         message.addAttachment(attachment);
@@ -204,8 +208,19 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
         conversationRepository.save(conversation);
 
         MessageResponseDto messageDto = messageMapper.toDto(message);
+        if (isImage && (messageDto.getContent() == null || messageDto.getContent().isEmpty())) {
+            messageDto.setContent(fileUrl);
+        }
         chatNotificationService.broadcastSystemEvent(conversationId, messageDto);
 
         return messageDto;
+    }
+
+    private boolean isImageFile(String fileName) {
+        if (fileName == null || !fileName.contains(".")) {
+            return false;
+        }
+        String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+        return java.util.Arrays.asList("png", "jpg", "jpeg", "webp", "gif", "bmp", "heic", "heif").contains(ext);
     }
 }

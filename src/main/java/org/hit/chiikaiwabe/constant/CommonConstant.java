@@ -18,7 +18,7 @@ public class CommonConstant {
   public static final String PATTERN_DATE = "yyyy-MM-dd";
 
   public static final String CONTENT_TYPE_DOCUMENT = "txt doc pdf ppt pps xlsx xls docx";
-  public static final String CONTENT_TYPE_IMAGE = "png jpg jpeg webp gif";
+  public static final String CONTENT_TYPE_IMAGE = "png jpg jpeg webp gif bmp heic heif";
   public static final String CONTENT_TYPE_VIDEO = "mp4 mpg mpe mpeg webm mov m4v";
 
 }

@@ -109,7 +109,7 @@ public class User extends DateAuditing {
     private Role role;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "auth_provider", nullable = false, length = 10)
+    @Column(name = "auth_provider", nullable = true, length = 10)
     @Builder.Default
     private AuthProvider authProvider = AuthProvider.LOCAL;
 

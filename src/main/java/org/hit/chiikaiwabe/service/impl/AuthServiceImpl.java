@@ -100,12 +100,18 @@ public class AuthServiceImpl implements AuthService {
     try {
       FirebaseToken firebaseToken = firebaseService.verifyIdToken(request.getIdToken());
       String email = firebaseToken.getEmail();
+      if (!StringUtils.hasText(email)) {
+        throw new InvalidException("Email is missing in Firebase token");
+      }
       String uid = firebaseToken.getUid();
 
       Optional<User> existingUser = userRepository.findByEmail(email);
 
       if (existingUser.isPresent()) {
         User user = existingUser.get();
+        if (user.getUserstatus() == UserStatus.LOCKED) {
+          throw new UnauthorizedException(ErrorMessage.Auth.ERR_ACCOUNT_LOCKED);
+        }
 
         UserPrincipal userPrincipal = UserPrincipal.create(user);
         String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
@@ -129,9 +135,12 @@ public class AuthServiceImpl implements AuthService {
 
         return new GoogleLoginResponseDto(email, ticket);
       }
+    } catch (com.google.firebase.auth.FirebaseAuthException e) {
+      log.error("Firebase auth error", e);
+      throw new UnauthorizedException(ErrorMessage.Auth.ERR_FIREBASE_TOKEN_INVALID);
     } catch (Exception e) {
       log.error("Google login error", e);
-      throw new UnauthorizedException(ErrorMessage.Auth.ERR_FIREBASE_TOKEN_INVALID);
+      throw new InternalServerException(ErrorMessage.Auth.ERR_SYSTEM_PROCESS);
     }
   }
 
@@ -356,6 +365,11 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public void resetPassword(ResetPasswordRequestDto request) {
+    String resetTicketKey = "RESET_TICKET:" + request.getEmail();
+    if (!Boolean.TRUE.equals(redisTemplate.hasKey(resetTicketKey))) {
+      throw new UnauthorizedException(ErrorMessage.Auth.ERR_RESET_TICKET_EXPIRED);
+    }
+
     User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{request.getEmail()}));
 
@@ -365,10 +379,6 @@ public class AuthServiceImpl implements AuthService {
 
     if (!request.getNewPassword().equals(request.getConfirmPassword())) {
       throw new InvalidException(ErrorMessage.Auth.ERR_CONFIRM_PASSWORD_NOT_MATCH);
-    }
-    String resetTicketKey = "RESET_TICKET:" + request.getEmail();
-    if (!redisTemplate.hasKey(resetTicketKey)) {
-      throw new UnauthorizedException(ErrorMessage.Auth.ERR_RESET_TICKET_EXPIRED);
     }
 
     user.setPassword(passwordEncoder.encode(request.getNewPassword()));

@@ -6,20 +6,22 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import jakarta.validation.constraints.Past;
 import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CompleteProfileRequestDto {
-    @NotBlank
+    @NotBlank(message = "{invalid.general.required}")
     private String ticket;
-    @NotBlank
+    @NotBlank(message = "{invalid.general.not-blank}")
     private String firstName;
-    @NotBlank
+    @NotBlank(message = "{invalid.general.not-blank}")
     private String lastName;
-    @NotBlank
+    @NotBlank(message = "{invalid.general.not-blank}")
     private String gender;
-    @NotNull
+    @NotNull(message = "{invalid.general.required}")
+    @Past(message = "{invalid.date-future}")
     private LocalDate dateOfBirth;
 }

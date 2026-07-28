@@ -109,6 +109,9 @@ public class AuthServiceImpl implements AuthService {
 
       if (existingUser.isPresent()) {
         User user = existingUser.get();
+        if (user.getAuthProvider() != AuthProvider.GOOGLE || !uid.equals(user.getProviderId())) {
+          throw new InvalidException(ErrorMessage.Auth.ERR_ACCOUNT_ALREADY_EXISTS);
+        }
         if (user.getUserstatus() == UserStatus.LOCKED) {
           throw new UnauthorizedException(ErrorMessage.Auth.ERR_ACCOUNT_LOCKED);
         }

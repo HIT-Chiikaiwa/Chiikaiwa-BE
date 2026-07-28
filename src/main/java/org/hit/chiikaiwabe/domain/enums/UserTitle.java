@@ -6,12 +6,11 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum UserTitle {
-    TAN_BINH("Tân Binh", "*", 0, 49),
-    TAN_TINH("Tân Tinh", "**", 50, 149),
-    SAO_SANG("Sao Sáng", "***", 150, 349),
-    KIM_CUONG("Kim Cương", "<>", 350, 699),
-    LAO_LANG("Lão Làng", "##", 700, 1199),
-    HUYEN_THOAI("Huyền Thoại", "@@", 1200, Integer.MAX_VALUE);
+    SIEU_TAN_BINH("Siêu Tân Binh", "*", 0, 199),
+    TAN_BINH_KY_CUU("Tân Binh Kỳ Cựu", "**", 200, 599),
+    CO_CONG_MAI_SAT("Có Công Mài Sắt", "***", 600, 799),
+    CONG_SU_SIEU_DANG("Cộng Sự Siêu Đẳng", "<>", 800, 999),
+    LAO_LANG("Lão Làng", "##", 1000, Integer.MAX_VALUE);
 
     private final String displayName;
     private final String icon;
@@ -24,7 +23,7 @@ public enum UserTitle {
                 return title;
             }
         }
-        return TAN_BINH;
+        return SIEU_TAN_BINH;
     }
 
     public UserTitle next() {

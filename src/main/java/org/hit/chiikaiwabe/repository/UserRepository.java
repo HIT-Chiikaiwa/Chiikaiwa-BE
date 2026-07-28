@@ -61,12 +61,11 @@ public interface UserRepository extends JpaRepository<User, String> {
   @Query("UPDATE User u SET " +
           "u.expPoints = GREATEST(0, u.expPoints + :delta), " +
           "u.title = CASE " +
-          "  WHEN GREATEST(0, u.expPoints + :delta) >= 1200 THEN 'Huyền Thoại' " +
-          "  WHEN GREATEST(0, u.expPoints + :delta) >= 700 THEN 'Lão Làng' " +
-          "  WHEN GREATEST(0, u.expPoints + :delta) >= 350 THEN 'Kim Cương' " +
-          "  WHEN GREATEST(0, u.expPoints + :delta) >= 150 THEN 'Sao Sáng' " +
-          "  WHEN GREATEST(0, u.expPoints + :delta) >= 50 THEN 'Tân Tinh' " +
-          "  ELSE 'Tân Binh' END " +
+          "  WHEN GREATEST(0, u.expPoints + :delta) >= 1000 THEN 'Lão Làng' " +
+          "  WHEN GREATEST(0, u.expPoints + :delta) >= 800 THEN 'Cộng Sự Siêu Đẳng' " +
+          "  WHEN GREATEST(0, u.expPoints + :delta) >= 600 THEN 'Có Công Mài Sắt' " +
+          "  WHEN GREATEST(0, u.expPoints + :delta) >= 200 THEN 'Tân Binh Kỳ Cựu' " +
+          "  ELSE 'Siêu Tân Binh' END " +
           "WHERE u.id = :userId")
   void updateExpPoints(@Param("userId") String userId, @Param("delta") int delta);
 

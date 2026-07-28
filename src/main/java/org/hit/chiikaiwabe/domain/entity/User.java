@@ -86,7 +86,7 @@ public class User extends DateAuditing {
     @Nationalized
     @Column(name = "title", length = 30)
     @Builder.Default
-    private String title = "Tân Binh";
+    private String title = "Siêu Tân Binh";
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -122,7 +122,7 @@ public class User extends DateAuditing {
         if (buddyActive == null) buddyActive = false;
         if (deleteFlag == null) deleteFlag = false;
         if (expPoints == null) expPoints = 0L;
-        if (title == null) title = "Tân Binh";
+        if (title == null) title = "Siêu Tân Binh";
         if (authProvider == null) authProvider = AuthProvider.LOCAL;
     }
 

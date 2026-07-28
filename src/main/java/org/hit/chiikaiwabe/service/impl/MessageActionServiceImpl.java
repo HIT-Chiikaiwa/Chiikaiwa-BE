@@ -61,7 +61,7 @@ public class MessageActionServiceImpl implements MessageActionService {
                 .conversation(conversation)
                 .sender(sender)
                 .content(dto.getContent())
-                .messageType(MessageType.TEXT)
+                .messageType(dto.getMessageType() != null ? dto.getMessageType() : MessageType.TEXT)
                 .build();
         message = messageRepository.save(message);
 

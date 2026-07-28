@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GoogleLoginRequestDto {
-    @NotBlank(message = "Firebase ID Token is required")
+    @NotBlank(message = "{invalid.general.required}")
     private String idToken;
 }

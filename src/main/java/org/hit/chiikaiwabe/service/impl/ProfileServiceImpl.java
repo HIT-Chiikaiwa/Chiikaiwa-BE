@@ -82,7 +82,7 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setTitle(user.getTitle());
         UserTitle userTitle = UserTitle.fromExp(user.getExpPoints());
         dto.setTitleIcon(userTitle.getIcon());
-        dto.setRank(userRepository.getUserRank(user.getExpPoints()));
+        dto.setRank(userRepository.getUserRank(user.getExpPoints()) + 1);
 
         return dto;
     }
@@ -187,8 +187,7 @@ public class ProfileServiceImpl implements ProfileService {
             throw new InvalidException(ErrorMessage.Subject.ERR_INVALID_TYPE);
         }
 
-        String searchName = dto.getName() == null ? "" : dto.getName().trim().toLowerCase();
-        List<Subject> existing = subjectRepository.findByUserIdAndName(userId, searchName);
+        List<Subject> existing = subjectRepository.findByUserIdAndName(userId, dto.getName());
         if (!existing.isEmpty()) {
             throw new InvalidException(ErrorMessage.Subject.ERR_DUPLICATE_NAME);
         }

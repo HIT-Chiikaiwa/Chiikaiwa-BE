@@ -67,6 +67,7 @@ public class AuthController {
   }
 
   @Operation(summary = "API Register")
+  @RateLimit(capacity = 1, durationInSeconds = 30)
   @PostMapping(UrlConstant.Auth.REGISTER)
   public ResponseEntity<?> register(@Valid @RequestBody UserCreateDto request) {
     authService.register(request);

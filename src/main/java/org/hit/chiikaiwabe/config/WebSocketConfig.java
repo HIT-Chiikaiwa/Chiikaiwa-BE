@@ -19,16 +19,20 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
     private final JwtChannelInterceptor jwtChannelInterceptor;
 
-    @Override
-    public void configureMessageBroker(MessageBrokerRegistry config) {
+    @org.springframework.context.annotation.Bean
+    public ThreadPoolTaskScheduler stompHeartbeatThread() {
         ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
         taskScheduler.setPoolSize(1);
         taskScheduler.setThreadNamePrefix("wss-heartbeat-thread-");
         taskScheduler.initialize();
+        return taskScheduler;
+    }
 
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic", "/queue")
                 .setHeartbeatValue(new long[]{10000, 10000})
-                .setTaskScheduler(taskScheduler);
+                .setTaskScheduler(stompHeartbeatThread());
         config.setApplicationDestinationPrefixes("/app");
         config.setUserDestinationPrefix("/user");
     }

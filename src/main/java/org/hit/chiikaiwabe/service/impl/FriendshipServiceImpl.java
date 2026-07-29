@@ -168,8 +168,8 @@ public class FriendshipServiceImpl implements FriendshipService {
     }
 
     @Override
-    public UserSearchResponseDto searchUserByPhone(String userId, String phone) {
-        User foundUser = userRepository.findByPhoneNumber(phone)
+    public UserSearchResponseDto searchUser(String userId, String keyword) {
+        User foundUser = userRepository.findByPhoneOrEmail(keyword)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Friendship.ERR_USER_NOT_FOUND_PHONE));
 
         String friendshipStatus = "STRANGER";

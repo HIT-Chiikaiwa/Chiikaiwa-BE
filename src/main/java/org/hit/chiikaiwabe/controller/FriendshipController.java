@@ -100,13 +100,13 @@ public class FriendshipController {
     }
 
     @Tag(name = "friendship-controller")
-    @Operation(summary = "Search user by phone number (all users in system)")
-    @GetMapping(UrlConstant.UserSearch.SEARCH_BY_PHONE)
-    public ResponseEntity<RestData<UserSearchResponseDto>> searchUserByPhone(
+    @Operation(summary = "Search user by phone or email (all users in system)")
+    @GetMapping(UrlConstant.UserSearch.SEARCH)
+    public ResponseEntity<RestData<UserSearchResponseDto>> searchUser(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
-            @RequestParam String phone) {
+            @RequestParam String keyword) {
         return VsResponseUtil.success(
-                friendshipService.searchUserByPhone(principal.getId(), phone));
+                friendshipService.searchUser(principal.getId(), keyword));
     }
 
 }

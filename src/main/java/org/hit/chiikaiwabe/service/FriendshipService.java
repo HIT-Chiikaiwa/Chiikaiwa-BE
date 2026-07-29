@@ -22,6 +22,6 @@ public interface FriendshipService {
 
     Page<FriendshipResponseDto> searchFriendsByName(String userId, String keyword, Pageable pageable);
 
-    UserSearchResponseDto searchUserByPhone(String userId, String phone);
+    UserSearchResponseDto searchUser(String userId, String keyword);
 
 }

@@ -126,7 +126,7 @@ public class UrlConstant {
   }
 
   public static class UserSearch {
-    public static final String SEARCH_BY_PHONE = "/users/search/phone";
+    public static final String SEARCH = "/users/search";
 
     private UserSearch() {
     }

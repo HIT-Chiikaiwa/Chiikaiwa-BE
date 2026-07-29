@@ -41,6 +41,18 @@ public class AuthController {
     return VsResponseUtil.success(multipartFile.getContentType());
   }
 
+  @Operation(summary = "API Google Login/Register")
+  @PostMapping(UrlConstant.Auth.GOOGLE_LOGIN)
+  public ResponseEntity<?> googleLogin(@Valid @RequestBody GoogleLoginRequestDto request) {
+    return VsResponseUtil.success(authService.loginWithGoogle(request));
+  }
+
+  @Operation(summary = "API Complete Profile (Google registration)")
+  @PostMapping(UrlConstant.Auth.COMPLETE_PROFILE)
+  public ResponseEntity<?> completeProfile(@Valid @RequestBody CompleteProfileRequestDto request) {
+    return VsResponseUtil.success(authService.completeGoogleProfile(request));
+  }
+
   @Operation(summary = "API Refresh Token")
   @PostMapping(UrlConstant.Auth.REFRESH_TOKEN)
   public ResponseEntity<?> refresh(@Valid @RequestBody TokenRefreshRequestDto request) {

@@ -1,5 +1,6 @@
 package org.hit.chiikaiwabe.domain.entity;
 
+import org.hit.chiikaiwabe.domain.enums.AuthProvider;
 import org.hit.chiikaiwabe.domain.enums.Role;
 import org.hit.chiikaiwabe.domain.enums.UserStatus;
 import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
@@ -107,6 +108,14 @@ public class User extends DateAuditing {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider", nullable = true, length = 10)
+    @Builder.Default
+    private AuthProvider authProvider = AuthProvider.LOCAL;
+
+    @Column(name = "provider_id")
+    private String providerId;
+
     @PostLoad
     private void onPostLoad() {
         if (totalRatingCount == null) totalRatingCount = 0;
@@ -114,6 +123,7 @@ public class User extends DateAuditing {
         if (deleteFlag == null) deleteFlag = false;
         if (expPoints == null) expPoints = 0L;
         if (title == null) title = "Siêu Tân Binh";
+        if (authProvider == null) authProvider = AuthProvider.LOCAL;
     }
 
 }

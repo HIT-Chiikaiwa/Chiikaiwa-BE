@@ -36,6 +36,11 @@ public class ErrorMessage {
     public static final String ERR_FORGOT_PASS_NOT_VERIFIED = "exception.auth.forgot_pass_not_verified";
     public static final String ERR_SYSTEM_PROCESS = "auth.register.system_process_error";
     public static final String ERR_SESSION_EXPIRED = "auth.register.session_expired";
+    public static final String ERR_FIREBASE_TOKEN_INVALID = "exception.auth.firebase.token.invalid";
+    public static final String ERR_GOOGLE_LOGIN_FAILED = "exception.auth.google.login.failed";
+    public static final String ERR_PROFILE_INCOMPLETE = "exception.auth.profile.incomplete";
+    public static final String ERR_PROFILE_ALREADY_COMPLETE = "exception.auth.profile.already.complete";
+    public static final String ERR_GOOGLE_USER_NO_PASSWORD = "exception.auth.google.no.password";
 
   }
 

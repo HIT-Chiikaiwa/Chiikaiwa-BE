@@ -41,9 +41,6 @@ public class ProfileServiceImpl implements ProfileService {
     private final LocationRadarService locationRadarService;
 
 
-    private final org.hit.chiikaiwabe.service.LeaderboardService leaderboardService;
-
-
     private User findUserById(String userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_ID, new String[]{userId}));
@@ -80,12 +77,12 @@ public class ProfileServiceImpl implements ProfileService {
         dto.setStatusTag(user.getStatusTag());
         dto.setSubjects(subjects);
 
-
+        // Leaderboard fields
         dto.setExpPoints(user.getExpPoints());
         dto.setTitle(user.getTitle());
         UserTitle userTitle = UserTitle.fromExp(user.getExpPoints());
         dto.setTitleIcon(userTitle.getIcon());
-        dto.setRank(leaderboardService.getUserRankNumber(userId, user.getExpPoints()));
+        dto.setRank(userRepository.getUserRank(user.getExpPoints()) + 1);
 
         return dto;
     }
@@ -149,6 +146,10 @@ public class ProfileServiceImpl implements ProfileService {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
 
+        if (user.getAuthProvider() == org.hit.chiikaiwabe.domain.enums.AuthProvider.GOOGLE) {
+            throw new InvalidException(ErrorMessage.Auth.ERR_GOOGLE_USER_NO_PASSWORD);
+        }
+
         if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
             throw new InvalidException(ErrorMessage.Auth.ERR_INCORRECT_PASSWORD);
         }
@@ -186,8 +187,7 @@ public class ProfileServiceImpl implements ProfileService {
             throw new InvalidException(ErrorMessage.Subject.ERR_INVALID_TYPE);
         }
 
-        String searchName = dto.getName() == null ? "" : dto.getName().trim().toLowerCase();
-        List<Subject> existing = subjectRepository.findByUserIdAndName(userId, searchName);
+        List<Subject> existing = subjectRepository.findByUserIdAndName(userId, dto.getName());
         if (!existing.isEmpty()) {
             throw new InvalidException(ErrorMessage.Subject.ERR_DUPLICATE_NAME);
         }

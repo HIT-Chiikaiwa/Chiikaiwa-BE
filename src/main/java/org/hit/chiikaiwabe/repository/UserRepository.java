@@ -32,8 +32,13 @@ public interface UserRepository extends JpaRepository<User, String> {
   @Query("SELECT u FROM User u WHERE u.phone = ?1")
   Optional<User> findByPhoneNumber(String phone);
 
-  @Query("SELECT u FROM User u WHERE u.phone = ?1 OR u.email = ?1")
+  @Query("SELECT u FROM User u WHERE u.deleteFlag = false AND (u.phone = ?1 OR u.email = ?1)")
   Optional<User> findByPhoneOrEmail(String keyword);
+
+  @Query("SELECT u FROM User u WHERE u.deleteFlag = false AND " +
+          "(LOWER(u.firstName) LIKE :keyword OR LOWER(u.lastName) LIKE :keyword " +
+          "OR LOWER(CONCAT(u.lastName, ' ', u.firstName)) LIKE :keyword)")
+  List<User> searchByName(@Param("keyword") String keyword);
 
 
 

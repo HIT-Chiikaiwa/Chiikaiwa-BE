@@ -11,12 +11,14 @@ import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 import org.hit.chiikaiwabe.domain.dto.response.BlockedUserDto;
 
 
 
 @RequiredArgsConstructor
 @RestApiV1
+@RateLimit(capacity = 10, durationInSeconds = 60)
 public class UserBlockController {
 
     private final UserBlockService userBlockService;

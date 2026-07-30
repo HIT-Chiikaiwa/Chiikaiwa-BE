@@ -25,9 +25,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -168,35 +171,54 @@ public class FriendshipServiceImpl implements FriendshipService {
     }
 
     @Override
-    public UserSearchResponseDto searchUser(String userId, String keyword) {
-        User foundUser = userRepository.findByPhoneOrEmail(keyword)
-                .orElseThrow(() -> new NotFoundException(ErrorMessage.Friendship.ERR_USER_NOT_FOUND_PHONE));
+    public List<UserSearchResponseDto> searchUser(String userId, String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new InvalidException(ErrorMessage.INVALID_SOME_THING_FIELD_IS_REQUIRED, new String[]{"keyword"});
+        }
+        keyword = keyword.trim();
 
-        String friendshipStatus = "STRANGER";
-        Optional<Friendship> friendship = friendshipRepository.findFriendshipBetween(userId, foundUser.getId());
-        if (friendship.isPresent()) {
-            Friendship f = friendship.get();
-            switch (f.getStatus()) {
-                case ACCEPTED:
-                    friendshipStatus = "FRIEND";
-                    break;
-                case PENDING:
-                    friendshipStatus = f.getRequester().getId().equals(userId)
-                            ? "PENDING_SENT" : "PENDING_RECEIVED";
-                    break;
-                default:
-                    friendshipStatus = "STRANGER";
-            }
+        List<User> foundUsers = new ArrayList<>();
+
+        // Thử tìm chính xác theo SĐT/email
+        userRepository.findByPhoneOrEmail(keyword).ifPresent(foundUsers::add);
+
+        // Nếu không tìm thấy theo SĐT/email → tìm theo tên
+        if (foundUsers.isEmpty()) {
+            String searchKeyword = "%" + keyword.toLowerCase() + "%";
+            foundUsers = userRepository.searchByName(searchKeyword);
         }
 
-        return UserSearchResponseDto.builder()
-                .id(foundUser.getId())
-                .firstName(foundUser.getFirstName())
-                .lastName(foundUser.getLastName())
-                .avatar(foundUser.getAvatar())
-                .phone(foundUser.getPhone())
-                .friendshipStatus(friendshipStatus)
-                .build();
+        if (foundUsers.isEmpty()) {
+            throw new NotFoundException(ErrorMessage.Friendship.ERR_USER_NOT_FOUND);
+        }
+
+        return foundUsers.stream()
+                .filter(u -> !u.getId().equals(userId))
+                .map(foundUser -> {
+                    String friendshipStatus = determineFriendshipStatus(userId, foundUser.getId());
+                    return UserSearchResponseDto.builder()
+                            .id(foundUser.getId())
+                            .firstName(foundUser.getFirstName())
+                            .lastName(foundUser.getLastName())
+                            .avatar(foundUser.getAvatar())
+                            .phone(foundUser.getPhone())
+                            .friendshipStatus(friendshipStatus)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    private String determineFriendshipStatus(String currentUserId, String targetUserId) {
+        return friendshipRepository.findFriendshipBetween(currentUserId, targetUserId)
+                .map(f -> {
+                    switch (f.getStatus()) {
+                        case ACCEPTED: return "FRIEND";
+                        case PENDING: return f.getRequester().getId().equals(currentUserId)
+                                ? "PENDING_SENT" : "PENDING_RECEIVED";
+                        default: return "STRANGER";
+                    }
+                })
+                .orElse("STRANGER");
     }
 
 

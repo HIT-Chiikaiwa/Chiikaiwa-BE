@@ -128,6 +128,7 @@ public class ErrorMessage {
     public static final String ERR_NOT_RECEIVER = "exception.friendship.not.receiver";
     public static final String ERR_NOT_FRIENDS = "exception.friendship.not.friends";
     public static final String ERR_USER_NOT_FOUND_PHONE = "exception.friendship.user.not.found.phone";
+    public static final String ERR_USER_NOT_FOUND = "exception.friendship.user.not.found";
   }
 
   public static class Booking {

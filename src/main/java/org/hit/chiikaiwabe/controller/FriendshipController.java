@@ -7,6 +7,8 @@ import org.hit.chiikaiwabe.constant.UrlConstant;
 import org.hit.chiikaiwabe.domain.dto.response.CommonResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.FriendshipResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.UserSearchResponseDto;
+
+import java.util.List;
 import org.hit.chiikaiwabe.security.CurrentUser;
 import org.hit.chiikaiwabe.security.UserPrincipal;
 import org.hit.chiikaiwabe.service.FriendshipService;
@@ -100,9 +102,9 @@ public class FriendshipController {
     }
 
     @Tag(name = "friendship-controller")
-    @Operation(summary = "Search user by phone or email (all users in system)")
+    @Operation(summary = "Search user by phone, email or name (all users in system)")
     @GetMapping(UrlConstant.UserSearch.SEARCH)
-    public ResponseEntity<RestData<UserSearchResponseDto>> searchUser(
+    public ResponseEntity<RestData<List<UserSearchResponseDto>>> searchUser(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @RequestParam String keyword) {
         return VsResponseUtil.success(

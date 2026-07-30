@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.List;
 @RestApiV1
 @RequiredArgsConstructor
 @Tag(name = "booking-query-controller")
+@RateLimit(capacity = 30, durationInSeconds = 60)
 public class BookingQueryController {
     private final BookingQueryService bookingQueryService;
 

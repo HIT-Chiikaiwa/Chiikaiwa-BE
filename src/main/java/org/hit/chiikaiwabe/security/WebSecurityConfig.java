@@ -3,6 +3,7 @@ package org.hit.chiikaiwabe.security;
 import org.hit.chiikaiwabe.security.jwt.JwtAuthenticationEntryPoint;
 import org.hit.chiikaiwabe.security.jwt.JwtAuthenticationFilter;
 import org.hit.chiikaiwabe.service.impl.CustomUserDetailsServiceImpl;
+import org.hit.chiikaiwabe.filter.GlobalRateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +37,7 @@ import java.util.List;
 public class WebSecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final GlobalRateLimitFilter globalRateLimitFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -59,6 +61,7 @@ public class WebSecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
+                .addFilterBefore(globalRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -23,15 +23,18 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 
 @RequiredArgsConstructor
 @RestApiV1
+@RateLimit(capacity = 30, durationInSeconds = 60)
 public class FriendshipController {
 
     private final FriendshipService friendshipService;
 
     @Tag(name = "friendship-controller")
     @Operation(summary = "Send friend request")
+    @RateLimit(capacity = 10, durationInSeconds = 60)
     @PostMapping(UrlConstant.Friendship.SEND_REQUEST)
     public ResponseEntity<RestData<CommonResponseDto>> sendFriendRequest(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
@@ -103,6 +106,7 @@ public class FriendshipController {
 
     @Tag(name = "friendship-controller")
     @Operation(summary = "Search user by phone, email or name (all users in system)")
+    @RateLimit(capacity = 10, durationInSeconds = 60)
     @GetMapping(UrlConstant.UserSearch.SEARCH)
     public ResponseEntity<RestData<List<UserSearchResponseDto>>> searchUser(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,

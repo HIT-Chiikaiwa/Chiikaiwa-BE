@@ -15,6 +15,7 @@ public class ErrorMessage {
   public static final String INVALID_FORMAT_EMAIL = "invalid.email-format";
   public static final String INVALID_DATE = "invalid.date-format";
   public static final String INVALID_DATE_FEATURE = "invalid.date-future";
+  public static final String INVALID_DATE_PAST = "invalid.date-past";
   public static final String INVALID_DATETIME = "invalid.datetime-format";
 
   public static class Auth {

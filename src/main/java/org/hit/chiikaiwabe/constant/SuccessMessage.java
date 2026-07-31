@@ -10,6 +10,8 @@ public class SuccessMessage {
     public static final String VERIFY_REGISTER_SUCCESS = "auth.register.verify.success";
     public static final String FORGOT_PASSWORD_SEND_OTP_SUCCESS = "auth.forgot_password.send_otp_success";
     public static final String FORGOT_PASSWORD_VERIFY_SUCCESS = "auth.otp.verify_success";
+    public static final String GOOGLE_LOGIN_SUCCESS = "success.auth.google.login";
+    public static final String PROFILE_COMPLETED = "success.auth.profile.completed";
 
     public static final String PASSWORD_UPDATED = "success.password.updated";
     public static final String USER_DELETED = "success.user.deleted";

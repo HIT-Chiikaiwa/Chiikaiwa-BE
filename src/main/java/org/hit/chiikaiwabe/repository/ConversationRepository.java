@@ -47,12 +47,12 @@ public interface ConversationRepository extends JpaRepository<Conversation, Stri
             "JOIN ConversationMember cm ON cm.conversation.id = c.id " +
             "WHERE cm.user.id = ?1 AND cm.leftAt IS NULL " +
             "AND (" +
-            "  (c.type = 'GROUP' AND LOWER(c.groupName) LIKE LOWER(CONCAT('%', ?2, '%'))) " +
+            "  (c.type = 'GROUP' AND LOWER(c.groupName) LIKE ?2) " +
             "  OR (c.type = 'DIRECT' AND c.id IN (" +
             "    SELECT cm2.conversation.id FROM ConversationMember cm2 " +
             "    WHERE cm2.conversation.id = c.id AND cm2.user.id <> ?1 " +
-            "    AND (LOWER(cm2.user.firstName) LIKE LOWER(CONCAT('%', ?2, '%')) " +
-            "         OR LOWER(cm2.user.lastName) LIKE LOWER(CONCAT('%', ?2, '%')))" +
+            "    AND (LOWER(cm2.user.firstName) LIKE ?2 " +
+            "         OR LOWER(cm2.user.lastName) LIKE ?2)" +
             "  ))" +
             ") ORDER BY c.lastModifiedDate DESC")
     Page<Conversation> searchByKeyword(String userId, String keyword, Pageable pageable);

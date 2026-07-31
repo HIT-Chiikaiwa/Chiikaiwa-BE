@@ -38,7 +38,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws")
                 .addInterceptors(jwtHandshakeInterceptor)
                 .setAllowedOriginPatterns("*")
-                .withSockJS();
+                .withSockJS()
+                .setDisconnectDelay(60000);
     }
 
     @Override

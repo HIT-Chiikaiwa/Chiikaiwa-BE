@@ -35,7 +35,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       String jwt = getJwtFromRequest(request);
       if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
 
-        String isBlocked = redisTemplate.opsForValue().get("BLACKLIST:" + jwt);
+        String jti = tokenProvider.extractJtiFromJwt(jwt);
+        String isBlocked = redisTemplate.opsForValue().get("BLACKLIST:" + jti);
 
         if(isBlocked == null) {
           String userId = tokenProvider.extractSubjectFromJwt(jwt);
@@ -44,7 +45,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                   new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
           authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
           SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-        }else {log.warn("Access denied: Token has been logged out (blacklisted).");}
+        } else {
+          log.warn("Access denied: Token has been logged out (blacklisted) - URI: {}, IP: {}", request.getRequestURI(), request.getRemoteAddr());
+        }
       }
     } catch (Exception ex) {
       log.error("Could not set user authentication in security context", ex);

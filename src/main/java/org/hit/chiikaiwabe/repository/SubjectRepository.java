@@ -16,7 +16,7 @@ public interface SubjectRepository extends JpaRepository<Subject, String> {
     @Query("SELECT s FROM Subject s WHERE s.user.id = ?1 AND s.type = ?2")
     List<Subject> findByUserIdAndType(String userId, String type);
 
-    @Query("SELECT s FROM Subject s WHERE s.user.id = ?1 AND LOWER(s.name) = LOWER(?2)")
+    @Query("SELECT s FROM Subject s WHERE s.user.id = ?1 AND LOWER(s.name) = ?2")
     List<Subject> findByUserIdAndName(String userId, String name);
 
 }

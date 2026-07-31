@@ -19,10 +19,12 @@ import org.hit.chiikaiwabe.service.PushNotificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 
 @Controller
 @RestApiV1
 @RequiredArgsConstructor
+@RateLimit(capacity = 10, durationInSeconds = 60)
 public class DeviceController {
     private final PushNotificationService pushNotificationService;
     private final OnlineStatusService onlineStatusService;

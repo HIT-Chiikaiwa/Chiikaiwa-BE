@@ -22,17 +22,20 @@ import org.hit.chiikaiwabe.service.BookingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Booking", description = "Offline Booking API")
 @SecurityRequirement(name = "bearerAuth")
+@RateLimit(capacity = 20, durationInSeconds = 60)
 public class BookingController {
 
     private final BookingService bookingService;
     private final BookingLifecycleService lifecycleService;
 
     @Operation(summary = "Create booking in conversation")
+    @RateLimit(capacity = 5, durationInSeconds = 60)
     @PostMapping(UrlConstant.Booking.CREATE)
     public ResponseEntity<RestData<BookingResponseDto>> createBooking(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,

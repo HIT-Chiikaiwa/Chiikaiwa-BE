@@ -19,11 +19,13 @@ import org.hit.chiikaiwabe.service.LeaderboardService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 
 @RestApiV1
 @RequiredArgsConstructor
 @Tag(name = "Leaderboard", description = "Leaderboards & EXP Points")
 @SecurityRequirement(name = "bearerAuth")
+@RateLimit(capacity = 30, durationInSeconds = 60)
 public class LeaderboardController {
 
     private final LeaderboardService leaderboardService;

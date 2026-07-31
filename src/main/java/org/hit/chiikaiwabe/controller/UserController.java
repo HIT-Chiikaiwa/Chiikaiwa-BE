@@ -18,9 +18,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import jakarta.validation.Valid;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 
 @RequiredArgsConstructor
 @RestApiV1
+@RateLimit(capacity = 30, durationInSeconds = 60)
 public class UserController {
 
   private final UserService userService;

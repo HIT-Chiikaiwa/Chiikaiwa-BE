@@ -17,14 +17,17 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 
 @RequiredArgsConstructor
 @RestApiV1
+@RateLimit(capacity = 30, durationInSeconds = 60)
 public class ChatController {
 
     private final FileService fileService;
     private final MessageFeatureService messageFeatureService;
 
+    @RateLimit(capacity = 5, durationInSeconds = 60)
     @PostMapping(value = UrlConstant.Chat.CONVERSATIONS + UrlConstant.Chat.UPLOAD, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadFile(@PathVariable String id,
                                         @RequestParam("file") MultipartFile file,

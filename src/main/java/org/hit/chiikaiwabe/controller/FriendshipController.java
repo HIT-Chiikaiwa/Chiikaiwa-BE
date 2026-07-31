@@ -7,6 +7,8 @@ import org.hit.chiikaiwabe.constant.UrlConstant;
 import org.hit.chiikaiwabe.domain.dto.response.CommonResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.FriendshipResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.UserSearchResponseDto;
+
+import java.util.List;
 import org.hit.chiikaiwabe.security.CurrentUser;
 import org.hit.chiikaiwabe.security.UserPrincipal;
 import org.hit.chiikaiwabe.service.FriendshipService;
@@ -21,15 +23,18 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 
 @RequiredArgsConstructor
 @RestApiV1
+@RateLimit(capacity = 30, durationInSeconds = 60)
 public class FriendshipController {
 
     private final FriendshipService friendshipService;
 
     @Tag(name = "friendship-controller")
     @Operation(summary = "Send friend request")
+    @RateLimit(capacity = 10, durationInSeconds = 60)
     @PostMapping(UrlConstant.Friendship.SEND_REQUEST)
     public ResponseEntity<RestData<CommonResponseDto>> sendFriendRequest(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
@@ -100,13 +105,14 @@ public class FriendshipController {
     }
 
     @Tag(name = "friendship-controller")
-    @Operation(summary = "Search user by phone number (all users in system)")
-    @GetMapping(UrlConstant.UserSearch.SEARCH_BY_PHONE)
-    public ResponseEntity<RestData<UserSearchResponseDto>> searchUserByPhone(
+    @Operation(summary = "Search user by phone, email or name (all users in system)")
+    @RateLimit(capacity = 10, durationInSeconds = 60)
+    @GetMapping(UrlConstant.UserSearch.SEARCH)
+    public ResponseEntity<RestData<List<UserSearchResponseDto>>> searchUser(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
-            @RequestParam String phone) {
+            @RequestParam String keyword) {
         return VsResponseUtil.success(
-                friendshipService.searchUserByPhone(principal.getId(), phone));
+                friendshipService.searchUser(principal.getId(), keyword));
     }
 
 }

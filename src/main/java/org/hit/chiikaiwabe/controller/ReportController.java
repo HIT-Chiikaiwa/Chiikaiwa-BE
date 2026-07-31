@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import jakarta.validation.Valid;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 
 @RequiredArgsConstructor
 @RestApiV1
@@ -22,6 +23,7 @@ public class ReportController {
 
     private final ReportService reportService;
 
+    @RateLimit(capacity = 3, durationInSeconds = 60)
     @PostMapping(UrlConstant.BlockReport.REPORT)
     public ResponseEntity<?> createReport(@RequestBody @Valid ReportRequestDto requestDto,
                                           @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {

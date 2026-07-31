@@ -6,6 +6,8 @@ import org.hit.chiikaiwabe.domain.dto.response.UserSearchResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface FriendshipService {
 
     void sendFriendRequest(String senderId, String receiverId);
@@ -22,6 +24,6 @@ public interface FriendshipService {
 
     Page<FriendshipResponseDto> searchFriendsByName(String userId, String keyword, Pageable pageable);
 
-    UserSearchResponseDto searchUserByPhone(String userId, String phone);
+    List<UserSearchResponseDto> searchUser(String userId, String keyword);
 
 }

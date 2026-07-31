@@ -66,10 +66,11 @@ public class ProfileController {
     @Tag(name = "profile-controller")
     @Operation(summary = "Upload avatar")
     @RateLimit(capacity = 1, durationInSeconds = 120)
-    @PostMapping(UrlConstant.Profile.UPLOAD_AVATAR)
+    @PostMapping(value = UrlConstant.Profile.UPLOAD_AVATAR, consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<RestData<UserDto>> uploadAvatar(
             @PathVariable String userId,
-            @RequestParam("file") MultipartFile file,
+            @Parameter(description = "Avatar file to upload")
+            @RequestPart("file") MultipartFile file,
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal) {
         return VsResponseUtil.success(profileService.uploadAvatar(principal.getId(), userId, file));
     }

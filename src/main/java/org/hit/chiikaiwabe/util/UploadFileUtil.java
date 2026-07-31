@@ -45,6 +45,12 @@ public class UploadFileUtil {
 
     int startIndex = url.lastIndexOf("/") + 1;
     int endIndex = url.lastIndexOf(".");
+
+    if (startIndex >= url.length()) {
+      log.warn("Cannot extract publicId from URL: {}", url);
+      return;
+    }
+
     if (endIndex == -1 || endIndex < startIndex) {
       endIndex = url.length();
     }

@@ -52,12 +52,6 @@ public class ProfileServiceImpl implements ProfileService {
         }
     }
 
-    private void checkOwnership(String currentUserId, String userId) {
-        if (!currentUserId.equals(userId)) {
-            throw new ForbiddenException(ErrorMessage.FORBIDDEN);
-        }
-    }
-
 
     @Override
     @Cacheable(value = "publicProfile", key = "#userId")
@@ -95,8 +89,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
-    public UserDto updatePersonalInfo(String currentUserId, String userId, PersonalInfoUpdateDto dto) {
-        checkOwnership(currentUserId, userId);
+    public UserDto updatePersonalInfo(String userId, PersonalInfoUpdateDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
 
@@ -119,8 +112,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
-    public UserDto uploadAvatar(String currentUserId, String userId, MultipartFile file) {
-        checkOwnership(currentUserId, userId);
+    public UserDto uploadAvatar(String userId, MultipartFile file) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
 
@@ -141,8 +133,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
-    public void deleteUser(String currentUserId, String userId) {
-        checkOwnership(currentUserId, userId);
+    public void deleteUser(String userId) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
 
@@ -151,8 +142,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public void updatePassword(String currentUserId, String userId, ChangePasswordDto dto) {
-        checkOwnership(currentUserId, userId);
+    public void updatePassword(String userId, ChangePasswordDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
 
@@ -175,8 +165,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
-    public UserDto updateAcademicInfo(String currentUserId, String userId, AcademicInfoUpdateDto dto) {
-        checkOwnership(currentUserId, userId);
+    public UserDto updateAcademicInfo(String userId, AcademicInfoUpdateDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
 
@@ -189,8 +178,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @CacheEvict(value = "publicProfile", key = "#userId")
-    public SubjectDto addSubject(String currentUserId, String userId, SubjectCreateDto dto) {
-        checkOwnership(currentUserId, userId);
+    public SubjectDto addSubject(String userId, SubjectCreateDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
 
@@ -227,8 +215,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @CacheEvict(value = "publicProfile", key = "#userId")
-    public void deleteSubject(String currentUserId, String userId, String subjectId) {
-        checkOwnership(currentUserId, userId);
+    public void deleteSubject(String userId, String subjectId) {
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Subject.ERR_NOT_FOUND_ID, new String[]{subjectId}));
 
@@ -242,8 +229,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
-    public UserDto updateBuddyStatus(String currentUserId, String userId, StatusUpdateDto dto) {
-        checkOwnership(currentUserId, userId);
+    public UserDto updateBuddyStatus(String userId, StatusUpdateDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
 
@@ -257,8 +243,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
-    public UserDto updateStatusTag(String currentUserId, String userId, StatusTagUpdateDto dto) {
-        checkOwnership(currentUserId, userId);
+    public UserDto updateStatusTag(String userId, StatusTagUpdateDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
 
@@ -269,8 +254,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @CacheEvict(value = {"publicProfile", "radarUserInfo"}, key = "#userId")
-    public UserDto updateLocation(String currentUserId, String userId, LocationUpdateDto dto) {
-        checkOwnership(currentUserId, userId);
+    public UserDto updateLocation(String userId, LocationUpdateDto dto) {
         User user = findUserById(userId);
         checkUserNotDeleted(user);
 

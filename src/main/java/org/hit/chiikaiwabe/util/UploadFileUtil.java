@@ -41,6 +41,12 @@ public class UploadFileUtil {
   public void destroyFileWithUrl(String url) {
     int startIndex = url.lastIndexOf("/") + 1;
     int endIndex = url.lastIndexOf(".");
+
+    if (endIndex == -1 || endIndex <= startIndex) {
+      log.warn("Cannot extract publicId from URL (no file extension): {}", url);
+      return;
+    }
+
     String publicId = url.substring(startIndex, endIndex);
     try {
       Map<?, ?> result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());

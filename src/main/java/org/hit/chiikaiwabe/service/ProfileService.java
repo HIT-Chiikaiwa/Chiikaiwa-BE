@@ -33,5 +33,4 @@ public interface ProfileService {
     UserDto updateStatusTag(String userId, StatusTagUpdateDto dto);
 
     UserDto updateLocation(String userId, LocationUpdateDto dto);
-
 }

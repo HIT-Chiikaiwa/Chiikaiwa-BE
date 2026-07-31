@@ -12,26 +12,25 @@ public interface ProfileService {
 
     PublicProfileDto getPublicProfile(String userId);
 
-    UserDto updatePersonalInfo(String currentUserId, String userId, PersonalInfoUpdateDto dto);
+    UserDto updatePersonalInfo(String userId, PersonalInfoUpdateDto dto);
 
-    void updatePassword(String currentUserId, String userId, ChangePasswordDto dto);
+    void updatePassword(String userId, ChangePasswordDto dto);
 
-    UserDto uploadAvatar(String currentUserId, String userId, MultipartFile file);
+    UserDto uploadAvatar(String userId, MultipartFile file);
 
-    void deleteUser(String currentUserId, String userId);
+    void deleteUser(String userId);
 
-    UserDto updateAcademicInfo(String currentUserId, String userId, AcademicInfoUpdateDto dto);
+    UserDto updateAcademicInfo(String userId, AcademicInfoUpdateDto dto);
 
-    SubjectDto addSubject(String currentUserId, String userId, SubjectCreateDto dto);
+    SubjectDto addSubject(String userId, SubjectCreateDto dto);
 
     List<SubjectDto> getSubjects(String userId, String type);
 
-    void deleteSubject(String currentUserId, String userId, String subjectId);
+    void deleteSubject(String userId, String subjectId);
 
-    UserDto updateBuddyStatus(String currentUserId, String userId, StatusUpdateDto dto);
+    UserDto updateBuddyStatus(String userId, StatusUpdateDto dto);
 
-    UserDto updateStatusTag(String currentUserId, String userId, StatusTagUpdateDto dto);
+    UserDto updateStatusTag(String userId, StatusTagUpdateDto dto);
 
-    UserDto updateLocation(String currentUserId, String userId, LocationUpdateDto dto);
-
+    UserDto updateLocation(String userId, LocationUpdateDto dto);
 }

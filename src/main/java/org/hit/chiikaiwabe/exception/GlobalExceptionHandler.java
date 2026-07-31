@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.security.access.AccessDeniedException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -120,6 +121,13 @@ public class GlobalExceptionHandler {
     String message = getMessageOrDefault(ex.getMessage(), ex.getParams());
     log.error(message, ex);
     return VsResponseUtil.error(ex.getStatus(), message);
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<RestData<?>> handleSpringAccessDeniedException(AccessDeniedException ex) {
+    String message = getMessageOrDefault(ErrorMessage.FORBIDDEN, null);
+    log.error(message, ex);
+    return VsResponseUtil.error(HttpStatus.FORBIDDEN, message);
   }
 
   @ExceptionHandler(MaxUploadSizeExceededException.class)

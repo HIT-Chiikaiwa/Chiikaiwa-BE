@@ -31,7 +31,7 @@ public class PersonalInfoUpdateDto {
     private String gender;
 
     @NotNull(message = ErrorMessage.INVALID_SOME_THING_FIELD_IS_REQUIRED)
-    @Past(message = "Date of birth must be in the past")
+    @Past(message = ErrorMessage.INVALID_DATE_PAST)
     private LocalDate dateOfBirth;
 
     private String phone;

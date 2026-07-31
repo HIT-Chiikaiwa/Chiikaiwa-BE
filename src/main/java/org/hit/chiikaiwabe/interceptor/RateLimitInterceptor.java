@@ -9,7 +9,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hit.chiikaiwabe.annotation.RateLimit;
+import org.hit.chiikaiwabe.security.IpAbuseTracker;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -24,6 +27,7 @@ import java.util.function.Supplier;
 public class RateLimitInterceptor implements HandlerInterceptor {
 
     private final ProxyManager<byte[]> proxyManager;
+    private final IpAbuseTracker ipAbuseTracker;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -44,7 +48,9 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         String clientIp = getClientIP(request);
         String requestUri = request.getRequestURI();
 
-        String bucketKeyString = "RATE_LIMIT:" + clientIp + ":" + requestUri;
+        String rateLimitIdentifier = resolveRateLimitIdentifier(clientIp);
+
+        String bucketKeyString = "RATE_LIMIT:" + rateLimitIdentifier + ":" + requestUri;
         byte[] bucketKey = bucketKeyString.getBytes(StandardCharsets.UTF_8);
 
         Supplier<BucketConfiguration> configurationSupplier = () -> BucketConfiguration.builder()
@@ -60,7 +66,9 @@ public class RateLimitInterceptor implements HandlerInterceptor {
             response.setHeader("X-Rate-Limit-Remaining", String.valueOf(probe.getRemainingTokens()));
             return true;
         } else {
-            log.warn("Rate limit exceeded for IP: {} on URI: {}", clientIp, requestUri);
+            log.warn("Rate limit exceeded for identifier: {} (IP: {}) on URI: {}", rateLimitIdentifier, clientIp, requestUri);
+
+            ipAbuseTracker.recordViolation(clientIp);
 
             long waitForRefill = probe.getNanosToWaitForRefill() / 1_000_000_000;
             response.setHeader("X-Rate-Limit-Retry-After-Seconds", String.valueOf(waitForRefill));
@@ -71,6 +79,17 @@ public class RateLimitInterceptor implements HandlerInterceptor {
             response.getWriter().write("{\"error\": \"Too many requests. Please try again later.\"}");
             return false;
         }
+    }
+
+    private String resolveRateLimitIdentifier(String clientIp) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication != null && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getPrincipal())) {
+            return "USER:" + authentication.getName();
+        }
+
+        return "IP:" + clientIp;
     }
 
     private String getClientIP(HttpServletRequest request) {
@@ -84,3 +103,4 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         return ip;
     }
 }
+

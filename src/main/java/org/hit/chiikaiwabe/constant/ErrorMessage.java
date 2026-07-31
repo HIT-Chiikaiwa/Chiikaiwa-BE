@@ -15,6 +15,7 @@ public class ErrorMessage {
   public static final String INVALID_FORMAT_EMAIL = "invalid.email-format";
   public static final String INVALID_DATE = "invalid.date-format";
   public static final String INVALID_DATE_FEATURE = "invalid.date-future";
+  public static final String INVALID_DATE_PAST = "invalid.date-past";
   public static final String INVALID_DATETIME = "invalid.datetime-format";
 
   public static class Auth {
@@ -128,6 +129,7 @@ public class ErrorMessage {
     public static final String ERR_NOT_RECEIVER = "exception.friendship.not.receiver";
     public static final String ERR_NOT_FRIENDS = "exception.friendship.not.friends";
     public static final String ERR_USER_NOT_FOUND_PHONE = "exception.friendship.user.not.found.phone";
+    public static final String ERR_USER_NOT_FOUND = "exception.friendship.user.not.found";
   }
 
   public static class Booking {

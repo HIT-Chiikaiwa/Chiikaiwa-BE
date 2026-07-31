@@ -26,9 +26,11 @@ import jakarta.validation.Valid;
 import org.hit.chiikaiwabe.security.CurrentUser;
 import org.hit.chiikaiwabe.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Parameter;
+import org.hit.chiikaiwabe.annotation.RateLimit;
 
 @RequiredArgsConstructor
 @RestApiV1
+@RateLimit(capacity = 60, durationInSeconds = 60)
 public class ChatRestController {
 
     private final ConversationManagementService conversationManagementService;

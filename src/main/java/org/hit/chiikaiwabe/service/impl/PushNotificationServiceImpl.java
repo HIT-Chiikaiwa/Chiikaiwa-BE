@@ -18,6 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PushNotificationServiceImpl implements PushNotificationService {
@@ -30,7 +33,6 @@ public class PushNotificationServiceImpl implements PushNotificationService {
         sendPushNotification(userID, title, body, null);
     }
 
-    @Async("notificationExecutor")
     @Override
     public void sendPushNotification(String userID, String title, String body, java.util.Map<String, String> data) {
         List<UserDevice> devices = userDeviceRepository.findByUserIdAndIsActiveTrue(userID);
@@ -79,7 +81,7 @@ public class PushNotificationServiceImpl implements PushNotificationService {
                 }
             }
         } catch (FirebaseMessagingException e) {
-            e.printStackTrace();
+            log.error("Failed to send FCM multicast: {}", e.getMessage(), e);
         }
     }
 

@@ -48,7 +48,7 @@ public class ChatNotificationServiceImpl implements ChatNotificationService {
 
                     if (!Boolean.TRUE.equals(member.getIsMuted()) && !onlineStatusService.isOnline(memberId)) {
                         String title = dto.getSenderName() + " đã gửi một tin nhắn";
-                        String body = dto.getMessageType().equals("TEXT") ?
+                        String body = "TEXT".equals(dto.getMessageType()) ?
                                 dto.getContent() : "Đã gửi một " + dto.getMessageType().toLowerCase();
 
                         Map<String, String> payloadData = Map.of(

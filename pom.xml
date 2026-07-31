@@ -30,6 +30,7 @@
         <java.version>17</java.version>
         <lombok.version>1.18.36</lombok.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <firebase-admin.version>9.2.0</firebase-admin.version>
     </properties>
     <dependencies>
         <dependency>
@@ -54,7 +55,7 @@
         <dependency>
             <groupId>com.google.firebase</groupId>
             <artifactId>firebase-admin</artifactId>
-            <version>9.2.0</version>
+            <version>${firebase-admin.version}</version>
         </dependency>
         <!--     Cache     -->
         <dependency>

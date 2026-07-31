@@ -1,5 +1,6 @@
 package org.hit.chiikaiwabe.domain.entity;
 
+import org.hit.chiikaiwabe.domain.enums.AuthProvider;
 import org.hit.chiikaiwabe.domain.enums.Role;
 import org.hit.chiikaiwabe.domain.enums.UserStatus;
 import org.hit.chiikaiwabe.domain.entity.common.DateAuditing;
@@ -18,9 +19,7 @@ import java.time.LocalDate;
 @Setter
 @Builder
 @Entity
-@Table(name = "users", indexes = {
-        @Index(name = "IDX_USER_EXP_POINTS", columnList = "exp_points")
-})
+@Table(name = "users")
 public class User extends DateAuditing {
 
     @Id
@@ -87,7 +86,7 @@ public class User extends DateAuditing {
     @Nationalized
     @Column(name = "title", length = 30)
     @Builder.Default
-    private String title = "Tân Binh";
+    private String title = "Siêu Tân Binh";
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -109,13 +108,22 @@ public class User extends DateAuditing {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider", nullable = true, length = 10)
+    @Builder.Default
+    private AuthProvider authProvider = AuthProvider.LOCAL;
+
+    @Column(name = "provider_id")
+    private String providerId;
+
     @PostLoad
     private void onPostLoad() {
         if (totalRatingCount == null) totalRatingCount = 0;
         if (buddyActive == null) buddyActive = false;
         if (deleteFlag == null) deleteFlag = false;
         if (expPoints == null) expPoints = 0L;
-        if (title == null) title = "Tân Binh";
+        if (title == null) title = "Siêu Tân Binh";
+        if (authProvider == null) authProvider = AuthProvider.LOCAL;
     }
 
 }

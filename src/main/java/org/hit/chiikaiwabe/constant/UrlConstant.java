@@ -16,6 +16,8 @@ public class UrlConstant {
     public static final String FORGOT_PASSWORD_VERIFY_OTP = PRE_FIX + "/forgot-password/verify-otp";
     public static final String FORGOT_PASSWORD_RESET = PRE_FIX + "/forgot-password/reset";
     public static final String VERIFY_REGISTER_OTP = PRE_FIX + "/verify-register-otp";
+    public static final String GOOGLE_LOGIN = PRE_FIX + "/google";
+    public static final String COMPLETE_PROFILE = PRE_FIX + "/complete-profile";
     private Auth() {
     }
   }

@@ -6,10 +6,12 @@ import org.hit.chiikaiwabe.constant.SuccessMessage;
 import org.hit.chiikaiwabe.domain.enums.Role;
 import org.hit.chiikaiwabe.domain.enums.UserStatus;
 import org.hit.chiikaiwabe.domain.dto.request.*;
-import org.hit.chiikaiwabe.domain.dto.response.CommonResponseDto;
+import org.hit.chiikaiwabe.domain.dto.response.CompleteProfileResponseDto;
+import org.hit.chiikaiwabe.domain.dto.response.GoogleLoginResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.LoginResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.TokenRefreshResponseDto;
 import org.hit.chiikaiwabe.domain.entity.User;
+import org.hit.chiikaiwabe.domain.enums.AuthProvider;
 import org.hit.chiikaiwabe.exception.InternalServerException;
 import org.hit.chiikaiwabe.exception.InvalidException;
 import org.hit.chiikaiwabe.exception.NotFoundException;
@@ -31,7 +33,12 @@ import org.springframework.stereotype.Service;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.time.Period;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import org.hit.chiikaiwabe.service.FirebaseService;
+import com.google.firebase.auth.FirebaseToken;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -54,9 +61,7 @@ public class AuthServiceImpl implements AuthService {
 
   private final ObjectMapper objectMapper;
 
-  private final org.springframework.data.redis.core.RedisTemplate<String, Object> objectRedisTemplate;
-
-  private static final String LEADERBOARD_ZSET_KEY = "leaderboard_zset";
+  private final FirebaseService firebaseService;
 
   @Override
   public LoginResponseDto login(LoginRequestDto request) {
@@ -76,8 +81,11 @@ public class AuthServiceImpl implements AuthService {
       long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
       long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
 
-      redisTemplate.opsForValue().set(accessToken, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
-      redisTemplate.opsForValue().set(refreshToken, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
+      String accessJti = jwtTokenProvider.extractJtiFromJwt(accessToken);
+      String refreshJti = jwtTokenProvider.extractJtiFromJwt(refreshToken);
+
+      redisTemplate.opsForValue().set(accessJti, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
+      redisTemplate.opsForValue().set(refreshJti, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
 
       return new LoginResponseDto(accessToken, refreshToken, userPrincipal.getId(), authentication.getAuthorities());
     } catch (InternalAuthenticationServiceException e) {
@@ -88,30 +96,143 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  public GoogleLoginResponseDto loginWithGoogle(GoogleLoginRequestDto request) {
+    try {
+      FirebaseToken firebaseToken = firebaseService.verifyIdToken(request.getIdToken());
+      String email = firebaseToken.getEmail();
+      if (!StringUtils.hasText(email)) {
+        throw new InvalidException("Email is missing in Firebase token");
+      }
+      String uid = firebaseToken.getUid();
+
+      Optional<User> existingUser = userRepository.findByEmail(email);
+
+      if (existingUser.isPresent()) {
+        User user = existingUser.get();
+        if (user.getAuthProvider() != AuthProvider.GOOGLE || !uid.equals(user.getProviderId())) {
+          throw new InvalidException(ErrorMessage.Auth.ERR_ACCOUNT_ALREADY_EXISTS);
+        }
+        if (user.getUserstatus() == UserStatus.LOCKED) {
+          throw new UnauthorizedException(ErrorMessage.Auth.ERR_ACCOUNT_LOCKED);
+        }
+
+        UserPrincipal userPrincipal = UserPrincipal.create(user);
+        String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
+        String refreshToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.TRUE);
+
+        long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
+        long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
+
+        String accessJti = jwtTokenProvider.extractJtiFromJwt(accessToken);
+        String refreshJti = jwtTokenProvider.extractJtiFromJwt(refreshToken);
+
+        redisTemplate.opsForValue().set(accessJti, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
+        redisTemplate.opsForValue().set(refreshJti, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
+
+        return new GoogleLoginResponseDto(email, accessToken, refreshToken);
+      } else {
+        String ticket = java.util.UUID.randomUUID().toString();
+        GoogleRegistrationTempData tempData = new GoogleRegistrationTempData(email, uid);
+        String redisKey = "google_reg:" + ticket;
+        redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(tempData), 15, TimeUnit.MINUTES);
+
+        return new GoogleLoginResponseDto(email, ticket);
+      }
+    } catch (com.google.firebase.auth.FirebaseAuthException e) {
+      log.error("Firebase auth error", e);
+      throw new UnauthorizedException(ErrorMessage.Auth.ERR_FIREBASE_TOKEN_INVALID);
+    } catch (Exception e) {
+      log.error("Google login error", e);
+      throw new InternalServerException(ErrorMessage.Auth.ERR_SYSTEM_PROCESS);
+    }
+  }
+
+  @Override
+  public CompleteProfileResponseDto completeGoogleProfile(CompleteProfileRequestDto request) {
+    String redisKey = "google_reg:" + request.getTicket();
+    String jsonStr = redisTemplate.opsForValue().get(redisKey);
+
+    if (jsonStr == null) {
+      throw new InvalidException(ErrorMessage.Auth.ERR_SESSION_EXPIRED);
+    }
+
+    try {
+      GoogleRegistrationTempData tempData = objectMapper.readValue(jsonStr, GoogleRegistrationTempData.class);
+
+      if (userRepository.existsByEmail(tempData.getEmail())) {
+        throw new InvalidException(ErrorMessage.Auth.ERR_ACCOUNT_ALREADY_EXISTS);
+      }
+
+      String randomPassword = java.util.UUID.randomUUID().toString();
+
+      User newUser = User.builder()
+              .username(tempData.getEmail())
+              .email(tempData.getEmail())
+              .password(passwordEncoder.encode(randomPassword))
+              .firstName(request.getFirstName())
+              .lastName(request.getLastName())
+              .gender(request.getGender())
+              .dateOfBirth(request.getDateOfBirth())
+              .age(Period.between(request.getDateOfBirth(), LocalDate.now()).getYears())
+              .authProvider(AuthProvider.GOOGLE)
+              .providerId(tempData.getProviderId())
+              .userstatus(UserStatus.ACTIVE)
+              .trustScore(100.0)
+              .role(Role.USER)
+              .build();
+
+      userRepository.save(newUser);
+      redisTemplate.delete(redisKey);
+
+      UserPrincipal userPrincipal = UserPrincipal.create(newUser);
+      String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
+      String refreshToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.TRUE);
+
+      long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
+      long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
+
+      String accessJti = jwtTokenProvider.extractJtiFromJwt(accessToken);
+      String refreshJti = jwtTokenProvider.extractJtiFromJwt(refreshToken);
+
+      redisTemplate.opsForValue().set(accessJti, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
+      redisTemplate.opsForValue().set(refreshJti, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
+
+      return new CompleteProfileResponseDto("Bearer", accessToken, refreshToken, newUser.getId(), true);
+
+    } catch (Exception e) {
+      log.error("Complete profile error", e);
+      throw new InternalServerException(ErrorMessage.Auth.ERR_SYSTEM_PROCESS);
+    }
+  }
+
+  @Override
   public TokenRefreshResponseDto refresh(TokenRefreshRequestDto request) {
     try {
       String oldRefreshToken = request.getRefreshToken();
+      String oldJti = jwtTokenProvider.extractJtiFromJwt(oldRefreshToken);
 
-      if (!redisTemplate.hasKey(oldRefreshToken)) {
+      if (!Boolean.TRUE.equals(redisTemplate.hasKey(oldJti))) {
         throw new UnauthorizedException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
       }
-      Authentication authentication = jwtTokenProvider.getAuthenticationByRefreshToken(request.getRefreshToken());
+      Authentication authentication = jwtTokenProvider.getAuthenticationByRefreshToken(oldRefreshToken);
       String identifier = authentication.getName();
       UserPrincipal userPrincipal = (UserPrincipal) customUserDetailsService.loadUserByUsername(identifier);
       String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
       String refreshToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.TRUE);
 
-      redisTemplate.delete(oldRefreshToken);
+      redisTemplate.delete(oldJti);
       long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
       long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
 
+      String accessJti = jwtTokenProvider.extractJtiFromJwt(accessToken);
+      String refreshJti = jwtTokenProvider.extractJtiFromJwt(refreshToken);
 
-      redisTemplate.opsForValue().set(accessToken, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
-      redisTemplate.opsForValue().set(refreshToken, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
+      redisTemplate.opsForValue().set(accessJti, userPrincipal.getId(), accessTtl, TimeUnit.MILLISECONDS);
+      redisTemplate.opsForValue().set(refreshJti, userPrincipal.getId(), refreshTtl, TimeUnit.MILLISECONDS);
 
       return new TokenRefreshResponseDto(accessToken, refreshToken);
 
-    } catch (Exception e) {
+    } catch (io.jsonwebtoken.JwtException | IllegalArgumentException e) {
       throw new UnauthorizedException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
     }
   }
@@ -121,16 +242,26 @@ public class AuthServiceImpl implements AuthService {
     String bearerToken = request.getHeader("Authorization");
     if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
       String accessToken = bearerToken.substring(7);
-      long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
-      if (accessTtl > 0) {
-        redisTemplate.opsForValue().set("BLACKLIST:" + accessToken, "LOGGED_OUT", accessTtl, TimeUnit.MILLISECONDS);
+      try {
+        String accessJti = jwtTokenProvider.extractJtiFromJwt(accessToken);
+        long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
+        if (accessTtl > 0) {
+          redisTemplate.opsForValue().set("BLACKLIST:" + accessJti, "LOGGED_OUT", accessTtl, TimeUnit.MILLISECONDS);
+        }
+      } catch (Exception e) {
+        log.warn("Invalid access token on logout", e);
       }
     }
 
     if (StringUtils.hasText(refreshToken)) {
-      long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
-      if (refreshTtl > 0) {
-        redisTemplate.opsForValue().set("BLACKLIST:" + refreshToken, "LOGGED_OUT", refreshTtl, TimeUnit.MILLISECONDS);
+      try {
+        String refreshJti = jwtTokenProvider.extractJtiFromJwt(refreshToken);
+        long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
+        if (refreshTtl > 0) {
+          redisTemplate.opsForValue().set("BLACKLIST:" + refreshJti, "LOGGED_OUT", refreshTtl, TimeUnit.MILLISECONDS);
+        }
+      } catch (Exception e) {
+        log.warn("Invalid refresh token on logout", e);
       }
     }
 
@@ -140,6 +271,9 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public void register(UserCreateDto request) {
+    if (request.getEmail() == null || !request.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+      throw new InvalidException("Email không hợp lệ");
+    }
     if (!request.getPassword().equals(request.getConfirmPassword())) {
       throw new InvalidException(ErrorMessage.Auth.ERR_CONFIRM_PASSWORD_NOT_MATCH);
     }
@@ -178,7 +312,6 @@ public class AuthServiceImpl implements AuthService {
       if (userRepository.existsByEmail(userDto.getEmail())) {
         throw new InvalidException(ErrorMessage.Auth.ERR_ACCOUNT_ALREADY_EXISTS);
       }
-     
       int age = java.time.Period.between(userDto.getDateOfBirth(), java.time.LocalDate.now()).getYears();
 
       User newUser = User.builder()
@@ -195,14 +328,11 @@ public class AuthServiceImpl implements AuthService {
               .role(Role.USER)
               .build();
 
-      User savedUser = userRepository.save(newUser);
-      objectRedisTemplate.opsForZSet().add(LEADERBOARD_ZSET_KEY, savedUser.getId(), 0);
+      userRepository.save(newUser);
       redisTemplate.delete(redisKey);
 
-    } catch (InvalidException e) {
-      throw e;
-    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-      log.error("Failed to deserialize temp user data on verify OTP", e);
+    } catch (Exception e) {
+      log.error("Failed to create user on verify OTP", e);
       throw new InternalServerException(ErrorMessage.Auth.ERR_SYSTEM_PROCESS);
     }
   }
@@ -214,6 +344,11 @@ public class AuthServiceImpl implements AuthService {
     User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME,
                     new String[]{request.getEmail()}));
+
+    if (user.getAuthProvider() == AuthProvider.GOOGLE) {
+      throw new InvalidException(ErrorMessage.Auth.ERR_GOOGLE_USER_NO_PASSWORD);
+    }
+
     if (user.getUserstatus() !=  UserStatus.ACTIVE) {
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_FORGOT_PASS_NOT_VERIFIED);
     }
@@ -233,15 +368,21 @@ public class AuthServiceImpl implements AuthService {
 
   @Override
   public void resetPassword(ResetPasswordRequestDto request) {
+    String resetTicketKey = "RESET_TICKET:" + request.getEmail();
+    if (!Boolean.TRUE.equals(redisTemplate.hasKey(resetTicketKey))) {
+      throw new UnauthorizedException(ErrorMessage.Auth.ERR_RESET_TICKET_EXPIRED);
+    }
+
+    User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{request.getEmail()}));
+
+    if (user.getAuthProvider() == AuthProvider.GOOGLE) {
+      throw new InvalidException(ErrorMessage.Auth.ERR_GOOGLE_USER_NO_PASSWORD);
+    }
+
     if (!request.getNewPassword().equals(request.getConfirmPassword())) {
       throw new InvalidException(ErrorMessage.Auth.ERR_CONFIRM_PASSWORD_NOT_MATCH);
     }
-    String resetTicketKey = "RESET_TICKET:" + request.getEmail();
-    if (!redisTemplate.hasKey(resetTicketKey)) {
-      throw new UnauthorizedException(ErrorMessage.Auth.ERR_RESET_TICKET_EXPIRED);
-    }
-    User user = userRepository.findByEmail(request.getEmail())
-            .orElseThrow(() -> new NotFoundException(ErrorMessage.User.ERR_NOT_FOUND_USERNAME, new String[]{request.getEmail()}));
 
     user.setPassword(passwordEncoder.encode(request.getNewPassword()));
     userRepository.save(user);

@@ -12,6 +12,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+
+
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +31,9 @@ public interface UserRepository extends JpaRepository<User, String> {
 
   @Query("SELECT u FROM User u WHERE u.phone = ?1")
   Optional<User> findByPhoneNumber(String phone);
+
+
+
 
   boolean existsByEmail(String email);
 
@@ -49,19 +54,18 @@ public interface UserRepository extends JpaRepository<User, String> {
   @Query("SELECT u FROM User u WHERE u.deleteFlag = false ORDER BY u.expPoints DESC")
   Page<User> findTopByExpPoints(Pageable pageable);
 
-  @Query("SELECT COUNT(u) + 1 FROM User u WHERE u.deleteFlag = false AND u.expPoints > :exp")
-  long getUserRank(@Param("exp") long exp);
+  @Query("SELECT COUNT(u)  FROM User u WHERE u.deleteFlag = false AND u.expPoints > :targetExp")
+  long getUserRank(@Param("targetExp") long targetExp);
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query("UPDATE User u SET " +
           "u.expPoints = GREATEST(0, u.expPoints + :delta), " +
           "u.title = CASE " +
-          "  WHEN GREATEST(0, u.expPoints + :delta) >= 1200 THEN 'Huyền Thoại' " +
-          "  WHEN GREATEST(0, u.expPoints + :delta) >= 700 THEN 'Lão Làng' " +
-          "  WHEN GREATEST(0, u.expPoints + :delta) >= 350 THEN 'Kim Cương' " +
-          "  WHEN GREATEST(0, u.expPoints + :delta) >= 150 THEN 'Sao Sáng' " +
-          "  WHEN GREATEST(0, u.expPoints + :delta) >= 50 THEN 'Tân Tinh' " +
-          "  ELSE 'Tân Binh' END " +
+          "  WHEN GREATEST(0, u.expPoints + :delta) >= 1000 THEN 'Lão Làng' " +
+          "  WHEN GREATEST(0, u.expPoints + :delta) >= 800 THEN 'Cộng Sự Siêu Đẳng' " +
+          "  WHEN GREATEST(0, u.expPoints + :delta) >= 600 THEN 'Có Công Mài Sắt' " +
+          "  WHEN GREATEST(0, u.expPoints + :delta) >= 200 THEN 'Tân Binh Kỳ Cựu' " +
+          "  ELSE 'Siêu Tân Binh' END " +
           "WHERE u.id = :userId")
   void updateExpPoints(@Param("userId") String userId, @Param("delta") int delta);
 

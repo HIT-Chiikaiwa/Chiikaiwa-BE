@@ -42,13 +42,23 @@ public interface BookingMapper {
 
         boolean isCreator = creator != null && creator.getId().equals(currentUserId);
 
+        BookingParticipant me = null;
+        BookingParticipant partner = null;
+
+        if (booking.getParticipants() != null) {
+            for (BookingParticipant p : booking.getParticipants()) {
+                if (p.getUser() != null) {
+                    if (p.getUser().getId().equals(currentUserId)) {
+                        me = p;
+                    } else {
+                        partner = p;
+                    }
+                }
+            }
+        }
+
         if (isCreator) {
             dto.setParticipantStatus("CREATOR");
-            BookingParticipant partner = booking.getParticipants().stream()
-                    .filter(p -> !p.getUser().getId().equals(currentUserId))
-                    .findFirst()
-                    .orElse(null);
-
             if (partner != null) {
                 User partnerUser = partner.getUser();
                 dto.setPartnerId(partnerUser.getId());
@@ -56,11 +66,6 @@ public interface BookingMapper {
                 dto.setPartnerAvatar(partnerUser.getAvatar());
             }
         } else {
-            BookingParticipant me = booking.getParticipants().stream()
-                    .filter(p -> p.getUser().getId().equals(currentUserId))
-                    .findFirst()
-                    .orElse(null);
-
             if (me != null) {
                 dto.setParticipantStatus(me.getStatus().name());
             } else {

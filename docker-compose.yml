@@ -1,4 +1,20 @@
 services:
+  # 1. Service Chiikaiwa Backend
+  app:
+    image: ${DOCKER_USERNAME:-chaosql}/chiikaiwa-be:${IMAGE_TAG:-latest}
+    container_name: chiikaiwa-be
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+
+  # 2. Service Redis Cache & Rate Limiting
   redis:
     image: redis:7
     container_name: studydate-redis
@@ -9,5 +25,20 @@ services:
       - redis_data:/data
     command: redis-server --appendonly yes
 
+  # 3. Service PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: chiikaiwa-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME:-chiikaiwa}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
 volumes:
   redis_data:
+  postgres_data:

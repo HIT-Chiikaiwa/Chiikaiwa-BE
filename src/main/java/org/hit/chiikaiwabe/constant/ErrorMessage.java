@@ -168,4 +168,11 @@ public class ErrorMessage {
     public static final String ERR_USER_NOT_FOUND = "exception.leaderboard.user.not.found";
   }
 
+  public static class Notification {
+    public static final String ERR_NOT_FOUND = "exception.notification.not.found";
+    public static final String ERR_NOT_RECIPIENT = "exception.notification.not.recipient";
+    public static final String VAL_IDS_REQUIRED = "notification.ids.required";
+  }
+
 }
+

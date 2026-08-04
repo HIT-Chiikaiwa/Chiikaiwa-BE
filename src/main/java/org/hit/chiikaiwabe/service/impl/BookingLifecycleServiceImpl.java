@@ -5,9 +5,11 @@ import org.hit.chiikaiwabe.domain.dto.request.CancelBookingRequestDto;
 import org.hit.chiikaiwabe.domain.dto.request.RateBookingRequestDto;
 import org.hit.chiikaiwabe.domain.dto.response.BookingResponseDto;
 import org.hit.chiikaiwabe.domain.entity.BookingRating;
+import org.hit.chiikaiwabe.domain.entity.Notification;
 import org.hit.chiikaiwabe.domain.entity.OfflineBooking;
 import org.hit.chiikaiwabe.domain.entity.User;
 import org.hit.chiikaiwabe.domain.enums.BookingStatus;
+import org.hit.chiikaiwabe.domain.enums.NotificationType;
 import org.hit.chiikaiwabe.domain.enums.PointAction;
 import org.hit.chiikaiwabe.domain.mapper.BookingMapper;
 import org.hit.chiikaiwabe.exception.ForbiddenException;
@@ -21,6 +23,7 @@ import org.hit.chiikaiwabe.repository.BookingParticipantRepository;
 import org.hit.chiikaiwabe.service.BookingLifecycleService;
 import org.hit.chiikaiwabe.service.ChatNotificationService;
 import org.hit.chiikaiwabe.service.LeaderboardService;
+import org.hit.chiikaiwabe.service.NotificationService;
 import org.hit.chiikaiwabe.service.PushNotificationService;
 import org.hit.chiikaiwabe.component.ChatHelper;
 import org.hit.chiikaiwabe.domain.entity.Message;
@@ -32,6 +35,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -54,6 +59,8 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
     private final PushNotificationService pushNotificationService;
     private final ChatHelper chatHelper;
     private final LeaderboardService leaderboardService;
+    private final NotificationService notificationService;
+    private final MessageSource messageSource;
 
     @Override
     @Transactional
@@ -75,7 +82,6 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
 
         booking = bookingRepository.save(booking);
 
-        // Trừ EXP người hủy
         leaderboardService.awardPoints(userId, PointAction.BOOKING_CANCELLED, bookingId);
 
         if (booking.getConversation() != null) {
@@ -90,10 +96,34 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
 
             String conversationId = booking.getConversation().getId();
 
+            String notifContent = messageSource.getMessage("notification.booking.cancelled",
+                    new Object[]{cancelerName}, LocaleContextHolder.getLocale());
+
+            java.util.List<Notification> pendingNotifs = new java.util.ArrayList<>();
+
+            if (!booking.getCreator().getId().equals(userId)) {
+                Notification notif = notificationService.saveNotification(
+                        booking.getCreator().getId(), canceler, NotificationType.BOOKING_CANCELLED,
+                        notifContent, bookingId, "BOOKING");
+                pendingNotifs.add(notif);
+            }
+
+            for (BookingParticipant p : booking.getParticipants()) {
+                if (!p.getUser().getId().equals(userId)) {
+                    Notification notif = notificationService.saveNotification(
+                            p.getUser().getId(), canceler, NotificationType.BOOKING_CANCELLED,
+                            notifContent, bookingId, "BOOKING");
+                    pendingNotifs.add(notif);
+                }
+            }
+
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
                     chatNotificationService.broadcastSystemEvent(conversationId, sysMsgDto);
+                    for (Notification n : pendingNotifs) {
+                        notificationService.publishNotification(n);
+                    }
                 }
             });
 
@@ -120,7 +150,6 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
         booking.setStatus(BookingStatus.COMPLETED);
         booking = bookingRepository.save(booking);
 
-        // Cộng EXP cho cả creator và participants
         leaderboardService.awardPoints(booking.getCreator().getId(),
                 PointAction.BOOKING_COMPLETED, bookingId);
         for (BookingParticipant p : booking.getParticipants()) {
@@ -166,7 +195,7 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
                     }
                 }
 
-                bookingParticipantRepository.saveAll(newParticipants); // 1 batch INSERT thay vì N
+                bookingParticipantRepository.saveAll(newParticipants);
 
                 for (BookingParticipant oldParticipant : participantsToNotify) {
                     TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -229,9 +258,7 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
 
         userRepository.updateTrustScoreMovingAverage(ratedUser.getId(), dto.getScore());
 
-        // EXP cho người đánh giá
         leaderboardService.awardPoints(userId, PointAction.BOOKING_RATED, bookingId);
-        // Bonus/phạt EXP cho người được đánh giá
         if (dto.getScore() == 5) {
             leaderboardService.awardPoints(ratedUser.getId(),
                     PointAction.RATING_5_STAR_RECEIVED, bookingId);

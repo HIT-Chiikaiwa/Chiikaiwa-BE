@@ -6,8 +6,10 @@ import org.hit.chiikaiwabe.domain.dto.response.CommonResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.FriendshipResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.UserSearchResponseDto;
 import org.hit.chiikaiwabe.domain.entity.Friendship;
+import org.hit.chiikaiwabe.domain.entity.Notification;
 import org.hit.chiikaiwabe.domain.entity.User;
 import org.hit.chiikaiwabe.domain.enums.FriendshipStatus;
+import org.hit.chiikaiwabe.domain.enums.NotificationType;
 import org.hit.chiikaiwabe.domain.enums.PointAction;
 import org.hit.chiikaiwabe.exception.InvalidException;
 import org.hit.chiikaiwabe.exception.NotFoundException;
@@ -16,6 +18,7 @@ import org.hit.chiikaiwabe.repository.UserRepository;
 import org.hit.chiikaiwabe.service.UserBlockService;
 import org.hit.chiikaiwabe.service.FriendshipService;
 import org.hit.chiikaiwabe.service.LeaderboardService;
+import org.hit.chiikaiwabe.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,6 +26,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
@@ -43,6 +50,8 @@ public class FriendshipServiceImpl implements FriendshipService {
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
     private final LeaderboardService leaderboardService;
+    private final NotificationService notificationService;
+    private final MessageSource messageSource;
 
     private static final String FRIENDSHIP_CHANNEL = "friendship:notify";
 
@@ -63,6 +72,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         }
 
         Optional<Friendship> existing = friendshipRepository.findFriendshipBetween(userId, targetUserId);
+        Friendship savedFriendship;
         if (existing.isPresent()) {
             Friendship f = existing.get();
             if (f.getStatus() == FriendshipStatus.ACCEPTED) {
@@ -74,17 +84,31 @@ public class FriendshipServiceImpl implements FriendshipService {
             f.setRequester(requester);
             f.setReceiver(receiver);
             f.setStatus(FriendshipStatus.PENDING);
-            friendshipRepository.save(f);
+            savedFriendship = friendshipRepository.save(f);
         } else {
             Friendship friendship = Friendship.builder()
                     .requester(requester)
                     .receiver(receiver)
                     .status(FriendshipStatus.PENDING)
                     .build();
-            friendshipRepository.save(friendship);
+            savedFriendship = friendshipRepository.save(friendship);
         }
 
         notifyFriendRequest(targetUserId, requester);
+
+        String content = messageSource.getMessage("notification.friend.request.received",
+                new Object[]{requester.getLastName() + " " + requester.getFirstName()},
+                LocaleContextHolder.getLocale());
+        Notification notif = notificationService.saveNotification(
+                targetUserId, requester, NotificationType.FRIEND_REQUEST_RECEIVED,
+                content, savedFriendship.getId(), "FRIENDSHIP");
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                notificationService.publishNotification(notif);
+            }
+        });
 
         log.info("Friend request sent from {} to {}", userId, targetUserId);
     }
@@ -111,9 +135,22 @@ public class FriendshipServiceImpl implements FriendshipService {
                 "avatar", accepter.getAvatar() != null ? accepter.getAvatar() : ""
         ));
 
+        String content = messageSource.getMessage("notification.friend.request.accepted",
+                new Object[]{accepter.getLastName() + " " + accepter.getFirstName()},
+                LocaleContextHolder.getLocale());
+        Notification notif = notificationService.saveNotification(
+                friendship.getRequester().getId(), accepter, NotificationType.FRIEND_REQUEST_ACCEPTED,
+                content, friendship.getId(), "FRIENDSHIP");
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                notificationService.publishNotification(notif);
+            }
+        });
+
         log.info("Friend request {} accepted by {}", requestId, userId);
 
-        // Cộng EXP cho cả 2 bên
         leaderboardService.awardPoints(friendship.getRequester().getId(),
                 PointAction.FRIENDSHIP_ACCEPTED, friendship.getId());
         leaderboardService.awardPoints(friendship.getReceiver().getId(),
@@ -179,10 +216,8 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         List<User> foundUsers = new ArrayList<>();
 
-        // Thử tìm chính xác theo SĐT/email
         userRepository.findByPhoneOrEmail(keyword).ifPresent(foundUsers::add);
 
-        // Nếu không tìm thấy theo SĐT/email → tìm theo tên
         if (foundUsers.isEmpty()) {
             String searchKeyword = "%" + keyword.toLowerCase() + "%";
             foundUsers = userRepository.searchByName(searchKeyword);

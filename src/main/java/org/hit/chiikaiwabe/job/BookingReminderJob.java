@@ -58,6 +58,7 @@ public class BookingReminderJob {
     }
 
     @Scheduled(fixedRate = 900000) //15p
+    @Transactional(readOnly = true)
     public void sendBookingReminders(){
         LocalDateTime now = LocalDateTime.now();
         int reminderMinutes = bookingProperties.getDefaultReminderMinutes() > 0 ?
@@ -136,6 +137,7 @@ public class BookingReminderJob {
         } else {
             return booking.getCreator().getLastName() + " " + booking.getCreator().getFirstName();
         }
-        return "đối tác";
+        return messageSource.getMessage("notification.booking.partner.fallback",
+                null, "đối tác", LocaleContextHolder.getLocale());
     }
 }

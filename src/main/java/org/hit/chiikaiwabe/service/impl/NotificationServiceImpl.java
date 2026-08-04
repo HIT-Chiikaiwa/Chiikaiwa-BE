@@ -1,7 +1,6 @@
 package org.hit.chiikaiwabe.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hit.chiikaiwabe.constant.ErrorMessage;
 import org.hit.chiikaiwabe.domain.dto.response.NotificationResponseDto;
@@ -72,11 +71,9 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void publishNotification(Notification notification) {
-        // Pre-build DTO trong calling thread (còn JPA session) để tránh LazyInitializationException
         NotificationResponseDto dto = notificationMapper.toDto(notification);
         String recipientUserId = notification.getRecipient().getId();
 
-        // Dispatch async qua Executor trực tiếp (tránh Spring AOP self-invocation issue)
         notificationExecutor.execute(() -> {
             try {
                 Map<String, Object> event = new HashMap<>();

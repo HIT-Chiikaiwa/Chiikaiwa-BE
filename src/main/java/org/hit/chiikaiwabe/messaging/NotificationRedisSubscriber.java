@@ -24,7 +24,7 @@ public class NotificationRedisSubscriber implements MessageListener {
     @SuppressWarnings("unchecked")
     public void onMessage(Message message, byte[] pattern) {
         try {
-            String json = new String(message.getBody());
+            String json = new String(message.getBody(), java.nio.charset.StandardCharsets.UTF_8);
             JsonNode event = objectMapper.readTree(json);
 
             String recipientUserId = event.get("recipientUserId").asText();

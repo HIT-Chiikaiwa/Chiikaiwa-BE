@@ -157,4 +157,18 @@ public class UrlConstant {
     }
   }
 
+  public static class Notification {
+    private static final String PRE_FIX = "/notifications";
+    public static final String LIST = PRE_FIX;
+    public static final String UNREAD_COUNT = PRE_FIX + "/unread-count";
+    public static final String MARK_READ = PRE_FIX + "/{notificationId}/read";
+    public static final String MARK_ALL_READ = PRE_FIX + "/read-all";
+    public static final String DELETE_ONE = PRE_FIX + "/{notificationId}";
+    public static final String DELETE_SELECTED = PRE_FIX + "/batch";
+    public static final String DELETE_ALL = PRE_FIX + "/all";
+
+    private Notification() {
+    }
+  }
+
 }

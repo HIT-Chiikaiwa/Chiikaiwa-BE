@@ -43,10 +43,12 @@ public interface OfflineBookingRepository extends JpaRepository<OfflineBooking, 
                                             @Param("startDate") LocalDateTime startDate,
                                             @Param("endDate") LocalDateTime endDate);
 
+    @EntityGraph(attributePaths = {"creator", "participants", "participants.user"})
     @Query("SELECT b FROM OfflineBooking b WHERE " +
             "b.status = 'PENDING' AND b.createdDate < :expireThreshold")
     List<OfflineBooking> findExpiredPending(@Param("expireThreshold") LocalDateTime expireThreshold);
 
+    @EntityGraph(attributePaths = {"creator", "participants", "participants.user"})
     @Query("SELECT b FROM OfflineBooking b WHERE " +
             "b.status = 'CONFIRMED' AND b.scheduledAt BETWEEN :start AND :end")
     List<OfflineBooking> findUpcomingForReminder(@Param("start") LocalDateTime start,

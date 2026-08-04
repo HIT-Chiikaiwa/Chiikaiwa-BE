@@ -3,9 +3,12 @@ package org.hit.chiikaiwabe.job;
 import lombok.RequiredArgsConstructor;
 import org.hit.chiikaiwabe.config.properties.BookingProperties;
 import org.hit.chiikaiwabe.domain.entity.BookingParticipant;
+import org.hit.chiikaiwabe.domain.entity.Notification;
 import org.hit.chiikaiwabe.domain.entity.OfflineBooking;
 import org.hit.chiikaiwabe.domain.enums.BookingStatus;
+import org.hit.chiikaiwabe.domain.enums.NotificationType;
 import org.hit.chiikaiwabe.repository.OfflineBookingRepository;
+import org.hit.chiikaiwabe.service.NotificationService;
 import org.hit.chiikaiwabe.service.PushNotificationService;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -14,8 +17,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 @Component
 @RequiredArgsConstructor
@@ -25,6 +31,8 @@ public class BookingReminderJob {
     private final PushNotificationService pushNotificationService;
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final BookingProperties bookingProperties;
+    private final NotificationService notificationService;
+    private final MessageSource messageSource;
 
     @Scheduled(fixedRate = 300000) //5p
     @Transactional
@@ -61,13 +69,38 @@ public class BookingReminderJob {
             Boolean alreadyReminded = redisTemplate.hasKey(redisKey);
             if(Boolean.FALSE.equals(alreadyReminded)){
                 String message = "Cuộc hẹn sắp bắt đầu";
+                DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+                // Creator
                 pushNotificationService.sendPushNotification(booking.getCreator()
                         .getId(), "Nhắc nhở cuộc hẹn", message);
+                String partnerName = getPartnerName(booking, booking.getCreator().getId());
+                String creatorContent = messageSource.getMessage("notification.booking.reminder",
+                        new Object[]{partnerName, booking.getScheduledAt().format(timeFormatter)},
+                        LocaleContextHolder.getLocale());
+                Notification creatorNotif = notificationService.saveNotification(
+                        booking.getCreator().getId(),
+                        booking.getParticipants() != null && !booking.getParticipants().isEmpty()
+                                ? booking.getParticipants().get(0).getUser() : booking.getCreator(),
+                        NotificationType.BOOKING_REMINDER,
+                        creatorContent, booking.getId(), "BOOKING");
+                notificationService.publishNotification(creatorNotif);
+
+                // Participants
                 if(booking.getParticipants() != null){
                     for(BookingParticipant p : booking.getParticipants()){
                         if(p.getUser() != null){
                             pushNotificationService.sendPushNotification(p.getUser()
                                     .getId(), "Nhắc nhở cuộc hẹn", message);
+                            String pContent = messageSource.getMessage("notification.booking.reminder",
+                                    new Object[]{booking.getCreator().getLastName() + " " + booking.getCreator().getFirstName(),
+                                            booking.getScheduledAt().format(timeFormatter)},
+                                    LocaleContextHolder.getLocale());
+                            Notification pNotif = notificationService.saveNotification(
+                                    p.getUser().getId(), booking.getCreator(),
+                                    NotificationType.BOOKING_REMINDER,
+                                    pContent, booking.getId(), "BOOKING");
+                            notificationService.publishNotification(pNotif);
                         }
                     }
                 }
@@ -92,5 +125,17 @@ public class BookingReminderJob {
     private void notifyWebSocket(String userId, OfflineBooking booking){
         simpMessagingTemplate.convertAndSendToUser(userId, "/queue/booking",
                 "Booking " + booking.getId() + " is expired");
+    }
+
+    private String getPartnerName(OfflineBooking booking, String userId) {
+        if (booking.getCreator().getId().equals(userId)) {
+            if (booking.getParticipants() != null && !booking.getParticipants().isEmpty()) {
+                BookingParticipant p = booking.getParticipants().get(0);
+                return p.getUser().getLastName() + " " + p.getUser().getFirstName();
+            }
+        } else {
+            return booking.getCreator().getLastName() + " " + booking.getCreator().getFirstName();
+        }
+        return "đối tác";
     }
 }

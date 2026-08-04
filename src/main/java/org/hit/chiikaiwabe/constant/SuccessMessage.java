@@ -80,4 +80,12 @@ public class SuccessMessage {
         public static final String POINTS_AWARDED = "success.leaderboard.points.awarded";
     }
 
+    public static class Notification {
+        public static final String MARK_READ = "success.notification.mark.read";
+        public static final String MARK_ALL_READ = "success.notification.mark.all.read";
+        public static final String DELETED = "success.notification.deleted";
+        public static final String DELETED_ALL = "success.notification.deleted.all";
+    }
+
 }
+

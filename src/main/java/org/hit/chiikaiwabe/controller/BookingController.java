@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.hit.chiikaiwabe.base.RestApiV1;
 import org.hit.chiikaiwabe.base.RestData;
 import org.hit.chiikaiwabe.base.VsResponseUtil;
 import org.hit.chiikaiwabe.constant.SuccessMessage;
@@ -24,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.hit.chiikaiwabe.annotation.RateLimit;
 
+@RestApiV1
 @RestController
 @RequiredArgsConstructor
 @Tag(name = "Booking", description = "Offline Booking API")

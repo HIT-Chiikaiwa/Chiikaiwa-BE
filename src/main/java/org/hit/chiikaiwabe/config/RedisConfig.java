@@ -2,6 +2,7 @@ package org.hit.chiikaiwabe.config;
 
 import org.hit.chiikaiwabe.messaging.ChatRedisSubscriber;
 import org.hit.chiikaiwabe.messaging.FriendshipRedisSubscriber;
+import org.hit.chiikaiwabe.messaging.NotificationRedisSubscriber;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -78,11 +79,13 @@ public class RedisConfig {
     public RedisMessageListenerContainer redisMessageListenerContainer(
             RedisConnectionFactory factory,
             ChatRedisSubscriber chatSubscriber,
-            FriendshipRedisSubscriber friendshipSubscriber) {
+            FriendshipRedisSubscriber friendshipSubscriber,
+            NotificationRedisSubscriber notificationSubscriber) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(factory);
         container.addMessageListener(chatSubscriber, new ChannelTopic("chat:broadcast"));
         container.addMessageListener(friendshipSubscriber, new ChannelTopic("friendship:notify"));
+        container.addMessageListener(notificationSubscriber, new ChannelTopic("notification:push"));
         return container;
     }
 }

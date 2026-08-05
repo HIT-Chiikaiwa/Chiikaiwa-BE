@@ -9,6 +9,7 @@ import org.hit.chiikaiwabe.domain.dto.response.MessageResponseDto;
 import org.hit.chiikaiwabe.domain.entity.*;
 import org.hit.chiikaiwabe.domain.enums.BookingStatus;
 import org.hit.chiikaiwabe.domain.enums.MessageType;
+import org.hit.chiikaiwabe.domain.enums.NotificationType;
 import org.hit.chiikaiwabe.domain.enums.ParticipantStatus;
 import org.hit.chiikaiwabe.domain.enums.PointAction;
 import org.hit.chiikaiwabe.exception.ForbiddenException;
@@ -25,6 +26,7 @@ import org.hit.chiikaiwabe.repository.*;
 import org.hit.chiikaiwabe.service.BookingService;
 import org.hit.chiikaiwabe.service.ChatNotificationService;
 import org.hit.chiikaiwabe.service.LeaderboardService;
+import org.hit.chiikaiwabe.service.NotificationService;
 import org.hit.chiikaiwabe.service.PushNotificationService;
 import org.hit.chiikaiwabe.config.properties.BookingProperties;
 import org.springframework.stereotype.Service;
@@ -58,6 +60,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingProperties bookingProperties;
     private final BookingMapper bookingMapper;
     private final LeaderboardService leaderboardService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -156,11 +159,19 @@ public class BookingServiceImpl implements BookingService {
         String title = messageSource.getMessage(SuccessMessage.Booking.PUSH_NEW_REQUEST_TITLE, null, LocaleContextHolder.getLocale());
         String body = messageSource.getMessage(SuccessMessage.Booking.PUSH_NEW_REQUEST_BODY, new Object[]{creator.getFirstName() + " " + creator.getLastName()}, LocaleContextHolder.getLocale());
 
+        String notifContent = messageSource.getMessage("notification.booking.invite",
+                new Object[]{creator.getLastName() + " " + creator.getFirstName()},
+                LocaleContextHolder.getLocale());
+        Notification notif = notificationService.saveNotification(
+                partner.getId(), creator, NotificationType.BOOKING_INVITE,
+                notifContent, booking.getId(), "BOOKING");
+
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
                 chatNotificationService.broadcastSystemEvent(conversationId, messageDto);
                 pushNotificationService.sendPushNotification(partner.getId(), title, body);
+                notificationService.publishNotification(notif);
             }
         });
 
@@ -207,6 +218,17 @@ public class BookingServiceImpl implements BookingService {
 
         String title = messageSource.getMessage(titleKey, null, LocaleContextHolder.getLocale());
         String body = messageSource.getMessage(bodyKey, new Object[]{participant.getUser().getFirstName() + " " + participant.getUser().getLastName()}, LocaleContextHolder.getLocale());
+
+        // Lưu notification vào DB
+        NotificationType notifType = accept ? NotificationType.BOOKING_ACCEPTED : NotificationType.BOOKING_REJECTED;
+        String notifKey = accept ? "notification.booking.accepted" : "notification.booking.rejected";
+        String notifContent = messageSource.getMessage(notifKey,
+                new Object[]{participant.getUser().getLastName() + " " + participant.getUser().getFirstName()},
+                LocaleContextHolder.getLocale());
+        Notification notif = notificationService.saveNotification(
+                booking.getCreator().getId(), participant.getUser(), notifType,
+                notifContent, bookingId, "BOOKING");
+
         if (booking.getMessageId() != null) {
             messageRepository.findById(booking.getMessageId()).ifPresent(msg -> {
                 try {
@@ -222,6 +244,7 @@ public class BookingServiceImpl implements BookingService {
                         public void afterCommit() {
                             chatNotificationService.broadcastSystemEvent(booking.getConversation().getId(), messageDto);
                             pushNotificationService.sendPushNotification(booking.getCreator().getId(), title, body);
+                            notificationService.publishNotification(notif);
                         }
                     });
                 } catch (Exception e) {
@@ -234,6 +257,7 @@ public class BookingServiceImpl implements BookingService {
                 @Override
                 public void afterCommit() {
                     pushNotificationService.sendPushNotification(booking.getCreator().getId(), title, body);
+                    notificationService.publishNotification(notif);
                 }
             });
         }

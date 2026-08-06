@@ -46,7 +46,7 @@ public class ChatNotificationServiceImpl implements ChatNotificationService {
                 if (!memberId.equals(senderId)) {
                     onlineStatusService.incrementUnread(conversationId, memberId);
 
-                    if (!Boolean.TRUE.equals(member.getIsMuted()) && !onlineStatusService.isOnline(memberId)) {
+                    if (!Boolean.TRUE.equals(member.getIsMuted())) {
                         String title = dto.getSenderName() + " đã gửi một tin nhắn";
                         String body = "TEXT".equals(dto.getMessageType()) ?
                                 dto.getContent() : "Đã gửi một " + dto.getMessageType().toLowerCase();

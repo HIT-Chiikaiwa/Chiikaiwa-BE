@@ -159,6 +159,7 @@ public class BookingServiceImpl implements BookingService {
         String title = messageSource.getMessage(SuccessMessage.Booking.PUSH_NEW_REQUEST_TITLE, null, LocaleContextHolder.getLocale());
         String body = messageSource.getMessage(SuccessMessage.Booking.PUSH_NEW_REQUEST_BODY, new Object[]{creator.getFirstName() + " " + creator.getLastName()}, LocaleContextHolder.getLocale());
 
+        // Lưu notification vào DB
         String notifContent = messageSource.getMessage("notification.booking.invite",
                 new Object[]{creator.getLastName() + " " + creator.getFirstName()},
                 LocaleContextHolder.getLocale());
@@ -166,11 +167,17 @@ public class BookingServiceImpl implements BookingService {
                 partner.getId(), creator, NotificationType.BOOKING_INVITE,
                 notifContent, booking.getId(), "BOOKING");
 
+        final String bookingIdFinal = booking.getId();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
                 chatNotificationService.broadcastSystemEvent(conversationId, messageDto);
-                pushNotificationService.sendPushNotification(partner.getId(), title, body);
+                Map<String, String> pushData = Map.of(
+                        "type", "BOOKING_INVITE",
+                        "bookingId", bookingIdFinal,
+                        "conversationId", conversationId
+                );
+                pushNotificationService.sendPushNotification(partner.getId(), title, body, pushData);
                 notificationService.publishNotification(notif);
             }
         });
@@ -239,11 +246,19 @@ public class BookingServiceImpl implements BookingService {
 
                     MessageResponseDto messageDto = messageMapper.toDto(msg);
 
+                    final String bId = bookingId;
+                    final String convId = booking.getConversation().getId();
+                    final String notifTypeName = accept ? "BOOKING_ACCEPTED" : "BOOKING_REJECTED";
                     TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                         @Override
                         public void afterCommit() {
-                            chatNotificationService.broadcastSystemEvent(booking.getConversation().getId(), messageDto);
-                            pushNotificationService.sendPushNotification(booking.getCreator().getId(), title, body);
+                            chatNotificationService.broadcastSystemEvent(convId, messageDto);
+                            Map<String, String> pushData = Map.of(
+                                    "type", notifTypeName,
+                                    "bookingId", bId,
+                                    "conversationId", convId
+                            );
+                            pushNotificationService.sendPushNotification(booking.getCreator().getId(), title, body, pushData);
                             notificationService.publishNotification(notif);
                         }
                     });
@@ -253,10 +268,18 @@ public class BookingServiceImpl implements BookingService {
                 }
             });
         } else {
+            final String bId2 = bookingId;
+            final String convId2 = booking.getConversation().getId();
+            final String notifTypeName2 = accept ? "BOOKING_ACCEPTED" : "BOOKING_REJECTED";
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    pushNotificationService.sendPushNotification(booking.getCreator().getId(), title, body);
+                    Map<String, String> pushData = Map.of(
+                            "type", notifTypeName2,
+                            "bookingId", bId2,
+                            "conversationId", convId2
+                    );
+                    pushNotificationService.sendPushNotification(booking.getCreator().getId(), title, body, pushData);
                     notificationService.publishNotification(notif);
                 }
             });

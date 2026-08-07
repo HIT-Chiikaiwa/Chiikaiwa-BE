@@ -14,7 +14,7 @@ public interface ConversationMemberRepository extends JpaRepository<Conversation
     @Query("SELECT cm FROM ConversationMember cm WHERE cm.conversation.id = ?1 AND cm.user.id = ?2")
     Optional<ConversationMember> findByConversationIdAndUserId(String conversationId, String userId);
 
-    @Query("SELECT cm FROM ConversationMember cm WHERE cm.conversation.id = ?1 AND cm.leftAt IS NULL")
+    @Query("SELECT cm FROM ConversationMember cm JOIN FETCH cm.user WHERE cm.conversation.id = ?1 AND cm.leftAt IS NULL")
     List<ConversationMember> findActiveMembers(String conversationId);
 
     @Query("SELECT COUNT(cm) FROM ConversationMember cm WHERE cm.conversation.id = ?1 AND cm.leftAt IS NULL")

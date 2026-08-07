@@ -19,6 +19,7 @@ import org.hit.chiikaiwabe.service.UserBlockService;
 import org.hit.chiikaiwabe.service.FriendshipService;
 import org.hit.chiikaiwabe.service.LeaderboardService;
 import org.hit.chiikaiwabe.service.NotificationService;
+import org.hit.chiikaiwabe.service.PushNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -51,6 +52,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     private final ObjectMapper objectMapper;
     private final LeaderboardService leaderboardService;
     private final NotificationService notificationService;
+    private final PushNotificationService pushNotificationService;
     private final MessageSource messageSource;
 
     private static final String FRIENDSHIP_CHANNEL = "friendship:notify";
@@ -96,6 +98,7 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         notifyFriendRequest(targetUserId, requester);
 
+        // Lưu notification vào DB
         String content = messageSource.getMessage("notification.friend.request.received",
                 new Object[]{requester.getLastName() + " " + requester.getFirstName()},
                 LocaleContextHolder.getLocale());
@@ -103,10 +106,16 @@ public class FriendshipServiceImpl implements FriendshipService {
                 targetUserId, requester, NotificationType.FRIEND_REQUEST_RECEIVED,
                 content, savedFriendship.getId(), "FRIENDSHIP");
 
+        // Gửi real-time sau khi transaction commit
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
                 notificationService.publishNotification(notif);
+                pushNotificationService.sendPushNotification(
+                        targetUserId, "Lời mời kết bạn",
+                        requester.getLastName() + " " + requester.getFirstName() + " đã gửi cho bạn lời mời kết bạn",
+                        Map.of("type", "FRIEND_REQUEST_RECEIVED", "userId", requester.getId())
+                );
             }
         });
 
@@ -135,6 +144,7 @@ public class FriendshipServiceImpl implements FriendshipService {
                 "avatar", accepter.getAvatar() != null ? accepter.getAvatar() : ""
         ));
 
+        // Lưu notification vào DB
         String content = messageSource.getMessage("notification.friend.request.accepted",
                 new Object[]{accepter.getLastName() + " " + accepter.getFirstName()},
                 LocaleContextHolder.getLocale());
@@ -142,15 +152,23 @@ public class FriendshipServiceImpl implements FriendshipService {
                 friendship.getRequester().getId(), accepter, NotificationType.FRIEND_REQUEST_ACCEPTED,
                 content, friendship.getId(), "FRIENDSHIP");
 
+        // Gửi real-time sau khi transaction commit
+        final String requesterId = friendship.getRequester().getId();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
                 notificationService.publishNotification(notif);
+                pushNotificationService.sendPushNotification(
+                        requesterId, "Kết bạn thành công",
+                        accepter.getLastName() + " " + accepter.getFirstName() + " đã chấp nhận lời mời kết bạn",
+                        Map.of("type", "FRIEND_REQUEST_ACCEPTED", "userId", accepter.getId())
+                );
             }
         });
 
         log.info("Friend request {} accepted by {}", requestId, userId);
 
+        // Cộng EXP cho cả 2 bên
         leaderboardService.awardPoints(friendship.getRequester().getId(),
                 PointAction.FRIENDSHIP_ACCEPTED, friendship.getId());
         leaderboardService.awardPoints(friendship.getReceiver().getId(),
@@ -216,8 +234,10 @@ public class FriendshipServiceImpl implements FriendshipService {
 
         List<User> foundUsers = new ArrayList<>();
 
+        // Thử tìm chính xác theo SĐT/email
         userRepository.findByPhoneOrEmail(keyword).ifPresent(foundUsers::add);
 
+        // Nếu không tìm thấy theo SĐT/email → tìm theo tên
         if (foundUsers.isEmpty()) {
             String searchKeyword = "%" + keyword.toLowerCase() + "%";
             foundUsers = userRepository.searchByName(searchKeyword);

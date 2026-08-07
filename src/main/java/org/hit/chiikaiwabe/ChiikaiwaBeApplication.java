@@ -18,10 +18,11 @@ public class ChiikaiwaBeApplication {
 
     @PostConstruct
     public void init() {
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        // init method can be used for other purposes
     }
 
     public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         SpringApplication.run(ChiikaiwaBeApplication.class, args);
     }
 

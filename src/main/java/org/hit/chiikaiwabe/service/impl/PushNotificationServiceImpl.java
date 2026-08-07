@@ -27,12 +27,12 @@ public class PushNotificationServiceImpl implements PushNotificationService {
     private final UserDeviceRepository userDeviceRepository;
     private final UserRepository userRepository;
 
-    @Async("notificationExecutor")
     @Override
     public void sendPushNotification(String userID, String title, String body) {
         sendPushNotification(userID, title, body, null);
     }
 
+    @Async("notificationExecutor")
     @Override
     public void sendPushNotification(String userID, String title, String body, java.util.Map<String, String> data) {
         List<UserDevice> devices = userDeviceRepository.findByUserIdAndIsActiveTrue(userID);

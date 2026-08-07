@@ -69,8 +69,14 @@ public class LocationRadarServiceImpl implements LocationRadarService {
 
         double searchRadius = radarProperties.getDefaultRadiusKm();
         if (radiusKm != null && radiusKm > 0) {
-            searchRadius = Math.min(radiusKm, radarProperties.getMaxRadiusKm());
+            if (radiusKm > radarProperties.getDefaultRadiusKm()) {
+                throw new InvalidException(ErrorMessage.Location.ERR_INVALID_RADIUS,
+                        new String[]{String.valueOf(radarProperties.getDefaultRadiusKm())});
+            }
+            searchRadius = radiusKm;
         }
+        // Hard safety cap — phòng hờ
+        searchRadius = Math.min(searchRadius, radarProperties.getMaxRadiusKm());
 
         Distance distance = new Distance(searchRadius, Metrics.KILOMETERS);
         Circle circle = new Circle(new Point(lng, lat), distance);

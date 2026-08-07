@@ -144,4 +144,11 @@ public class GlobalExceptionHandler {
     return VsResponseUtil.error(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage());
   }
 
+  @ExceptionHandler(org.springframework.web.multipart.support.MissingServletRequestPartException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public ResponseEntity<RestData<?>> handleMissingServletRequestPartException(org.springframework.web.multipart.support.MissingServletRequestPartException ex) {
+    log.error("Missing request part: {}", ex.getMessage());
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, "Thiếu dữ liệu upload: " + ex.getRequestPartName());
+  }
+
 }

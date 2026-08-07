@@ -129,7 +129,7 @@ public class BookingServiceImpl implements BookingService {
         payload.put("bookingId", booking.getId());
         payload.put("subject", booking.getSubject());
         payload.put("location", booking.getLocationName());
-        payload.put("scheduledAt", booking.getScheduledAt().toString());
+        payload.put("scheduledAt", java.time.format.DateTimeFormatter.ofPattern(org.hit.chiikaiwabe.constant.CommonConstant.PATTERN_DATE_TIME).format(booking.getScheduledAt()));
         payload.put("duration", booking.getDurationMinutes() != null ? booking.getDurationMinutes() : 0);
         payload.put("note", booking.getNote() != null ? booking.getNote() : "");
         payload.put("status", booking.getStatus().name());
@@ -159,6 +159,7 @@ public class BookingServiceImpl implements BookingService {
         String title = messageSource.getMessage(SuccessMessage.Booking.PUSH_NEW_REQUEST_TITLE, null, LocaleContextHolder.getLocale());
         String body = messageSource.getMessage(SuccessMessage.Booking.PUSH_NEW_REQUEST_BODY, new Object[]{creator.getFirstName() + " " + creator.getLastName()}, LocaleContextHolder.getLocale());
 
+        // Lưu notification vào DB
         String notifContent = messageSource.getMessage("notification.booking.invite",
                 new Object[]{creator.getLastName() + " " + creator.getFirstName()},
                 LocaleContextHolder.getLocale());

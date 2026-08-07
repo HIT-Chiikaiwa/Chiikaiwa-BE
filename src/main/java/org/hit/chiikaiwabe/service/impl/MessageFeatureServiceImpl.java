@@ -144,7 +144,7 @@ public class MessageFeatureServiceImpl implements MessageFeatureService {
         java.util.Map<String, Object> payload = new java.util.HashMap<>();
         payload.put("subject", requestDto.getSubject());
         payload.put("location", requestDto.getLocation() != null ? requestDto.getLocation() : "");
-        payload.put("scheduledAt", requestDto.getScheduledAt() != null ? requestDto.getScheduledAt().toString() : "");
+        payload.put("scheduledAt", requestDto.getScheduledAt() != null ? java.time.format.DateTimeFormatter.ofPattern(org.hit.chiikaiwabe.constant.CommonConstant.PATTERN_DATE_TIME).format(requestDto.getScheduledAt()) : "");
         payload.put("duration", requestDto.getDuration() != null ? requestDto.getDuration() : 0);
         payload.put("note", requestDto.getNote() != null ? requestDto.getNote() : "");
 

@@ -25,7 +25,7 @@ public class JwtAuthenticationEntryPoint implements org.springframework.security
     response.setStatus(HttpStatus.UNAUTHORIZED.value());
     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
     String message = messageSource.getMessage(ErrorMessage.UNAUTHORIZED, null, LocaleContextHolder.getLocale());
-    response.getOutputStream().write(new ObjectMapper().writeValueAsBytes(RestData.error(message)));
+    response.getOutputStream().write(new ObjectMapper().writeValueAsBytes(RestData.error(HttpStatus.UNAUTHORIZED.value(), message)));
   }
 
 }

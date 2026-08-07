@@ -1,0 +1,163 @@
+# =============================================================
+# Chiikaiwa-BE — Build & Deploy to AWS EC2
+# =============================================================
+# Workflow:
+#   1. Build JAR trên GitHub Actions (FREE)
+#   2. Build Docker image nhẹ (run-only, ~250MB)
+#   3. Push image lên Amazon ECR
+#   4. SSH vào EC2 → pull image mới → restart container
+# =============================================================
+
+name: Build & Deploy to AWS EC2
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch: # Cho phép trigger thủ công từ GitHub UI
+
+# Tránh deploy trùng lắp: cancel run cũ nếu có run mới
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: ap-southeast-1
+  ECR_REPOSITORY: chiikaiwa-be
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20  # Tự hủy nếu treo quá 20 phút
+
+    steps:
+      # ── 1. Checkout code ──────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # ── 2. Setup JDK 17 + cache Maven dependencies ───────
+      - name: Set up JDK 17
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      # ── 3. Build JAR (trên GitHub runner — FREE) ──────────
+      - name: Build with Maven
+        run: chmod +x mvnw && ./mvnw clean package -DskipTests -B
+
+      # ── 4. Configure AWS credentials ──────────────────────
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ── 5. Login to Amazon ECR ────────────────────────────
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+
+      # ── 6. Build & Push Docker image (run-only) ───────────
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "Building image with aws.Dockerfile (run-only, no Maven)..."
+          docker build -f aws.Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "Pushing to ECR..."
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "Image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Prepare secrets
+        env:
+          FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
+        run: |
+          echo "FIREBASE_B64=$(echo "$FIREBASE_CREDENTIALS" | base64 -w 0)" >> $GITHUB_ENV
+
+      # ── 7. Deploy to EC2 via SSH ──────────────────────────
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          FIREBASE_B64: ${{ env.FIREBASE_B64 }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          CLOUD_NAME: ${{ secrets.CLOUD_NAME }}
+          CLOUD_API_KEY: ${{ secrets.CLOUD_API_KEY }}
+          CLOUD_API_SECRET: ${{ secrets.CLOUD_API_SECRET }}
+          BREVO_NAME: ${{ secrets.BREVO_NAME }}
+          BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: ECR_REGISTRY,ECR_REPOSITORY,DB_HOST,DB_PASSWORD,FIREBASE_B64,JWT_SECRET,CLOUD_NAME,CLOUD_API_KEY,CLOUD_API_SECRET,BREVO_NAME,BREVO_SENDER_EMAIL,BREVO_API_KEY,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
+          script: |
+            set -e # Dừng script ngay nếu có lệnh lỗi
+            echo "Starting deployment..."
+            
+            # Giải mã Base64 và loại bỏ khoảng trắng thừa/dấu xuống dòng
+            FIREBASE_JSON=$(echo "$FIREBASE_B64" | base64 -d)
+            FIREBASE_ONELINE=$(echo "$FIREBASE_JSON" | tr -d '\n' | tr -d '\r')
+            
+            # Ghi các biến môi trường vào file .env
+            cat <<EOF > /home/ec2-user/chiikaiwa/.env
+            DB_HOST=$DB_HOST
+            DB_USERNAME=chiikaiwa_admin
+            DB_PASSWORD=$DB_PASSWORD
+            DB_NAME=chiikaiwa
+            REDIS_HOST=localhost
+            REDIS_PORT=6379
+            REDIS_PASSWORD=RedisChiikaiwa@2026
+            JWT_SECRET=$JWT_SECRET
+            CLOUD_NAME=$CLOUD_NAME
+            CLOUD_API_KEY=$CLOUD_API_KEY
+            CLOUD_API_SECRET=$CLOUD_API_SECRET
+            BREVO_NAME=$BREVO_NAME
+            BREVO_SENDER_EMAIL=$BREVO_SENDER_EMAIL
+            BREVO_API_KEY=$BREVO_API_KEY
+            FIREBASE_CREDENTIALS=$FIREBASE_ONELINE
+            ADMIN_USERNAME=admin1
+            ADMIN_PASSWORD=admin1
+            ADMIN_LASTNAME=Vien
+            ADMIN_FIRSTNAME=Quan_Tri
+            DEAFULT_RADIUS_KM=5
+            MAX_RADIUS_KM=20
+            TTL_MINUTES=30
+            EOF
+            
+            # Login ECR (Truyền credentials của IAM vào)
+            AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+            
+            # Pull image mới
+            docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
+            
+            # Stop container cũ (nếu có)
+            docker stop chiikaiwa-be 2>/dev/null || true
+            docker rm chiikaiwa-be 2>/dev/null || true
+            
+            # Start container mới (Dùng --network host)
+            docker run -d \
+              --name chiikaiwa-be \
+              --restart unless-stopped \
+              --network host \
+              --env-file /home/ec2-user/chiikaiwa/.env \
+              $ECR_REGISTRY/$ECR_REPOSITORY:latest
+            
+            # Dọn image cũ để giải phóng ổ cứng EC2
+            docker image prune -f
+            
+            echo "Deployment complete!"
+            echo "Container status:"
+            docker ps --filter name=chiikaiwa-be
+

@@ -6,8 +6,6 @@ import org.hit.chiikaiwabe.constant.ErrorMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.internal.engine.path.PathImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
@@ -17,7 +15,11 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.security.access.AccessDeniedException;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -31,6 +33,13 @@ public class GlobalExceptionHandler {
 
   private final MessageSource messageSource;
 
+  private String getMessageOrDefault(String code, Object[] args) {
+    if (code == null) {
+      return ErrorMessage.ERR_EXCEPTION_GENERAL;
+    }
+    return messageSource.getMessage(code, args, code, LocaleContextHolder.getLocale());
+  }
+
   //Error validate for param
   @ExceptionHandler(ConstraintViolationException.class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -38,11 +47,10 @@ public class GlobalExceptionHandler {
     Map<String, String> result = new LinkedHashMap<>();
     ex.getConstraintViolations().forEach((error) -> {
       String fieldName = ((PathImpl) error.getPropertyPath()).getLeafNode().getName();
-      String errorMessage = messageSource.getMessage(Objects.requireNonNull(error.getMessage()), null,
-          LocaleContextHolder.getLocale());
+      String errorMessage = getMessageOrDefault(error.getMessage(), null);
       result.put(fieldName, errorMessage);
     });
-    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, result);
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, "Validation error", result);
   }
 
   //Error validate for body
@@ -52,19 +60,17 @@ public class GlobalExceptionHandler {
     Map<String, String> result = new HashMap<>();
     ex.getBindingResult().getAllErrors().forEach((error) -> {
       String fieldName = ((FieldError) error).getField();
-      String errorMessage = messageSource.getMessage(Objects.requireNonNull(error.getDefaultMessage()), null,
-          LocaleContextHolder.getLocale());
+      String errorMessage = getMessageOrDefault(error.getDefaultMessage(), null);
       result.put(fieldName, errorMessage);
     });
-    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, result);
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, "Validation error", result);
   }
 
   @ExceptionHandler(Exception.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   public ResponseEntity<RestData<?>> handlerInternalServerError(Exception ex) {
     log.error(ex.getMessage(), ex);
-    String message = messageSource.getMessage(ErrorMessage.ERR_EXCEPTION_GENERAL, null,
-        LocaleContextHolder.getLocale());
+    String message = getMessageOrDefault(ErrorMessage.ERR_EXCEPTION_GENERAL, null);
     return VsResponseUtil.error(HttpStatus.INTERNAL_SERVER_ERROR, message);
   }
 
@@ -77,7 +83,7 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(NotFoundException.class)
   public ResponseEntity<RestData<?>> handlerNotFoundException(NotFoundException ex) {
-    String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
+    String message = getMessageOrDefault(ex.getMessage(), ex.getParams());
     log.error(message, ex);
     return VsResponseUtil.error(ex.getStatus(), message);
   }
@@ -85,36 +91,64 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(InvalidException.class)
   public ResponseEntity<RestData<?>> handlerInvalidException(InvalidException ex) {
     log.error(ex.getMessage(), ex);
-    String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
+    String message = getMessageOrDefault(ex.getMessage(), ex.getParams());
     return VsResponseUtil.error(ex.getStatus(), message);
   }
 
   @ExceptionHandler(InternalServerException.class)
   public ResponseEntity<RestData<?>> handlerInternalServerException(InternalServerException ex) {
-    String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
+    String message = getMessageOrDefault(ex.getMessage(), ex.getParams());
     log.error(message, ex);
     return VsResponseUtil.error(ex.getStatus(), message);
   }
 
   @ExceptionHandler(UploadFileException.class)
   public ResponseEntity<RestData<?>> handleUploadImageException(UploadFileException ex) {
-    String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
+    String message = getMessageOrDefault(ex.getMessage(), ex.getParams());
     log.error(message, ex);
     return VsResponseUtil.error(ex.getStatus(), message);
   }
 
   @ExceptionHandler(UnauthorizedException.class)
   public ResponseEntity<RestData<?>> handleUnauthorizedException(UnauthorizedException ex) {
-    String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
+    String message = getMessageOrDefault(ex.getMessage(), ex.getParams());
     log.error(message, ex);
     return VsResponseUtil.error(ex.getStatus(), message);
   }
 
   @ExceptionHandler(ForbiddenException.class)
   public ResponseEntity<RestData<?>> handleAccessDeniedException(ForbiddenException ex) {
-    String message = messageSource.getMessage(ex.getMessage(), ex.getParams(), LocaleContextHolder.getLocale());
+    String message = getMessageOrDefault(ex.getMessage(), ex.getParams());
     log.error(message, ex);
     return VsResponseUtil.error(ex.getStatus(), message);
+  }
+
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<RestData<?>> handleSpringAccessDeniedException(AccessDeniedException ex) {
+    String message = getMessageOrDefault(ErrorMessage.FORBIDDEN, null);
+    log.error(message, ex);
+    return VsResponseUtil.error(HttpStatus.FORBIDDEN, message);
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<RestData<?>> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
+    log.error("Max upload size exceeded: {}", ex.getMessage());
+    String message = getMessageOrDefault(ErrorMessage.File.ERR_FILE_SIZE_EXCEED, null);
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, message);
+  }
+
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+  public ResponseEntity<RestData<?>> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+    log.warn("Method not allowed: {} - Request: {} {}", ex.getMessage(), request.getMethod(), request.getRequestURI());
+    return VsResponseUtil.error(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage());
+  }
+
+  @ExceptionHandler(org.springframework.web.multipart.support.MissingServletRequestPartException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public ResponseEntity<RestData<?>> handleMissingServletRequestPartException(org.springframework.web.multipart.support.MissingServletRequestPartException ex) {
+    log.error("Missing request part: {}", ex.getMessage());
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST, "Thiếu dữ liệu upload: " + ex.getRequestPartName());
   }
 
 }

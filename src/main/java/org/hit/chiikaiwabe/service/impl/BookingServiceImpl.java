@@ -159,7 +159,6 @@ public class BookingServiceImpl implements BookingService {
         String title = messageSource.getMessage(SuccessMessage.Booking.PUSH_NEW_REQUEST_TITLE, null, LocaleContextHolder.getLocale());
         String body = messageSource.getMessage(SuccessMessage.Booking.PUSH_NEW_REQUEST_BODY, new Object[]{creator.getFirstName() + " " + creator.getLastName()}, LocaleContextHolder.getLocale());
 
-        // Lưu notification vào DB
         String notifContent = messageSource.getMessage("notification.booking.invite",
                 new Object[]{creator.getLastName() + " " + creator.getFirstName()},
                 LocaleContextHolder.getLocale());

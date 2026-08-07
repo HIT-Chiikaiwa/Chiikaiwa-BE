@@ -35,7 +35,7 @@ public class LocationRadarController {
             @CurrentUser UserPrincipal userPrincipal,
             @RequestParam Double lat,
             @RequestParam Double lng,
-            @RequestParam(required = false, defaultValue = "5") Double radius) {
+            @RequestParam(required = false) Double radius) {
         return VsResponseUtil.success(locationRadarService.scanRadar(userPrincipal.getId(), lat, lng, radius));
     }
 

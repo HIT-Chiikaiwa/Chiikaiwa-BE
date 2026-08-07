@@ -77,7 +77,7 @@ public class BookingReminderJob {
                         .getId(), "Nhắc nhở cuộc hẹn", message);
                 String partnerName = getPartnerName(booking, booking.getCreator().getId());
                 String creatorContent = messageSource.getMessage("notification.booking.reminder",
-                        new Object[]{partnerName, booking.getScheduledAt().format(timeFormatter)},
+                        new Object[]{partnerName, booking.getScheduledAt().atZone(java.time.ZoneId.of("UTC")).withZoneSameInstant(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).format(timeFormatter)},
                         LocaleContextHolder.getLocale());
                 Notification creatorNotif = notificationService.saveNotification(
                         booking.getCreator().getId(),
@@ -95,7 +95,7 @@ public class BookingReminderJob {
                                     .getId(), "Nhắc nhở cuộc hẹn", message);
                             String pContent = messageSource.getMessage("notification.booking.reminder",
                                     new Object[]{booking.getCreator().getLastName() + " " + booking.getCreator().getFirstName(),
-                                            booking.getScheduledAt().format(timeFormatter)},
+                                            booking.getScheduledAt().atZone(java.time.ZoneId.of("UTC")).withZoneSameInstant(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).format(timeFormatter)},
                                     LocaleContextHolder.getLocale());
                             Notification pNotif = notificationService.saveNotification(
                                     p.getUser().getId(), booking.getCreator(),

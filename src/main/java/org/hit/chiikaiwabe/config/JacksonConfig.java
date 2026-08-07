@@ -1,6 +1,6 @@
 package org.hit.chiikaiwabe.config;
 
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import org.hit.chiikaiwabe.constant.CommonConstant;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
@@ -17,7 +17,6 @@ public class JacksonConfig {
         return builder -> {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(CommonConstant.PATTERN_DATE_TIME);
             builder.serializers(new LocalDateTimeSerializer(formatter));
-            builder.deserializers(new LocalDateTimeDeserializer(formatter));
         };
     }
 }

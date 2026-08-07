@@ -12,6 +12,7 @@ import org.hit.chiikaiwabe.service.PushNotificationService;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +31,7 @@ public class ChatNotificationServiceImpl implements ChatNotificationService {
 
     private static final String CHAT_CHANNEL = "chat:broadcast";
 
+    @Transactional(readOnly = true)
     @Async("taskExecutor")
     @Override
     public void broadcastAndNotify(String conversationId, String senderId, MessageResponseDto dto) {

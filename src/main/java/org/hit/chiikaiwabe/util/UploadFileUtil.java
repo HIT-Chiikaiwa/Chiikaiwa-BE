@@ -22,7 +22,7 @@ public class UploadFileUtil {
     try {
       String resourceType = getResourceType(file);
       Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap("resource_type",
-          resourceType));
+              resourceType));
       return result.get("secure_url").toString();
     } catch (IOException e) {
       throw new UploadFileException("Upload file failed!");
@@ -39,8 +39,22 @@ public class UploadFileUtil {
   }
 
   public void destroyFileWithUrl(String url) {
+    if (url == null || !url.contains("res.cloudinary.com")) {
+      return;
+    }
+
     int startIndex = url.lastIndexOf("/") + 1;
     int endIndex = url.lastIndexOf(".");
+
+    if (startIndex >= url.length()) {
+      log.warn("Cannot extract publicId from URL: {}", url);
+      return;
+    }
+
+    if (endIndex == -1 || endIndex < startIndex) {
+      endIndex = url.length();
+    }
+
     String publicId = url.substring(startIndex, endIndex);
     try {
       Map<?, ?> result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());

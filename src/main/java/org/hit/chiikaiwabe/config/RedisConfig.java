@@ -31,6 +31,20 @@ public class RedisConfig {
 
     private GenericJackson2JsonRedisSerializer createJsonSerializer() {
         ObjectMapper objectMapper = new ObjectMapper();
+
+        com.fasterxml.jackson.datatype.jsr310.JavaTimeModule javaTimeModule = new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule();
+        javaTimeModule.addSerializer(java.time.LocalDateTime.class,
+                new com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer(
+                        java.time.format.DateTimeFormatter.ofPattern(org.hit.chiikaiwabe.constant.CommonConstant.PATTERN_DATE_TIME)
+                )
+        );
+        javaTimeModule.addDeserializer(java.time.LocalDateTime.class,
+                new com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer(
+                        java.time.format.DateTimeFormatter.ofPattern(org.hit.chiikaiwabe.constant.CommonConstant.PATTERN_DATE_TIME)
+                )
+        );
+
+        objectMapper.registerModule(javaTimeModule);
         objectMapper.findAndRegisterModules();
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         objectMapper.activateDefaultTyping(objectMapper.getPolymorphicTypeValidator(),

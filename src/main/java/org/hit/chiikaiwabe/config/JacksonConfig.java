@@ -20,6 +20,11 @@ public class JacksonConfig {
 
     public static class LenientLocalDateTimeDeserializer extends JsonDeserializer<LocalDateTime> {
         @Override
+        public Class<?> handledType() {
+            return LocalDateTime.class;
+        }
+
+        @Override
         public LocalDateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             String dateStr = p.getText();
             if (dateStr == null || dateStr.trim().isEmpty()) {

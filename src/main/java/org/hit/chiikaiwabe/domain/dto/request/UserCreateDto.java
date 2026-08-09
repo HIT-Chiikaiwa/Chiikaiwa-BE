@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 
 import java.time.LocalDate;
@@ -43,6 +44,7 @@ public class UserCreateDto {
   private String gender;
 
   @NotNull(message = ErrorMessage.INVALID_SOME_THING_FIELD_IS_REQUIRED)
+  @Past(message = ErrorMessage.INVALID_DATE_PAST)
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   private LocalDate dateOfBirth;
 

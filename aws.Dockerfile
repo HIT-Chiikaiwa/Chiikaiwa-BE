@@ -20,13 +20,10 @@ COPY target/Chiikaiwa-BE-0.0.1-SNAPSHOT.jar app.jar
 # Port mặc định Spring Boot
 EXPOSE 8080
 
-# JVM tuned cho EC2 t3.micro (1GB RAM):
-# - Xms128m: khởi động nhẹ
-# - Xmx384m: giới hạn heap tối đa 384MB
-# - G1GC: garbage collector tối ưu cho memory nhỏ
-# - Profile mặc định: aws (override qua env SPRING_PROFILES_ACTIVE)
+# JVM tuned cho EC2 t3.small (2GB RAM):
+
 ENTRYPOINT ["java", "-jar", \
-  "-Xms128m", "-Xmx384m", \
+  "-Xms384m", "-Xmx768m", \
   "-XX:+UseG1GC", \
   "-XX:MaxGCPauseMillis=100", \
   "-XX:+UseStringDeduplication", \

@@ -1,5 +1,7 @@
 package org.hit.chiikaiwabe.controller;
 
+import org.hit.chiikaiwabe.security.WebSocketAuthorizationService;
+
 import org.hit.chiikaiwabe.domain.dto.request.SendMessageRequestDto;
 import org.hit.chiikaiwabe.service.MessageActionService;
 import org.hit.chiikaiwabe.service.OnlineStatusService;
@@ -16,6 +18,7 @@ import java.security.Principal;
 @Controller
 public class ChatWebSocketController {
 
+    private final WebSocketAuthorizationService authorization;
     private final MessageActionService messageActionService;
     private final OnlineStatusService onlineStatusService;
 
@@ -37,6 +40,7 @@ public class ChatWebSocketController {
     public void typing(@Payload java.util.Map<String, String> payload, Principal principal) {
         String userId = principal.getName();
         String conversationId = payload.get("conversationId");
+        authorization.requireConversationMember(userId, conversationId);
         log.debug("User {} is typing in conversation {}", userId, conversationId);
         onlineStatusService.setTyping(conversationId, userId);
     }

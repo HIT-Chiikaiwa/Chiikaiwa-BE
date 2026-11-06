@@ -2,7 +2,7 @@ package org.hit.chiikaiwabe.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hit.chiikaiwabe.service.CustomUserDetailsService;
+import org.hit.chiikaiwabe.security.jwt.JwtHandshakeInterceptor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -23,7 +23,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class AccountStatusWebSocketGuard implements WebSocketHandlerDecoratorFactory, ChannelInterceptor {
 
-    private final CustomUserDetailsService customUserDetailsService;
+    private final AccessTokenAuthenticator authenticator;
+    private final WebSocketAuthorizationService authorization;
     private final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
 
     @Override
@@ -60,10 +61,12 @@ public class AccountStatusWebSocketGuard implements WebSocketHandlerDecoratorFac
         }
         Object userId = session.getAttributes().get("userId");
         try {
-            if (!(userId instanceof String)) {
-                return null;
-            }
-            customUserDetailsService.loadUserById((String) userId);
+            Object token = session.getAttributes().get(JwtHandshakeInterceptor.ACCESS_TOKEN);
+            if (!(userId instanceof String) || !(token instanceof String)) return null;
+            var principal = authenticator.authenticate((String) token);
+            if (!userId.equals(principal.getId())) return null;
+            authorization.authorizeDelivery(principal.getId(),
+                    SimpMessageHeaderAccessor.getDestination(message.getHeaders()));
             return message;
         } catch (RuntimeException ex) {
             try {

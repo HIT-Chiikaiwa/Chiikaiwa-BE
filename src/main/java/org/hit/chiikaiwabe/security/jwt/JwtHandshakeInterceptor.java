@@ -1,56 +1,43 @@
 package org.hit.chiikaiwabe.security.jwt;
 
-import org.hit.chiikaiwabe.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.server.ServerHttpRequest;
-import org.springframework.http.server.ServerHttpResponse;
-import org.springframework.http.server.ServletServerHttpRequest;
+import org.hit.chiikaiwabe.security.AccessTokenAuthenticator;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.server.*;
 import org.springframework.stereotype.Component;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
-
 import java.util.Map;
 
-@Slf4j
-@RequiredArgsConstructor
 @Component
+@RequiredArgsConstructor
 public class JwtHandshakeInterceptor implements HandshakeInterceptor {
-
-    private final CustomUserDetailsService customUserDetailsService;
-    private final JwtTokenProvider jwtTokenProvider;
-    private final StringRedisTemplate redisTemplate;
+    public static final String ACCESS_TOKEN = "wsAccessToken";
+    private final AccessTokenAuthenticator authenticator;
 
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                                   WebSocketHandler wsHandler, Map<String, Object> attributes) {
+                                   WebSocketHandler handler, Map<String, Object> attributes) {
+        String token = null;
         if (request instanceof ServletServerHttpRequest servletRequest) {
-            String token = servletRequest.getServletRequest().getParameter("token");
-            if (token != null && jwtTokenProvider.validateToken(token)) {
-                String jti = jwtTokenProvider.extractJtiFromJwt(token);
-                if (Boolean.TRUE.equals(redisTemplate.hasKey("BLACKLIST:" + jti))) {
-                    log.warn("WebSocket handshake rejected: token is blacklisted");
-                    return false;
-                }
-                String userId = jwtTokenProvider.extractSubjectFromJwt(token);
-                try {
-                    customUserDetailsService.loadUserById(userId);
-                } catch (RuntimeException ex) {
-                    log.warn("WebSocket handshake rejected: account unavailable");
-                    return false;
-                }
-                attributes.put("userId", userId);
-                log.info("WebSocket handshake success for user: {}", userId);
-                return true;
-            }
+            token = servletRequest.getServletRequest().getParameter("token");
         }
-        log.warn("WebSocket handshake rejected: missing or invalid token");
-        return false;
+        if (token == null) {
+            String bearer = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+            if (bearer != null && bearer.startsWith("Bearer ")) token = bearer.substring(7);
+        }
+        try {
+            if (token == null) return false;
+            var user = authenticator.authenticate(token);
+            attributes.put("userId", user.getId());
+            attributes.put(ACCESS_TOKEN, token);
+            return true;
+        } catch (RuntimeException ex) {
+            return false;
+        }
     }
 
     @Override
     public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                               WebSocketHandler wsHandler, Exception exception) {
-    }
+                               WebSocketHandler handler, Exception exception) { }
 }

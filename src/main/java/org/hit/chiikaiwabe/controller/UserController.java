@@ -16,6 +16,8 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.hit.chiikaiwabe.domain.dto.request.AdminAccountActionRequestDto;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.hit.chiikaiwabe.constant.SuccessMessage;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -58,8 +60,10 @@ public class UserController {
   @Operation(summary = "Lock user account")
   @PreAuthorize("hasAuthority('ADMIN')")
   @PatchMapping(UrlConstant.User.LOCK_USER)
-  public ResponseEntity<?> lockUser(@PathVariable String userId) {
-    userService.lockUser(userId);
+  public ResponseEntity<?> lockUser(@PathVariable String userId,
+      @Valid @RequestBody(required = false) AdminAccountActionRequestDto request) {
+    if (request == null) userService.lockUser(userId);
+    else userService.lockUser(userId, request);
     return VsResponseUtil.success(SuccessMessage.USER_LOCKED);
   }
 
@@ -67,8 +71,10 @@ public class UserController {
   @Operation(summary = "Unlock user account")
   @PreAuthorize("hasAuthority('ADMIN')")
   @PatchMapping(UrlConstant.User.UNLOCK_USER)
-  public ResponseEntity<?> unlockUser(@PathVariable String userId) {
-    userService.unlockUser(userId);
+  public ResponseEntity<?> unlockUser(@PathVariable String userId,
+      @Valid @RequestBody(required = false) AdminAccountActionRequestDto request) {
+    if (request == null) userService.unlockUser(userId);
+    else userService.unlockUser(userId, request);
     return VsResponseUtil.success(SuccessMessage.USER_UNLOCKED);
   }
 

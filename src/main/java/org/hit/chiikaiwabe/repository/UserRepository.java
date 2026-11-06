@@ -43,6 +43,14 @@ public interface UserRepository extends JpaRepository<User, String> {
 
 
 
+  @Query("SELECT u FROM User u WHERE u.deleteFlag = false AND " +
+          "(:keyword = '' OR LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+          "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+          "OR u.phone LIKE CONCAT('%', :keyword, '%') " +
+          "OR LOWER(CONCAT(COALESCE(u.lastName, ''), ' ', COALESCE(u.firstName, ''))) " +
+          "LIKE LOWER(CONCAT('%', :keyword, '%')))")
+  Page<User> searchUsers(@Param("keyword") String keyword, Pageable pageable);
+
   boolean existsByEmail(String email);
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)

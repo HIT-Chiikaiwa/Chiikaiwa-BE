@@ -1,6 +1,8 @@
 package org.hit.chiikaiwabe.config;
 
 import org.hit.chiikaiwabe.security.jwt.JwtChannelInterceptor;
+import org.hit.chiikaiwabe.security.AccountStatusWebSocketGuard;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 import org.hit.chiikaiwabe.security.jwt.JwtHandshakeInterceptor;
 import org.hit.chiikaiwabe.interceptor.WebSocketRateLimitInterceptor;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private final AccountStatusWebSocketGuard accountStatusWebSocketGuard;
     private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
     private final JwtChannelInterceptor jwtChannelInterceptor;
     private final WebSocketRateLimitInterceptor webSocketRateLimitInterceptor;
@@ -46,6 +49,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOriginPatterns("*")
                 .withSockJS()
                 .setDisconnectDelay(60000);
+    }
+
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        registration.addDecoratorFactory(accountStatusWebSocketGuard);
+    }
+
+    @Override
+    public void configureClientOutboundChannel(ChannelRegistration registration) {
+        registration.interceptors(accountStatusWebSocketGuard);
     }
 
     @Override

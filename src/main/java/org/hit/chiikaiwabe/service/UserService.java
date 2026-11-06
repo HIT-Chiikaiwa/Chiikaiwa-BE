@@ -16,4 +16,8 @@ public interface UserService {
 
   UserDto getCurrentUser(UserPrincipal principal);
 
+  void lockUser(String userId);
+
+  void unlockUser(String userId);
+
 }

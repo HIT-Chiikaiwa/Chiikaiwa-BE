@@ -56,6 +56,15 @@ public class ErrorMessage {
     public static final String ERR_INVALID_LOCK_STATUS = "exception.user.invalid.lock.status";
   }
 
+  public static class Admin {
+    public static final String ERR_NOT_FiND_NAME = "exception.user.not.find.name";
+    public static final String INVALID_REASON = "invalid.admin.reason";
+    public static final String INVALID_REASON_LENGTH = "invalid.admin.reason.length";
+    public static final String INVALID_REPORT_ID = "invalid.admin.report.id";
+    public static final String ERR_REPORT_NOT_FOUND = "exception.admin.report.not.found";
+    public static final String ERR_REPORT_TARGET_MISMATCH = "exception.admin.report.target.mismatch";
+  }
+
   public static class Subject {
     public static final String ERR_NOT_FOUND_ID = "exception.subject.not.found.id";
     public static final String ERR_DUPLICATE_NAME = "exception.subject.duplicate.name";
@@ -63,9 +72,6 @@ public class ErrorMessage {
     public static final String ERR_NOT_BELONG_TO_USER = "exception.subject.not.belong.to.user";
   }
 
-  public static class Admin {
-    public static final String ERR_NOT_FiND_NAME = "exception.user.not.find.name";
-  }
 
 
   public static class Role {

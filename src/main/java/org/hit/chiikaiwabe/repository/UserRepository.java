@@ -23,6 +23,10 @@ public interface UserRepository extends JpaRepository<User, String> {
   @Query("SELECT u FROM User u WHERE u.id = ?1")
   Optional<User> findById(String id);
 
+  @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT u FROM User u WHERE u.id = ?1")
+  Optional<User> findForAdminUpdate(String userId);
+
   @Query("SELECT u FROM User u WHERE u.username = ?1")
   Optional<User> findByUsername(String username);
 

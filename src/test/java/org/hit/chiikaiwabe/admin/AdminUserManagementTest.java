@@ -1,6 +1,9 @@
 package org.hit.chiikaiwabe.admin;
 
 import org.hit.chiikaiwabe.controller.UserController;
+import org.hit.chiikaiwabe.controller.AdminUserController;
+import org.hit.chiikaiwabe.repository.AdminActionLogRepository;
+import org.hit.chiikaiwabe.repository.UserReportRepository;
 import org.hit.chiikaiwabe.domain.dto.pagination.PaginationFullRequestDto;
 import org.hit.chiikaiwabe.domain.entity.User;
 import org.hit.chiikaiwabe.domain.enums.Role;
@@ -40,26 +43,34 @@ class AdminUserManagementTest {
   static class Config {
     @Bean UserRepository userRepository() { return mock(UserRepository.class); }
     @Bean UserMapper userMapper() { return Mappers.getMapper(UserMapper.class); }
-    @Bean UserService userService(UserRepository repository, UserMapper mapper) {
-      return new UserServiceImpl(repository, mapper);
+    @Bean AdminActionLogRepository actionLogs() { return mock(AdminActionLogRepository.class); }
+    @Bean UserReportRepository reports() { return mock(UserReportRepository.class); }
+    @Bean UserService userService(UserRepository repository, UserMapper mapper,
+        AdminActionLogRepository logs, UserReportRepository reports) {
+      return new UserServiceImpl(repository, mapper, logs, reports);
     }
+    @Bean AdminUserController adminController(UserService service) { return new AdminUserController(service); }
     @Bean UserController userController(UserService service) { return new UserController(service); }
   }
 
   @Autowired UserController controller;
+  @Autowired AdminUserController adminController;
+  @Autowired AdminActionLogRepository actionLogs;
   @Autowired UserService service;
   @Autowired UserRepository repository;
   MockMvc mvc;
   User target;
 
   @BeforeEach void setup() {
-    reset(repository);
+    reset(repository, actionLogs);
     signIn(Role.ADMIN);
     target = User.builder().id("user-1").username("alice").password("secret-hash")
         .email("alice@example.com").firstName("Alice").lastName("Nguyen")
         .role(Role.USER).userstatus(UserStatus.ACTIVE).build();
     when(repository.findById("user-1")).thenReturn(Optional.of(target));
-    mvc = MockMvcBuilders.standaloneSetup(controller)
+    when(repository.findForAdminUpdate("user-1")).thenReturn(Optional.of(target));
+    when(repository.getReferenceById("actor")).thenReturn(User.builder().id("actor").build());
+    mvc = MockMvcBuilders.standaloneSetup(controller, adminController)
         .setCustomArgumentResolvers(new org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver())
         .setControllerAdvice(new GlobalExceptionHandler(new StaticMessageSource())).build();
   }
@@ -167,4 +178,47 @@ class AdminUserManagementTest {
     mvc.perform(get("/api/v1/user/missing")).andExpect(status().isNotFound());
     mvc.perform(patch("/api/v1/user/missing/lock")).andExpect(status().isNotFound());
   }
+  @Test void newAdminApiUsesZeroBasedPagination() throws Exception {
+    when(repository.searchUsers(eq(""), any(Pageable.class))).thenAnswer(invocation -> {
+      Pageable page = invocation.getArgument(1);
+      assertThat(page.getPageNumber()).isZero();
+      assertThat(page.getPageSize()).isEqualTo(20);
+      return new PageImpl<>(List.of(target), page, 1);
+    });
+    mvc.perform(get("/api/v1/admin/users")).andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.meta.pageNum").value(0))
+        .andExpect(jsonPath("$.data.items[0].password").doesNotExist());
+  }
+
+  @Test void newAdminApiRequiresReason() throws Exception {
+    mvc.perform(patch("/api/v1/admin/users/user-1/lock").contentType("application/json")
+        .content("{\"reason\":\"  \"}")).andExpect(status().isBadRequest());
+    mvc.perform(patch("/api/v1/admin/users/user-1/lock")).andExpect(status().isBadRequest());
+    mvc.perform(patch("/api/v1/admin/users/user-1/lock").contentType("application/json")
+        .content("{broken")).andExpect(status().isBadRequest());
+    verify(repository, never()).save(any());
+  }
+
+  @Test void newAdminApiWritesAuditWithCurrentActorAndReason() throws Exception {
+    mvc.perform(patch("/api/v1/admin/users/user-1/lock").contentType("application/json")
+        .content("{\"reason\":\"Spam confirmed\"}")).andExpect(status().isOk());
+    var captor = org.mockito.ArgumentCaptor.forClass(org.hit.chiikaiwabe.domain.entity.AdminActionLog.class);
+    verify(actionLogs).save(captor.capture());
+    assertThat(captor.getValue().getActor().getId()).isEqualTo("actor");
+    assertThat(captor.getValue().getReason()).isEqualTo("Spam confirmed");
+    assertThat(captor.getValue().getPreviousStatus()).isEqualTo(UserStatus.ACTIVE);
+    assertThat(captor.getValue().getNewStatus()).isEqualTo(UserStatus.LOCKED);
+  }
+
+  @Test void newAdminApiRejectsUserRoleAndInvalidPagination() throws Exception {
+    mvc.perform(get("/api/v1/admin/users").param("page", "-1")).andExpect(status().isBadRequest());
+    mvc.perform(get("/api/v1/admin/users").param("size", "101")).andExpect(status().isBadRequest());
+    signIn(Role.USER);
+    mvc.perform(get("/api/v1/admin/users")).andExpect(status().isForbidden());
+    mvc.perform(get("/api/v1/admin/users/user-1")).andExpect(status().isForbidden());
+    mvc.perform(get("/api/v1/admin/users/user-1/actions")).andExpect(status().isForbidden());
+    mvc.perform(patch("/api/v1/admin/users/user-1/lock").contentType("application/json")
+        .content("{\"reason\":\"Spam\"}")).andExpect(status().isForbidden());
+  }
+
 }

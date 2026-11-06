@@ -11,6 +11,10 @@ import java.util.Optional;
 @Repository
 public interface ConversationMemberRepository extends JpaRepository<ConversationMember, String> {
 
+    @Query("SELECT (COUNT(cm) > 0) FROM ConversationMember cm WHERE cm.conversation.id = ?1 " +
+            "AND cm.user.id = ?2 AND cm.leftAt IS NULL")
+    boolean existsActiveMember(String conversationId, String userId);
+
     @Query("SELECT cm FROM ConversationMember cm WHERE cm.conversation.id = ?1 AND cm.user.id = ?2")
     Optional<ConversationMember> findByConversationIdAndUserId(String conversationId, String userId);
 

@@ -46,7 +46,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
                 .addInterceptors(jwtHandshakeInterceptor)
-                .setAllowedOriginPatterns("*")
+                .setAllowedOriginPatterns("https://api.chiikaiwa.me", "https://chiikaiwa.me", "http://localhost:3000", "http://localhost:5173")
                 .withSockJS()
                 .setDisconnectDelay(60000);
     }

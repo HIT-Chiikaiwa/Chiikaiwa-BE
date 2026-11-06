@@ -1,5 +1,9 @@
 package org.hit.chiikaiwabe.service;
 
+import org.hit.chiikaiwabe.domain.dto.request.AdminAccountActionRequestDto;
+import org.hit.chiikaiwabe.domain.dto.request.AdminUserSearchRequestDto;
+import org.hit.chiikaiwabe.domain.dto.response.AdminActionLogDto;
+
 import org.hit.chiikaiwabe.domain.dto.pagination.PaginationFullRequestDto;
 import org.hit.chiikaiwabe.domain.dto.pagination.PaginationResponseDto;
 import org.hit.chiikaiwabe.domain.dto.request.UserCreateDto;
@@ -19,5 +23,12 @@ public interface UserService {
   void lockUser(String userId);
 
   void unlockUser(String userId);
+
+  void lockUser(String userId, AdminAccountActionRequestDto request);
+
+  void unlockUser(String userId, AdminAccountActionRequestDto request);
+
+  PaginationResponseDto<AdminActionLogDto> getAdminActions(
+      String userId, AdminUserSearchRequestDto request);
 
 }

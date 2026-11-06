@@ -36,6 +36,15 @@ public class UrlConstant {
     }
   }
 
+  public static class Admin {
+    public static final String USERS = "/admin/users";
+    public static final String USER = USERS + "/{userId}";
+    public static final String LOCK = USER + "/lock";
+    public static final String UNLOCK = USER + "/unlock";
+    public static final String ACTIONS = USER + "/actions";
+    private Admin() { }
+  }
+
   public static class Profile {
     private static final String PRE_FIX = "/profile";
 

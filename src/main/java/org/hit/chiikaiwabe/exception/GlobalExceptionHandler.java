@@ -40,6 +40,13 @@ public class GlobalExceptionHandler {
     return messageSource.getMessage(code, args, code, LocaleContextHolder.getLocale());
   }
 
+  @ExceptionHandler({org.springframework.http.converter.HttpMessageNotReadableException.class,
+      org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
+  public ResponseEntity<RestData<?>> handleMalformedRequest(Exception ex) {
+    return VsResponseUtil.error(HttpStatus.BAD_REQUEST,
+        getMessageOrDefault(ErrorMessage.INVALID_FORMAT_SOME_THING_FIELD, null));
+  }
+
   //Error validate for param
   @ExceptionHandler(ConstraintViolationException.class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)

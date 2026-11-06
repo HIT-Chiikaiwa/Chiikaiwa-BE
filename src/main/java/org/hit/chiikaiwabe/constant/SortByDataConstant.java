@@ -7,13 +7,13 @@ public enum SortByDataConstant implements SortByInterface {
     public String getSortBy(String sortBy) {
       switch (sortBy) {
         case "firstName":
-          return "first_name";
+          return "firstName";
         case "lastName":
-          return "last_name";
+          return "lastName";
         case "lastModifiedDate":
-          return "last_modified_date";
+          return "lastModifiedDate";
         default:
-          return "created_date";
+          return "createdDate";
       }
     }
   },

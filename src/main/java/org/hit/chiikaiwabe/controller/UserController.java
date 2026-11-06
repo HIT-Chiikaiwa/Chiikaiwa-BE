@@ -15,6 +15,9 @@ import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.hit.chiikaiwabe.constant.SuccessMessage;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import jakarta.validation.Valid;
@@ -29,6 +32,7 @@ public class UserController {
 
   @Tag(name = "user-controller-admin")
   @Operation(summary = "API get user")
+  @PreAuthorize("hasAuthority('ADMIN')")
   @GetMapping(UrlConstant.User.GET_USER)
   public ResponseEntity<?> getUserById(@PathVariable String userId) {
     return VsResponseUtil.success(userService.getUserById(userId));
@@ -43,10 +47,29 @@ public class UserController {
   }
 
   @Tag(name = "user-controller-admin")
-  @Operation(summary = "API get all customer")
+  @Operation(summary = "Get users (paginated, search by username, email, phone or name)")
+  @PreAuthorize("hasAuthority('ADMIN')")
   @GetMapping(UrlConstant.User.GET_USERS)
   public ResponseEntity<?> getCustomers(@Valid @ParameterObject PaginationFullRequestDto requestDTO) {
     return VsResponseUtil.success(userService.getCustomers(requestDTO));
+  }
+
+  @Tag(name = "user-controller-admin")
+  @Operation(summary = "Lock user account")
+  @PreAuthorize("hasAuthority('ADMIN')")
+  @PatchMapping(UrlConstant.User.LOCK_USER)
+  public ResponseEntity<?> lockUser(@PathVariable String userId) {
+    userService.lockUser(userId);
+    return VsResponseUtil.success(SuccessMessage.USER_LOCKED);
+  }
+
+  @Tag(name = "user-controller-admin")
+  @Operation(summary = "Unlock user account")
+  @PreAuthorize("hasAuthority('ADMIN')")
+  @PatchMapping(UrlConstant.User.UNLOCK_USER)
+  public ResponseEntity<?> unlockUser(@PathVariable String userId) {
+    userService.unlockUser(userId);
+    return VsResponseUtil.success(SuccessMessage.USER_UNLOCKED);
   }
 
 }

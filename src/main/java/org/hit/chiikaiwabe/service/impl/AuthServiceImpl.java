@@ -67,7 +67,14 @@ public class AuthServiceImpl implements AuthService {
   public LoginResponseDto login(LoginRequestDto request) {
     try {
       User user = userRepository.findByEmail(request.getEmail())
+              .or(() -> userRepository.findByUsername(request.getEmail()))
               .orElseThrow(() -> new UnauthorizedException(ErrorMessage.Auth.ERR_INCORRECT_USERNAME));
+      if (UserStatus.LOCKED == user.getUserstatus()) {
+        throw new UnauthorizedException(ErrorMessage.Auth.ERR_ACCOUNT_LOCKED);
+      }
+      if (Boolean.TRUE.equals(user.getDeleteFlag())) {
+        throw new UnauthorizedException(ErrorMessage.Auth.ERR_ACCOUNT_NOT_ENABLED);
+      }
       if (UserStatus.UNVERIFIED == user.getUserstatus()) {
         throw new UnauthorizedException(ErrorMessage.Auth.ERR_ACCOUNT_NOT_VERIFIED);
       }
@@ -116,7 +123,7 @@ public class AuthServiceImpl implements AuthService {
           throw new UnauthorizedException(ErrorMessage.Auth.ERR_ACCOUNT_LOCKED);
         }
 
-        UserPrincipal userPrincipal = UserPrincipal.create(user);
+        UserPrincipal userPrincipal = (UserPrincipal) customUserDetailsService.loadUserById(user.getId());
         String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
         String refreshToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.TRUE);
 
@@ -138,6 +145,8 @@ public class AuthServiceImpl implements AuthService {
 
         return new GoogleLoginResponseDto(email, ticket);
       }
+    } catch (UnauthorizedException e) {
+      throw e;
     } catch (com.google.firebase.auth.FirebaseAuthException e) {
       log.error("Firebase auth error", e);
       throw new UnauthorizedException(ErrorMessage.Auth.ERR_FIREBASE_TOKEN_INVALID);

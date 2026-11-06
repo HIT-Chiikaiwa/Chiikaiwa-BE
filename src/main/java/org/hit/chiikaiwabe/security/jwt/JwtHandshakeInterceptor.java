@@ -1,5 +1,6 @@
 package org.hit.chiikaiwabe.security.jwt;
 
+import org.hit.chiikaiwabe.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.ServerHttpRequest;
@@ -17,6 +18,7 @@ import java.util.Map;
 @Component
 public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
+    private final CustomUserDetailsService customUserDetailsService;
     private final JwtTokenProvider jwtTokenProvider;
     private final StringRedisTemplate redisTemplate;
 
@@ -32,6 +34,12 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
                     return false;
                 }
                 String userId = jwtTokenProvider.extractSubjectFromJwt(token);
+                try {
+                    customUserDetailsService.loadUserById(userId);
+                } catch (RuntimeException ex) {
+                    log.warn("WebSocket handshake rejected: account unavailable");
+                    return false;
+                }
                 attributes.put("userId", userId);
                 log.info("WebSocket handshake success for user: {}", userId);
                 return true;

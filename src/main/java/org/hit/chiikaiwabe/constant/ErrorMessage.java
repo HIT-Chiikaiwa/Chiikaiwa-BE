@@ -52,6 +52,8 @@ public class ErrorMessage {
     public static final String ERR_DUPLICATE_PHONE = "exception.user.duplicate.phone";
     public static final String ERR_INVALID_AVATAR = "exception.user.invalid.avatar";
     public static final String ERR_USER_ALREADY_DELETED = "exception.user.already.deleted";
+    public static final String ERR_CANNOT_LOCK_ADMIN = "exception.user.cannot.lock.admin";
+    public static final String ERR_INVALID_LOCK_STATUS = "exception.user.invalid.lock.status";
   }
 
   public static class Subject {

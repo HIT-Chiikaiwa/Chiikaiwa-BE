@@ -65,7 +65,7 @@ public class JwtTokenProvider {
 
   public Authentication getAuthenticationByRefreshToken(String refreshToken) {
     Claims claims = Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(refreshToken).getBody();
-    if (!claims.get(CLAIM_TYPE).equals(TYPE_REFRESH) || ObjectUtils.isEmpty(claims.get(AUTHORITIES_KEY))
+    if (!TYPE_REFRESH.equals(claims.get(CLAIM_TYPE)) || ObjectUtils.isEmpty(claims.get(AUTHORITIES_KEY))
             || ObjectUtils.isEmpty(claims.get(USERNAME_KEY))) {
       throw new InvalidException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
     }
@@ -95,6 +95,16 @@ public class JwtTokenProvider {
 
   public Boolean isTokenExpired(String token) {
     return extractExpirationFromJwt(token).before(new Date());
+  }
+
+  public boolean validateAccessToken(String token) {
+    try {
+      Claims claims = Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody();
+      return TYPE_ACCESS.equals(claims.get(CLAIM_TYPE))
+          && org.springframework.util.StringUtils.hasText(claims.getSubject());
+    } catch (JwtException | IllegalArgumentException ex) {
+      return false;
+    }
   }
 
   public boolean validateToken(String token) {

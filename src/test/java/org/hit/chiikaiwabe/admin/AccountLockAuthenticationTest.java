@@ -42,6 +42,7 @@ class AccountLockAuthenticationTest {
   @Mock ObjectMapper objectMapper;
   @Mock FirebaseService firebase;
   @Mock ValueOperations<String, String> values;
+  @Mock org.hit.chiikaiwabe.security.RefreshTokenStore refreshTokenStore;
   CustomUserDetailsServiceImpl details;
   AuthServiceImpl auth;
   User user;
@@ -49,7 +50,7 @@ class AccountLockAuthenticationTest {
   @BeforeEach void setup() {
     details = new CustomUserDetailsServiceImpl(repository);
     auth = new AuthServiceImpl(authenticationManager, tokenProvider, details, repository,
-        passwordEncoder, otpService, redis, objectMapper, firebase);
+        passwordEncoder, otpService, redis, objectMapper, firebase, refreshTokenStore);
     user = User.builder().id("user-1").username("alice@example.com").email("alice@example.com")
         .role(Role.USER).userstatus(UserStatus.LOCKED).build();
   }
@@ -100,7 +101,6 @@ class AccountLockAuthenticationTest {
 
   @Test void lockedAccountCannotRefreshExistingToken() {
     when(tokenProvider.extractJtiFromJwt("refresh")).thenReturn("jti");
-    when(redis.hasKey("jti")).thenReturn(true);
     when(tokenProvider.getAuthenticationByRefreshToken("refresh")).thenReturn(
         new UsernamePasswordAuthenticationToken(user.getUsername(), null));
     when(repository.findByUsername(user.getUsername())).thenReturn(Optional.of(user));
@@ -111,11 +111,11 @@ class AccountLockAuthenticationTest {
   }
 
   @Test void existingAccessTokenStopsAuthenticatingAfterLockAndWorksAfterUnlock() throws Exception {
-    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(details, tokenProvider, redis);
-    when(tokenProvider.validateToken("access")).thenReturn(true);
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(
+        new org.hit.chiikaiwabe.security.AccessTokenAuthenticator(tokenProvider, redis, details));
+    when(tokenProvider.validateAccessToken("access")).thenReturn(true);
     when(tokenProvider.extractJtiFromJwt("access")).thenReturn("jti");
     when(tokenProvider.extractSubjectFromJwt("access")).thenReturn(user.getId());
-    when(redis.opsForValue()).thenReturn(values);
     when(repository.findById(user.getId())).thenReturn(Optional.of(user));
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("Authorization", "Bearer access");

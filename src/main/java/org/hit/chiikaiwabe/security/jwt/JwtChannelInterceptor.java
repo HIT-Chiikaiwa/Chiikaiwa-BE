@@ -1,70 +1,57 @@
 package org.hit.chiikaiwabe.security.jwt;
 
-import org.hit.chiikaiwabe.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.simp.stomp.StompCommand;
-import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
-import org.springframework.messaging.support.ChannelInterceptor;
-import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.hit.chiikaiwabe.constant.ErrorMessage;
+import org.hit.chiikaiwabe.exception.UnauthorizedException;
+import org.hit.chiikaiwabe.security.AccessTokenAuthenticator;
+import org.hit.chiikaiwabe.security.WebSocketAuthorizationService;
+import org.springframework.messaging.*;
+import org.springframework.messaging.simp.stomp.*;
+import org.springframework.messaging.support.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Component;
+import java.util.Set;
 
-import java.util.Map;
-
-@Slf4j
-@RequiredArgsConstructor
 @Component
+@RequiredArgsConstructor
 public class JwtChannelInterceptor implements ChannelInterceptor {
-
-    private final CustomUserDetailsService customUserDetailsService;
-    private final JwtTokenProvider jwtTokenProvider;
+    private static final Set<StompCommand> ALLOWED = Set.of(StompCommand.CONNECT, StompCommand.STOMP,
+            StompCommand.SEND, StompCommand.SUBSCRIBE, StompCommand.UNSUBSCRIBE,
+            StompCommand.ACK, StompCommand.NACK, StompCommand.DISCONNECT);
+    private final AccessTokenAuthenticator authenticator;
+    private final WebSocketAuthorizationService authorization;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
-        StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-
-        if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-            String userId = null;
-
-            String authHeader = accessor.getFirstNativeHeader("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                String token = authHeader.substring(7);
-                if (jwtTokenProvider.validateToken(token)) {
-                    userId = jwtTokenProvider.extractSubjectFromJwt(token);
-                } else {
-                    log.warn("STOMP CONNECT rejected: invalid Bearer token");
-                    throw new IllegalArgumentException("Invalid JWT token");
-                }
-            }
-
-            if (userId == null) {
-                Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
-                if (sessionAttributes != null && sessionAttributes.containsKey("userId")) {
-                    userId = (String) sessionAttributes.get("userId");
-                }
-            }
-
-            if (userId == null) {
-                log.warn("STOMP CONNECT rejected: no valid authentication found");
-                throw new IllegalArgumentException("Authentication required for WebSocket connection");
-            }
-
-            var userDetails = customUserDetailsService.loadUserById(userId);
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(userId, null, userDetails.getAuthorities());
-            accessor.setUser(auth);
-            log.info("STOMP CONNECT authenticated for user: {}", userId);
+        var accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+        if (accessor == null) throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED);
+        var command = accessor.getCommand();
+        if (command == StompCommand.DISCONNECT) return message;
+        if (command != null && !ALLOWED.contains(command)) throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED);
+        var attributes = accessor.getSessionAttributes();
+        if (attributes == null || !(attributes.get("userId") instanceof String handshakeUser)
+                || !(attributes.get(JwtHandshakeInterceptor.ACCESS_TOKEN) instanceof String storedToken)) {
+            throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED);
         }
-        if (accessor != null && (StompCommand.SEND.equals(accessor.getCommand())
-                || StompCommand.SUBSCRIBE.equals(accessor.getCommand()))) {
-            if (accessor.getUser() == null) {
-                throw new IllegalArgumentException("Authentication required for WebSocket message");
+        boolean connecting = command == StompCommand.CONNECT || command == StompCommand.STOMP;
+        String token = storedToken;
+        if (connecting) {
+            String header = accessor.getFirstNativeHeader("Authorization");
+            if (header != null) {
+                if (!header.startsWith("Bearer ")) throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED);
+                token = header.substring(7);
             }
-            customUserDetailsService.loadUserById(accessor.getUser().getName());
         }
+        var principal = authenticator.authenticate(token);
+        if (!handshakeUser.equals(principal.getId())) throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED);
+        if (connecting) {
+            attributes.put(JwtHandshakeInterceptor.ACCESS_TOKEN, token);
+            accessor.setUser(new UsernamePasswordAuthenticationToken(principal.getId(), null, principal.getAuthorities()));
+        } else if (accessor.getUser() == null || !principal.getId().equals(accessor.getUser().getName())) {
+            throw new UnauthorizedException(ErrorMessage.UNAUTHORIZED);
+        }
+        if (command == StompCommand.SUBSCRIBE) authorization.authorizeSubscription(principal.getId(), accessor.getDestination());
+        if (command == StompCommand.SEND) authorization.authorizeSend(accessor.getDestination());
         return message;
     }
 }

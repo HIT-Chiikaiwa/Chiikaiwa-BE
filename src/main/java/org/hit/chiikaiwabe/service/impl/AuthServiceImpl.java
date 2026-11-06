@@ -1,5 +1,7 @@
 package org.hit.chiikaiwabe.service.impl;
 
+import org.hit.chiikaiwabe.security.RefreshTokenStore;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hit.chiikaiwabe.constant.ErrorMessage;
 import org.hit.chiikaiwabe.constant.SuccessMessage;
@@ -62,6 +64,8 @@ public class AuthServiceImpl implements AuthService {
   private final ObjectMapper objectMapper;
 
   private final FirebaseService firebaseService;
+
+  private final RefreshTokenStore refreshTokenStore;
 
   @Override
   public LoginResponseDto login(LoginRequestDto request) {
@@ -220,16 +224,15 @@ public class AuthServiceImpl implements AuthService {
       String oldRefreshToken = request.getRefreshToken();
       String oldJti = jwtTokenProvider.extractJtiFromJwt(oldRefreshToken);
 
-      if (!Boolean.TRUE.equals(redisTemplate.hasKey(oldJti))) {
-        throw new UnauthorizedException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
-      }
       Authentication authentication = jwtTokenProvider.getAuthenticationByRefreshToken(oldRefreshToken);
       String identifier = authentication.getName();
       UserPrincipal userPrincipal = (UserPrincipal) customUserDetailsService.loadUserByUsername(identifier);
+      if (!refreshTokenStore.consume(oldJti, userPrincipal.getId())) {
+        throw new UnauthorizedException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
+      }
       String accessToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.FALSE);
       String refreshToken = jwtTokenProvider.generateToken(userPrincipal, Boolean.TRUE);
 
-      redisTemplate.delete(oldJti);
       long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
       long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
 
@@ -241,42 +244,33 @@ public class AuthServiceImpl implements AuthService {
 
       return new TokenRefreshResponseDto(accessToken, refreshToken);
 
-    } catch (io.jsonwebtoken.JwtException | IllegalArgumentException e) {
+    } catch (io.jsonwebtoken.JwtException | IllegalArgumentException | InvalidException e) {
       throw new UnauthorizedException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
     }
   }
 
   @Override
   public void logout(HttpServletRequest request, String refreshToken) {
-    String bearerToken = request.getHeader("Authorization");
-    if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-      String accessToken = bearerToken.substring(7);
-      try {
-        String accessJti = jwtTokenProvider.extractJtiFromJwt(accessToken);
-        long accessTtl = jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis();
-        if (accessTtl > 0) {
-          redisTemplate.opsForValue().set("BLACKLIST:" + accessJti, "LOGGED_OUT", accessTtl, TimeUnit.MILLISECONDS);
+    try {
+      // Validate the signed refresh token before mutating token state.
+      Authentication refreshAuthentication = jwtTokenProvider.getAuthenticationByRefreshToken(refreshToken);
+      String bearer = request.getHeader("Authorization");
+      String accessToken = StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")
+          ? bearer.substring(7) : null;
+      if (accessToken != null && jwtTokenProvider.validateAccessToken(accessToken)) {
+        if (!refreshAuthentication.getName().equals(jwtTokenProvider.extractClaimUsername(accessToken))) {
+          throw new UnauthorizedException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
         }
-      } catch (Exception e) {
-        log.warn("Invalid access token on logout", e);
+        refreshTokenStore.revoke(jwtTokenProvider.extractJtiFromJwt(accessToken),
+            jwtTokenProvider.extractExpirationFromJwt(accessToken).getTime() - System.currentTimeMillis());
       }
+      refreshTokenStore.revoke(jwtTokenProvider.extractJtiFromJwt(refreshToken),
+          jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis());
+      SecurityContextHolder.clearContext();
+    } catch (io.jsonwebtoken.JwtException | IllegalArgumentException | InvalidException ex) {
+      throw new UnauthorizedException(ErrorMessage.Auth.INVALID_REFRESH_TOKEN);
     }
-
-    if (StringUtils.hasText(refreshToken)) {
-      try {
-        String refreshJti = jwtTokenProvider.extractJtiFromJwt(refreshToken);
-        long refreshTtl = jwtTokenProvider.extractExpirationFromJwt(refreshToken).getTime() - System.currentTimeMillis();
-        if (refreshTtl > 0) {
-          redisTemplate.opsForValue().set("BLACKLIST:" + refreshJti, "LOGGED_OUT", refreshTtl, TimeUnit.MILLISECONDS);
-        }
-      } catch (Exception e) {
-        log.warn("Invalid refresh token on logout", e);
-      }
-    }
-
-    SecurityContextHolder.clearContext();
   }
-
 
   @Override
   public void register(UserCreateDto request) {

@@ -348,7 +348,7 @@ graph TB
 - `NotificationController` — CRUD notifications, mark read, unread count
 - `DeviceController` — Register/unregister FCM device, online status
 - `UserBlockController` / `ReportController` — Block/unblock user, report vi phạm
-- `UserController` — Get user by ID, get current user, list users (admin)
+- `UserController` — Get current user; admin: search/list users, get user by ID, lock/unlock accounts. See [Admin API](docs/admin-api.md).
 
 #### 2. Service Layer (Business Logic)
 - 24 service interfaces + implementations trong `service/impl/`

@@ -1,6 +1,7 @@
 package org.hit.chiikaiwabe.security;
 
 import org.hit.chiikaiwabe.domain.entity.User;
+import org.hit.chiikaiwabe.domain.enums.UserStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -9,6 +10,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.*;
 
 public class UserPrincipal implements UserDetails {
+
+    private boolean accountNonLocked = true;
+
+    private boolean enabled = true;
 
     private final String id;
 
@@ -46,8 +51,12 @@ public class UserPrincipal implements UserDetails {
     public static UserPrincipal create(User user) {
         List<GrantedAuthority> authorities = new LinkedList<>();
         authorities.add(new SimpleGrantedAuthority(user.getRole().name()));
-        return new UserPrincipal(user.getId(), user.getFirstName(), user.getLastName(),
+        UserPrincipal principal = new UserPrincipal(user.getId(), user.getFirstName(), user.getLastName(),
                 user.getUsername(), user.getPassword(), authorities);
+        principal.accountNonLocked = user.getUserstatus() != UserStatus.LOCKED;
+        principal.enabled = !Boolean.TRUE.equals(user.getDeleteFlag())
+                && user.getUserstatus() == UserStatus.ACTIVE;
+        return principal;
     }
 
     public String getId() {
@@ -84,7 +93,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return accountNonLocked;
     }
 
     @Override
@@ -94,7 +103,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 
     public boolean equals(Object object) {

@@ -15,6 +15,8 @@ public class SuccessMessage {
 
     public static final String PASSWORD_UPDATED = "success.password.updated";
     public static final String USER_DELETED = "success.user.deleted";
+    public static final String USER_LOCKED = "success.user.locked";
+    public static final String USER_UNLOCKED = "success.user.unlocked";
     public static final String SUBJECT_DELETED = "success.subject.deleted";
     public static final String LOCATION_UPDATED = "success.location.updated";
     public static final String LOCATION_REMOVED = "success.location.removed";

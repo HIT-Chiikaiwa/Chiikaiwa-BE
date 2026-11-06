@@ -1,5 +1,6 @@
 package org.hit.chiikaiwabe.security.jwt;
 
+import org.hit.chiikaiwabe.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -9,10 +10,8 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -20,6 +19,7 @@ import java.util.Map;
 @Component
 public class JwtChannelInterceptor implements ChannelInterceptor {
 
+    private final CustomUserDetailsService customUserDetailsService;
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
@@ -52,11 +52,18 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                 throw new IllegalArgumentException("Authentication required for WebSocket connection");
             }
 
+            var userDetails = customUserDetailsService.loadUserById(userId);
             UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(userId, null,
-                            List.of(new SimpleGrantedAuthority("USER")));
+                    new UsernamePasswordAuthenticationToken(userId, null, userDetails.getAuthorities());
             accessor.setUser(auth);
             log.info("STOMP CONNECT authenticated for user: {}", userId);
+        }
+        if (accessor != null && (StompCommand.SEND.equals(accessor.getCommand())
+                || StompCommand.SUBSCRIBE.equals(accessor.getCommand()))) {
+            if (accessor.getUser() == null) {
+                throw new IllegalArgumentException("Authentication required for WebSocket message");
+            }
+            customUserDetailsService.loadUserById(accessor.getUser().getName());
         }
         return message;
     }

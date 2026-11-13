@@ -105,7 +105,19 @@ jobs:
           script: |
             set -e # Dừng script ngay nếu có lệnh lỗi
             echo "Starting deployment..."
-            
+
+            # Keep administrator credentials on EC2; preserve them across deployments.
+            ADMIN_ENV_FILE=/home/ec2-user/chiikaiwa/.env
+            if [ ! -r "$ADMIN_ENV_FILE" ]; then
+              echo "Configure ADMIN_USERNAME and ADMIN_PASSWORD in the EC2 .env before deployment." >&2
+              exit 1
+            fi
+            ADMIN_USERNAME=$(sed -n 's/^ADMIN_USERNAME=//p' "$ADMIN_ENV_FILE" | head -n 1)
+            ADMIN_PASSWORD=$(sed -n 's/^ADMIN_PASSWORD=//p' "$ADMIN_ENV_FILE" | head -n 1)
+            : "${ADMIN_USERNAME:?ADMIN_USERNAME is missing from the EC2 .env}"
+            : "${ADMIN_PASSWORD:?ADMIN_PASSWORD is missing from the EC2 .env}"
+            umask 077
+
             # Giải mã Base64 và loại bỏ khoảng trắng thừa/dấu xuống dòng
             FIREBASE_JSON=$(echo "$FIREBASE_B64" | base64 -d)
             FIREBASE_ONELINE=$(echo "$FIREBASE_JSON" | tr -d '\n' | tr -d '\r')
@@ -127,8 +139,8 @@ jobs:
             BREVO_SENDER_EMAIL=$BREVO_SENDER_EMAIL
             BREVO_API_KEY=$BREVO_API_KEY
             FIREBASE_CREDENTIALS=$FIREBASE_ONELINE
-            ADMIN_USERNAME=admin1
-            ADMIN_PASSWORD=admin1
+            ADMIN_USERNAME=$ADMIN_USERNAME
+            ADMIN_PASSWORD=$ADMIN_PASSWORD
             ADMIN_LASTNAME=Vien
             ADMIN_FIRSTNAME=Quan_Tri
             DEAFULT_RADIUS_KM=5

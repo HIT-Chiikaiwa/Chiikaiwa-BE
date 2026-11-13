@@ -272,11 +272,15 @@ public class BookingLifecycleServiceImpl implements BookingLifecycleService {
         OfflineBooking booking = bookingRepository.findByIdWithDetails(bookingId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessage.Booking.ERR_NOT_FOUND));
 
-        boolean isCreator = booking.getCreator().getId().equals(userId);
+        // The creator is authorized independently of the invitation list.
+        if (booking.getCreator().getId().equals(userId)) {
+            return booking;
+        }
+
         boolean isParticipant = booking.getParticipants().stream()
                 .anyMatch(p -> p.getUser().getId().equals(userId));
 
-        if (!isCreator && !isParticipant) {
+        if (!isParticipant) {
             throw new ForbiddenException(ErrorMessage.Booking.ERR_NOT_PARTICIPANT);
         }
 

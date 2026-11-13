@@ -66,7 +66,7 @@ public class BookingController {
     }
 
     @PatchMapping(UrlConstant.Booking.CANCEL)
-    @Operation(summary = "Cancel a booking")
+    @Operation(summary = "Cancel a booking (creator or invited participant)")
     public ResponseEntity<RestData<BookingResponseDto>> cancelBooking(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @PathVariable String bookingId,
@@ -76,7 +76,7 @@ public class BookingController {
     }
 
     @PatchMapping(UrlConstant.Booking.COMPLETE)
-    @Operation(summary = "Complete a confirmed booking")
+    @Operation(summary = "Complete a confirmed booking (creator or invited participant)")
     public ResponseEntity<RestData<BookingResponseDto>> completeBooking(
             @Parameter(hidden = true) @CurrentUser UserPrincipal principal,
             @PathVariable String bookingId) {

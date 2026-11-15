@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.hit.chiikaiwabe.domain.dto.response.BookingResponseDto;
 import org.hit.chiikaiwabe.domain.dto.response.BookingWeekResponseDto;
 import org.hit.chiikaiwabe.domain.entity.OfflineBooking;
+import org.hit.chiikaiwabe.domain.entity.BookingRating;
 import org.hit.chiikaiwabe.domain.mapper.BookingMapper;
 import org.hit.chiikaiwabe.exception.ForbiddenException;
 import org.hit.chiikaiwabe.exception.NotFoundException;
@@ -43,16 +44,18 @@ public class BookingQueryServiceImpl implements BookingQueryService {
         }
 
         BookingResponseDto dto = bookingMapper.toDto(booking, currentUserId);
-        boolean hasRated = bookingRatingRepository.existsByBookingIdAndRaterId(bookingId, currentUserId);
-
-        dto.setHasRated(hasRated);
+        Integer score = bookingRatingRepository.findByBookingIdAndRaterId(bookingId, currentUserId)
+                .map(BookingRating::getScore).orElse(null);
+        setRating(dto, score);
         return dto;
     }
 
     @Override
     public List<BookingResponseDto> getMyBookings(String currentUserId) {
         List<OfflineBooking> bookingList = offlineBookingRepository.findAllByUserId(currentUserId);
-        return bookingMapper.toDtoList(bookingList, currentUserId);
+        List<BookingResponseDto> dtos = bookingMapper.toDtoList(bookingList, currentUserId);
+        populateRatings(dtos, currentUserId);
+        return dtos;
     }
 
     @Override
@@ -62,10 +65,25 @@ public class BookingQueryServiceImpl implements BookingQueryService {
 
         List<OfflineBooking> bookings = offlineBookingRepository.findWeeklySchedule(currentUserId, startDate, endDate);
         List<BookingResponseDto> dtos = bookingMapper.toDtoList(bookings, currentUserId);
+        populateRatings(dtos, currentUserId);
         Map<DayOfWeek, List<BookingResponseDto>> groupedByDay = dtos.stream()
                 .collect(Collectors.groupingBy(dto -> dto.getScheduledAt().getDayOfWeek()));
         return BookingWeekResponseDto.builder().weekStart(weekStart)
                 .weekEnd(endDate.toLocalDate())
                 .daySchedules(groupedByDay).build();
     }
+
+    private void populateRatings(List<BookingResponseDto> dtos, String currentUserId) {
+        if (dtos.isEmpty()) return;
+        List<String> bookingIds = dtos.stream().map(BookingResponseDto::getId).toList();
+        Map<String, Integer> scores = bookingRatingRepository.findByRaterIdAndBookingIds(currentUserId, bookingIds)
+                .stream().collect(Collectors.toMap(rating -> rating.getBooking().getId(), BookingRating::getScore));
+        dtos.forEach(dto -> setRating(dto, scores.get(dto.getId())));
+    }
+
+    private void setRating(BookingResponseDto dto, Integer score) {
+        dto.setHasRated(score != null);
+        dto.setMyRating(score);
+    }
+
 }

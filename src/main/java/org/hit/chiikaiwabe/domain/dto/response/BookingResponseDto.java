@@ -39,6 +39,7 @@ public class BookingResponseDto {
 
     private String participantStatus;
     private Boolean hasRated;
+    // Score submitted by the current user for this booking; null when not rated.
     private Integer myRating;
 
     private String messageId;
